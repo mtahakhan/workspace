@@ -1,0 +1,8 @@
+Ticker: AMZN
+Company: Amazon.com
+Period: 2025-08
+Compiled At: 2026-07-24T19:47:34.352063+02:00
+Method: WebSearch retrospective query (insufficient reliable results)
+Retrieved For: monthly-recap historical backfill
+
+No reliable, month-specific news found for this period - results were dominated by Q3 2025 (October-reported) and general FY2025 aggregate figures rather than August-specific events. Skipped per the monthly-recap backfill's reliability bar (see AGENT_NOTES.md).

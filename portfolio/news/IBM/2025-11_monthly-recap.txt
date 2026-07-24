@@ -1,0 +1,9 @@
+Ticker: IBM
+Company: IBM
+Period: 2025-11
+Compiled At: 2026-07-24T19:51:35.860372+02:00
+Method: WebSearch retrospective query (monthly recap)
+Sources:
+Retrieved For: monthly-recap historical backfill
+
+IBM shares peaked at $314.98 on November 12, 2025, the stock's high point for the year. Technical indicators turned cautionary shortly after: both the MACD histogram and the Momentum indicator crossed below zero on November 13, 2025, flagging potential downward pressure ahead.

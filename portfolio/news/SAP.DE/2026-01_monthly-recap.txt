@@ -1,0 +1,10 @@
+Ticker: SAP.DE
+Company: SAP SE
+Period: 2026-01
+Compiled At: 2026-07-24T19:54:23.035870+02:00
+Method: WebSearch retrospective query (monthly recap)
+Sources:
+- https://finance.yahoo.com/news/sap-meets-q4-revenue-forecasts-051512891.html
+Retrieved For: monthly-recap historical backfill
+
+SAP shares plunged 15% on January 29, 2026 (at one point down 17% to their lowest since February 2024, wiping over EUR40B off market cap) - the sharpest single-day drop since October 2020 - after Q4 current cloud backlog grew just 16% (25% at constant currency) versus ~26% expected, blamed on large deals with longer ramp-up periods. Q4 revenue still beat at EUR9.7B (vs EUR9.4B YoY) and operating profit rose to EUR2.6B (from EUR2B). 2026 guidance called for 23-25% cloud revenue growth with backlog growth decelerating from 2025's 25%. BMO Capital cut its target to $245 from $320 on January 30.

@@ -1,0 +1,9 @@
+Ticker: SAN.PA
+Company: Sanofi
+Period: 2025-12
+Compiled At: 2026-07-24T19:53:05.362122+02:00
+Method: WebSearch retrospective query (monthly recap)
+Sources:
+Retrieved For: monthly-recap historical backfill
+
+Jefferies maintained a EUR100 12-month target and reiterated Buy in December 2025 despite a US regulatory setback for MS drug tolebrutinib, citing confidence in the wider pipeline. A December 14, 2025 Wall Street coverage summary showed an average 12-month ADR target of ~$60.13, with 8 of 10 analysts rating the stock Buy and 2 Hold - reflecting continued pressure to develop/acquire assets ahead of Dupixent's eventual loss of exclusivity.

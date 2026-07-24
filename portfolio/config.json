@@ -1,0 +1,27 @@
+{
+  "thresholds": {
+    "value_divergence_pct": 20,
+    "mover_notable_pct": 5,
+    "stale_price_max_age_days": 1,
+    "split_adjustment_sanity_ratio": 100,
+    "full_year_holding_days": 365,
+    "short_hold_days_threshold": 90,
+    "movers_top_n": 5,
+    "largest_positions_top_n": 5
+  },
+  "caveats": {
+    "gain_pct_note": "gain_pct / trend.change_pct are TOTAL return (not annualized) - use annualized_returns.portfolio_xirr_pct for the figure to check against the 10-15%/yr target.",
+    "xirr_methodology_note": "annualized_returns is a money-weighted XIRR built from real purchase lots in transaction_lots.csv (via compute_lots.py, FIFO against the actual broker transaction history) - re-run compute_lots.py after new trades to keep it current.",
+    "drawdown_forward_fill_note": "drawdown/trend use forward-filled prices across tickers with different history lengths (gaps before a ticker's own listing date, or on non-trading days).",
+    "trend_methodology_note": "trend.since_inception is anchored to the earliest transaction_lots.csv purchase date, not each ticker's full price history - using full history here would apply today's share counts to decades-old prices for positions that didn't exist yet (a real bug caught and fixed: showed +57,000% using a 1996 Siemens price). drawdown/high-water-mark still deliberately use full price history though - that's a different, accepted use case (worst-case value swing of the current positions if simulated further back), not a claim about the real portfolio's actual value at that time.",
+    "tickers_without_lot_data": "No transaction lot data for: {tickers} - their XIRR is null and they're excluded from the portfolio-wide XIRR cash flows.",
+    "stale_prices": "Stale or missing prices (no update in {max_age_days}+ days): {stale_desc} - run fetch_prices.py; values/totals below use whatever last price is available regardless.",
+    "short_holding_period": "No position has been held a full year yet (longest: {max_holding_days} days) - every XIRR figure here is an annualized extrapolation from a shorter real period, not a measured annual return. Individual position XIRRs on very short holding periods (weeks) will look extreme even for ordinary moves - check weighted_avg_holding_days before treating a per-position XIRR as meaningful.",
+    "value_divergence": "Total portfolio value moved {change_pct:+.1f}% since the previous analysis run (EUR {prev_value:,.2f} at {prev_time} -> EUR {curr_value:,.2f} now) - a swing this large between two runs is more often a data bug (ticker mapping, split-adjustment, stale history) than a real market move. Verify before reporting it as genuine."
+  },
+  "notify_reasons": {
+    "large_movers": "Large daily move(s) (>={threshold_pct}%): {movers_desc}",
+    "stale_prices": "Stale prices: {tickers}",
+    "value_divergence": "Run-over-run value divergence flagged - see caveats"
+  }
+}

@@ -1,0 +1,10 @@
+Ticker: QBTS
+Company: D-Wave Quantum
+Period: 2025-11
+Compiled At: 2026-07-24T19:51:35.860372+02:00
+Method: WebSearch retrospective query (monthly recap)
+Sources:
+- https://www.fool.com/investing/2025/12/08/d-wave-quantum-stock-crash-november-whats-next/
+Retrieved For: monthly-recap historical backfill
+
+A rough month: shares traded around $23.63 on November 13, 2025 (-10.5% that day), having fallen nearly 22% in the first full week of November after closing below $30 post-Q3-earnings. D-Wave's overall 38.8% November decline was among the worst of the quantum-computing peer group, as broader debate over whether the quantum/AI rally was a bubble weighed on sentiment. Despite the drawdown, the stock remained up roughly 1,700%+ over the trailing 12 months, with cash reserves having grown from $29M (Q3 2024) to $819M (Q2 2025).

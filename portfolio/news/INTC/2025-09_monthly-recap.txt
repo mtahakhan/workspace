@@ -1,0 +1,8 @@
+Ticker: INTC
+Company: Intel Corp
+Period: 2025-09
+Compiled At: 2026-07-24T19:48:59.352226+02:00
+Method: WebSearch retrospective query (insufficient reliable results)
+Retrieved For: monthly-recap historical backfill
+
+No reliable, month-specific news found for this period - results explicitly stated no September 2025-specific events were found, only July 2026 information. Skipped per the monthly-recap backfill's reliability bar (see AGENT_NOTES.md).

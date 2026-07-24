@@ -73,7 +73,9 @@ See **`PIPELINE.md`** for a Mermaid diagram of everything below.
    purchase dates. Also flags any ticker whose latest `price_history` entry is
    more than 2 days old (stale/failed fetch) - see `stale_prices` in its output
    - and flags a run-over-run `total_value` swing >20% (see `analysis_history.jsonl`)
-   as a likely data bug rather than a real market move.
+   as a likely data bug rather than a real market move. Both thresholds (and
+   every other tunable number/message in the pipeline) live in `config.json`,
+   not hardcoded - see `AGENT_NOTES.md`'s "Configurable thresholds and caveats".
 6. **`render_report.py`** — takes `analyze_portfolio.py`'s JSON (piped via
    stdin) and renders every table/figure in the daily report as markdown.
    Exists so the LLM writing the report never hand-transcribes a number out of

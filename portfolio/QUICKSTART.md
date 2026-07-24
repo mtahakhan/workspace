@@ -133,8 +133,9 @@ python3 analyze_portfolio.py | python3 -m json.tool
 ```
 
 It also appends `{generated_at, total_value, xirr_pct}` to `analysis_history.jsonl`
-each run, and adds a `caveats` entry if `total_value` swung more than 20% since
-the previous run - a real incident (a bad ticker mapping doubled the reported
+each run, and adds a `caveats` entry if `total_value` swung more than 20%
+(configurable in `config.json`) since the previous run - a real incident (a
+bad ticker mapping doubled the reported
 value) is what this guards against; see `AGENT_NOTES.md`.
 
 ## 9. Render it as markdown

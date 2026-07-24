@@ -1,0 +1,9 @@
+Ticker: MSFT
+Company: Microsoft
+Period: 2026-01
+Compiled At: 2026-07-24T19:54:23.035870+02:00
+Method: WebSearch retrospective query (monthly recap)
+Sources:
+Retrieved For: monthly-recap historical backfill
+
+Microsoft reported Q2 (fiscal) earnings on January 28, 2026: cloud revenue topped $51.5B for the first time, EPS of $5.16 and revenue of $81.27B both beat Wall Street estimates - yet shares fell ~7% in after-hours trading on investor concern over capital intensity and Copilot execution. The company also faced multiple proposed securities class-action lawsuits alleging false statements about Azure growth, AI capital intensity, and Copilot adoption between May 1, 2025 and January 28, 2026 (shareholders claiming over $357B in market-value losses tied to a 10-12% price decline). Microsoft had entered 2026 near $551.05.

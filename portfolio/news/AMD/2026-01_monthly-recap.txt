@@ -1,0 +1,10 @@
+Ticker: AMD
+Company: Advanced Micro Devices
+Period: 2026-01
+Compiled At: 2026-07-24T19:54:23.035870+02:00
+Method: WebSearch retrospective query (monthly recap)
+Sources:
+- https://247wallst.com/forecasts/2026/01/19/advanced-micro-devices-inc-amd-price-prediction-and-forecast/
+Retrieved For: monthly-recap historical backfill
+
+AMD guided Q1 2026 revenue to ~$9.8B (+/-$300M), including ~$100M of Instinct MI308 sales to China - the mid-point implies ~32% YoY growth (a ~5% sequential decline). Shares gained 10.83% over the month after a 12.69% decline the prior month, leaving the stock up 95.74% over the trailing year. Wall Street consensus (32 analysts) was 24 Buy / 8 Hold / 0 Sell with a $284.07 average target.

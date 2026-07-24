@@ -1,0 +1,10 @@
+Ticker: AMD
+Company: Advanced Micro Devices
+Period: 2025-10
+Compiled At: 2026-07-24T19:50:16.056603+02:00
+Method: WebSearch retrospective query (monthly recap)
+Sources:
+- https://ir.amd.com/
+Retrieved For: monthly-recap historical backfill
+
+On October 27, 2025, AMD completed the divestiture of its ZT Systems Data Center Infrastructure Manufacturing Business to Sanmina. During October, AMD also showcased its "Helios" rack-scale AI platform (built on the Open Compute Project Open Rack standard) at an event where Meta presented it.

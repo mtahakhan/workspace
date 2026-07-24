@@ -10,7 +10,8 @@ that first, not this file, to understand the "why" behind anything below.
 
 Indicators: position/portfolio value & gain/loss, sector breakdown, largest
 positions, high-water-mark/drawdown, daily movers, trend (since-inception/30d/
-90d/365d), annualized return (XIRR), and stale_prices.
+90d/365d), annualized return (XIRR), stale_prices, and a deterministic
+notable/notify_reasons signal for the daily notification decision.
 """
 
 import csv
@@ -19,11 +20,12 @@ import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 
+from config import load_config
+
 PORTFOLIO_DIR = Path(__file__).parent
 PRICE_HISTORY_DIR = PORTFOLIO_DIR / "price_history"
 TRANSACTION_LOTS_FILE = PORTFOLIO_DIR / "transaction_lots.csv"
 ANALYSIS_HISTORY_FILE = PORTFOLIO_DIR / "analysis_history.jsonl"
-VALUE_DIVERGENCE_THRESHOLD_PCT = 20  # flag run-over-run total_value swings bigger than this
 
 def load_transaction_lots():
     """Return {ticker: [{"date", "shares", "price", "company", "sector"}, ...]}
@@ -136,15 +138,13 @@ def load_open_positions(lots):
     open_positions.sort(key=lambda pos: pos["Ticker"])
     return open_positions
 
-STALE_PRICE_MAX_AGE_DAYS = 2  # allows for a weekend; flags anything older
-
 def latest_prices_from_history(all_history):
     """The 'current price' for each ticker is just the last line of its own
     price_history/{TICKER}.jsonl - no separate prices.json snapshot file.
     Returns {ticker: price_eur} for tickers with at least one history point."""
     return {ticker: hist[-1]["price"] for ticker, hist in all_history.items() if hist}
 
-def stale_tickers(all_history, max_age_days=STALE_PRICE_MAX_AGE_DAYS):
+def stale_tickers(all_history, max_age_days):
     """Tickers whose latest history point is older than max_age_days, or that
     have no history at all - replaces what prices.json's missing_tickers used
     to flag, and catches more: a ticker silently failing to fetch for several
@@ -158,27 +158,25 @@ def stale_tickers(all_history, max_age_days=STALE_PRICE_MAX_AGE_DAYS):
             stale.append({"ticker": ticker, "last_price_date": hist[-1]["timestamp"].date().isoformat()})
     return stale
 
-SPLIT_ADJUSTMENT_SANITY_RATIO = 100  # unadjusted-split guard - see AGENT_NOTES.md
-
-def _filter_unadjusted_splits(records, ticker):
-    """Drop historical points >100x away from the ticker's current price -
+def _filter_unadjusted_splits(records, ticker, sanity_ratio):
+    """Drop historical points >sanity_ratio away from the ticker's current price -
     guards against unadjusted historical splits in yfinance data. See
     AGENT_NOTES.md ("Historical price data quality") for the confirmed case
-    this caught. 100x is deliberately generous - never triggers on ordinary
-    volatility."""
+    this caught. Default (100x) is deliberately generous - never triggers on
+    ordinary volatility."""
     if len(records) < 2:
         return records
     latest_price = records[-1]["price"]
     if not latest_price:
         return records
-    kept = [r for r in records if 1 / SPLIT_ADJUSTMENT_SANITY_RATIO <= r["price"] / latest_price <= SPLIT_ADJUSTMENT_SANITY_RATIO]
+    kept = [r for r in records if 1 / sanity_ratio <= r["price"] / latest_price <= sanity_ratio]
     dropped = len(records) - len(kept)
     if dropped:
         print(f"  {ticker}: dropped {dropped} history points inconsistent with current price "
               f"(likely unadjusted split) - retained {len(kept)}/{len(records)}", file=sys.stderr)
     return kept
 
-def load_ticker_history(ticker):
+def load_ticker_history(ticker, split_adjustment_sanity_ratio):
     """Return [{timestamp: datetime, price: float}, ...] sorted ascending. Empty if no file."""
     path = PRICE_HISTORY_DIR / f"{ticker}.jsonl"
     if not path.exists():
@@ -195,7 +193,7 @@ def load_ticker_history(ticker):
             # explicitly reading that key here, not any of the original-currency ones.
             records.append({"timestamp": datetime.fromisoformat(obj["timestamp"]), "price": obj["price_eur"]})
     records.sort(key=lambda r: r["timestamp"])
-    return _filter_unadjusted_splits(records, ticker)
+    return _filter_unadjusted_splits(records, ticker, split_adjustment_sanity_ratio)
 
 def price_at_or_before(history, when):
     """Latest known price at or before `when` (forward-fill). None if no such point exists."""
@@ -265,7 +263,7 @@ def compute_sector_breakdown(positions, total_value):
     result.sort(key=lambda s: s["value"], reverse=True)
     return result
 
-def compute_largest_positions(positions, top_n=5):
+def compute_largest_positions(positions, top_n):
     priced = [p for p in positions if p["value"] is not None]
     return sorted(priced, key=lambda p: p["value"], reverse=True)[:top_n]
 
@@ -295,7 +293,7 @@ def compute_drawdown(full_value_series, current_value):
     drawdown_pct = ((current_value - hwm) / hwm * 100) if hwm else 0.0
     return {"high_water_mark": round(hwm, 2), "high_water_mark_date": hwm_date, "drawdown_pct": round(drawdown_pct, 2)}
 
-def compute_movers(open_positions, all_history, top_n=5):
+def compute_movers(open_positions, all_history, top_n):
     """Day-over-day % change per ticker, using the two most recent history entries."""
     movers = []
     for pos in open_positions:
@@ -340,7 +338,7 @@ def compute_trend(full_value_series, lots):
         "last_365d": _trend_over(full_value_series, now - timedelta(days=365)),
     }
 
-def check_value_divergence(total_value, history_file=ANALYSIS_HISTORY_FILE):
+def check_value_divergence(total_value, threshold_pct, message_template, history_file=ANALYSIS_HISTORY_FILE):
     """Compare against the previous run's total_value to catch data bugs (bad
     ticker mappings, corrupted price history, etc.) that silently produce a
     wildly wrong portfolio value instead of an error - see AGENT_NOTES.md
@@ -360,13 +358,13 @@ def check_value_divergence(total_value, history_file=ANALYSIS_HISTORY_FILE):
     if not prev["total_value"]:
         return None
     change_pct = (total_value - prev["total_value"]) / prev["total_value"] * 100
-    if abs(change_pct) < VALUE_DIVERGENCE_THRESHOLD_PCT:
+    if abs(change_pct) < threshold_pct:
         return None
-    return (
-        f"Total portfolio value moved {change_pct:+.1f}% since the previous analysis run "
-        f"(EUR {prev['total_value']:,.2f} at {prev['generated_at']} -> EUR {total_value:,.2f} now) - "
-        f"a swing this large between two runs is more often a data bug (ticker mapping, "
-        f"split-adjustment, stale history) than a real market move. Verify before reporting it as genuine."
+    return message_template.format(
+        change_pct=change_pct,
+        prev_value=prev["total_value"],
+        prev_time=prev["generated_at"],
+        curr_value=total_value,
     )
 
 def record_analysis_history(generated_at, total_value, xirr_pct, history_file=ANALYSIS_HISTORY_FILE):
@@ -374,63 +372,68 @@ def record_analysis_history(generated_at, total_value, xirr_pct, history_file=AN
         f.write(json.dumps({"generated_at": generated_at, "total_value": total_value, "xirr_pct": xirr_pct}) + "\n")
 
 def main():
+    config = load_config()
+    th = config["thresholds"]
+    cv = config["caveats"]
+    nr = config["notify_reasons"]
+
     lots = load_transaction_lots()
     open_positions = load_open_positions(lots)
-    all_history = {pos["Ticker"]: load_ticker_history(pos["Ticker"]) for pos in open_positions}
+    all_history = {pos["Ticker"]: load_ticker_history(pos["Ticker"], th["split_adjustment_sanity_ratio"])
+                   for pos in open_positions}
     prices = latest_prices_from_history(all_history)
-    stale = stale_tickers(all_history)
+    stale = stale_tickers(all_history, th["stale_price_max_age_days"])
 
     positions = compute_positions(open_positions, prices)
     totals = compute_portfolio_totals(positions)
     sectors = compute_sector_breakdown(positions, totals["total_value"])
-    largest = compute_largest_positions(positions)
+    largest = compute_largest_positions(positions, th["largest_positions_top_n"])
     full_value_series = compute_portfolio_value_series(open_positions, all_history)
     drawdown = compute_drawdown(full_value_series, totals["total_value"])
-    movers = compute_movers(open_positions, all_history)
+    movers = compute_movers(open_positions, all_history, th["movers_top_n"])
     trend = compute_trend(full_value_series, lots)
     annualized = compute_annualized_returns(open_positions, prices, lots)
 
     caveats = [
-        "gain_pct / trend.change_pct are TOTAL return (not annualized) - use "
-        "annualized_returns.portfolio_xirr_pct for the figure to check against the 10-15%/yr target.",
-        "annualized_returns is a money-weighted XIRR built from real purchase lots in "
-        "transaction_lots.csv (via compute_lots.py, FIFO against the actual broker transaction "
-        "history) - re-run compute_lots.py after new trades to keep it current.",
-        "drawdown/trend use forward-filled prices across tickers with different history lengths "
-        "(gaps before a ticker's own listing date, or on non-trading days).",
-        "trend.since_inception is anchored to the earliest transaction_lots.csv purchase date, "
-        "not each ticker's full price history - using full history here would apply today's share "
-        "counts to decades-old prices for positions that didn't exist yet (a real bug caught and "
-        "fixed: showed +57,000% using a 1996 Siemens price). drawdown/high-water-mark still "
-        "deliberately use full price history though - that's a different, accepted use case "
-        "(worst-case value swing of the current positions if simulated further back), not a claim "
-        "about the real portfolio's actual value at that time.",
+        cv["gain_pct_note"],
+        cv["xirr_methodology_note"],
+        cv["drawdown_forward_fill_note"],
+        cv["trend_methodology_note"],
     ]
     if annualized["tickers_without_lot_data"]:
-        caveats.append(
-            f"No transaction lot data for: {', '.join(annualized['tickers_without_lot_data'])} - "
-            "their XIRR is null and they're excluded from the portfolio-wide XIRR cash flows."
-        )
+        caveats.append(cv["tickers_without_lot_data"].format(
+            tickers=", ".join(annualized["tickers_without_lot_data"])
+        ))
     if stale:
         stale_desc = ", ".join(f"{s['ticker']} (last: {s['last_price_date'] or 'never'})" for s in stale)
-        caveats.append(
-            f"Stale or missing prices (no update in {STALE_PRICE_MAX_AGE_DAYS}+ days): {stale_desc} - "
-            "run fetch_prices.py; values/totals below use whatever last price is available regardless."
-        )
+        caveats.append(cv["stale_prices"].format(
+            max_age_days=th["stale_price_max_age_days"], stale_desc=stale_desc
+        ))
     max_holding_days = max(
         (v["weighted_avg_holding_days"] for v in annualized["per_position_xirr_pct"].values()
          if v["weighted_avg_holding_days"] is not None), default=0)
-    if max_holding_days < 365:
-        caveats.append(
-            f"No position has been held a full year yet (longest: {max_holding_days} days) - "
-            "every XIRR figure here is an annualized extrapolation from a shorter real period, "
-            "not a measured annual return. Individual position XIRRs on very short holding periods "
-            "(weeks) will look extreme even for ordinary moves - check weighted_avg_holding_days "
-            "before treating a per-position XIRR as meaningful."
-        )
-    divergence = check_value_divergence(totals["total_value"])
+    if max_holding_days < th["full_year_holding_days"]:
+        caveats.append(cv["short_holding_period"].format(max_holding_days=max_holding_days))
+    divergence = check_value_divergence(
+        totals["total_value"], th["value_divergence_pct"], cv["value_divergence"]
+    )
     if divergence:
         caveats.append(divergence)
+
+    # Explicit, reproducible notification signal - so "is today notable enough to
+    # notify" is a fixed rule evaluated the same way every run, not a fresh judgment
+    # call each morning. Keep in sync with tasks/daily-analysis.md's notify step.
+    notify_reasons = []
+    big_movers = [m for m in movers if abs(m["change_pct"]) >= th["mover_notable_pct"]]
+    if big_movers:
+        notify_reasons.append(nr["large_movers"].format(
+            threshold_pct=th["mover_notable_pct"],
+            movers_desc=", ".join(f"{m['ticker']} {m['change_pct']:+.1f}%" for m in big_movers),
+        ))
+    if stale:
+        notify_reasons.append(nr["stale_prices"].format(tickers=", ".join(s["ticker"] for s in stale)))
+    if divergence:
+        notify_reasons.append(nr["value_divergence"])
 
     generated_at = datetime.now().isoformat()
     result = {
@@ -446,6 +449,8 @@ def main():
         "annualized_returns": annualized,
         "stale_prices": stale,
         "caveats": caveats,
+        "notable": bool(notify_reasons),
+        "notify_reasons": notify_reasons,
     }
     record_analysis_history(generated_at, totals["total_value"], annualized["portfolio_xirr_pct"])
     print(json.dumps(result, indent=2, default=str))

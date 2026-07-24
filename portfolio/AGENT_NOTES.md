@@ -26,15 +26,21 @@ it governs interpretation and opinions, not data mechanics.
    override by reasoning over the raw data yourself.
 3. **Never modify any deterministic script (`compute_lots.py`,
    `fetch_prices.py`, `backfill_history.py`, `analyze_portfolio.py`,
-   `scaffold_metadata.py`) without first confirming intent with the user.**
-   If something looks wrong or errors, the default action is to **report it**
-   - what happened, why it might be happening, and 2-3 concrete options for
-   how to debug or fix it - and stop there. Only edit the code once the user
-   has confirmed they want a change made and roughly how. This applies
-   doubly during an unattended scheduled-task run (`portfolio-price-fetch`,
-   `portfolio-daily-analysis`): there's no one present to confirm intent, so
-   an error there gets reported (in the report / via notification) and left
-   alone, never silently patched.
+   `scaffold_metadata.py`, `render_report.py`, `config.py`) without first
+   confirming intent with the user.** If something looks wrong or errors, the
+   default action is to **report it** - what happened, why it might be
+   happening, and 2-3 concrete options for how to debug or fix it - and stop
+   there. Only edit the code once the user has confirmed they want a change
+   made and roughly how. This applies doubly during an unattended
+   scheduled-task run (`portfolio-price-fetch`, `portfolio-daily-analysis`):
+   there's no one present to confirm intent, so an error there gets reported
+   (in the report / via notification) and left alone, never silently patched.
+   `config.json` is the deliberate exception - tuning a threshold or caveat
+   wording there is a config change, not a code change, and doesn't need this
+   same confirm-first treatment (see "Configurable thresholds and caveats"
+   below) - but a `config.json` edit that breaks JSON parsing or drops a
+   template placeholder still surfaces as a hard error per rule 3's spirit,
+   not a silent fallback.
 4. **Never write ad-hoc currency-conversion code.** The pipeline supports
    EUR, USD, GBP, and GBp (British pence, /100 to GBP). If you hit another
    currency, that's a sign the ticker/listing is wrong - find a supported
@@ -100,6 +106,7 @@ change - it's the authoritative inventory and must never drift from reality.
 |---|---|---|
 | `transactions.csv` | Raw broker export - the only external input | You (manual export) |
 | `ticker_map.csv` | ISIN, Ticker, Company, Sector - shared, committed | `scaffold_metadata.py` (Ticker/Company) + you (Sector) |
+| `config.json` | All tunable thresholds (stale-price age, mover/divergence %, split-sanity ratio, short-hold days, top-N counts) and every caveat/notify-reason message template - shared, committed, not personal data. Edit values here, not in code - see "Configurable thresholds and caveats" below | You (hand-edited); `config.py` just loads it |
 | `transaction_lots.csv` | Current open positions - FIFO lots, real dates/prices | `compute_lots.py` |
 | `price_history/{TICKER}.jsonl` | Full sourced price history, one file per ticker | `fetch_prices.py` (daily) / `backfill_history.py` (one-off) |
 | `analysis_history.jsonl` | One line per `analyze_portfolio.py` run: `generated_at`, `total_value`, `xirr_pct` - append-only, used only for the run-over-run divergence check | `analyze_portfolio.py` |
@@ -115,8 +122,9 @@ change - it's the authoritative inventory and must never drift from reality.
 | `compute_lots.py` (re-run) | same | fresh `transaction_lots.csv` with resolved tickers | 3rd, after scaffold_metadata.py |
 | `fetch_prices.py` | `transaction_lots.csv` + Finnhub/yfinance | Appends to `price_history/*.jsonl` | daily |
 | `backfill_history.py` | `transaction_lots.csv` + yfinance historical | Rewrites `price_history/*.jsonl` (full history) | one-off/rare |
-| `analyze_portfolio.py` | `transaction_lots.csv` + `price_history/*.jsonl` + last line of `analysis_history.jsonl` | JSON: value, gain/loss, drawdown, XIRR, movers, trend, `stale_prices`, `caveats` (incl. value-divergence check); appends a new line to `analysis_history.jsonl` | after fetch_prices.py |
-| `render_report.py` | `analyze_portfolio.py`'s JSON (via stdin/pipe) | Markdown: Portfolio Overview, Trend, Sector Breakdown, Largest Positions, Movers (numbers only), Complete Holdings Table, XIRR Context, Data Notes | after analyze_portfolio.py, before the report is written |
+| `config.py` | `config.json` | `load_config()` helper, imported by `analyze_portfolio.py`/`render_report.py` - no file output of its own | n/a (shared loader) |
+| `analyze_portfolio.py` | `transaction_lots.csv` + `price_history/*.jsonl` + last line of `analysis_history.jsonl` + `config.json` (thresholds/caveat templates) | JSON: value, gain/loss, drawdown, XIRR, movers, trend, `stale_prices`, `caveats` (incl. value-divergence check), `notable`/`notify_reasons` (deterministic push-notification signal - see below); appends a new line to `analysis_history.jsonl` | after fetch_prices.py |
+| `render_report.py` | `analyze_portfolio.py`'s JSON (via stdin/pipe) + `config.json` (`short_hold_days_threshold`) | Markdown: Portfolio Overview, Trend, Sector Breakdown, Largest Positions, Movers (numbers only), Complete Holdings Table, XIRR Context, Data Notes | after analyze_portfolio.py, before the report is written |
 
 **Scheduled tasks - thin LLM wrappers around the deterministic core:**
 
@@ -245,6 +253,51 @@ produces mathematically extreme numbers (e.g. a genuine 37% gain over 12
 weeks annualizes to 300%+). That's correct math, not a bug, but it's easy to
 misread without the holding-period context alongside it. No position needs to
 have been held a full year for the *portfolio-wide* XIRR to be meaningful.
+
+## Notification signal (notable/notify_reasons)
+
+Whether the daily task sends a push notification is a fixed rule evaluated by
+`analyze_portfolio.py`, not a judgment call made fresh each run - see
+`tasks/daily-analysis.md` step 8. `notable` is `true` if any of: a mover's
+`|change_pct|` is >= `config.json`'s `thresholds.mover_notable_pct` (5% by
+default, percentage move, not EUR size - consistent with how `compute_movers`
+itself ranks movers), `stale_prices` is non-empty, or the value-divergence
+check fired. `notify_reasons` lists which, rendered from
+`config.json`'s `notify_reasons` templates. This replaced an earlier version
+of the task that left "large move" undefined and included "target breached" -
+that phrase never corresponded to any tracked data (no price-target field
+exists anywhere in this pipeline) and was removed rather than implemented; revisit if
+per-position price targets are ever actually added as a feature.
+
+## Configurable thresholds and caveats (config.json)
+
+Every numeric threshold and every caveat/notify-reason message string used by
+`analyze_portfolio.py` and `render_report.py` lives in `config.json`, not
+hardcoded in the scripts - `stale_price_max_age_days`, `mover_notable_pct`,
+`value_divergence_pct`, `split_adjustment_sanity_ratio`, `full_year_holding_days`,
+`short_hold_days_threshold`, `movers_top_n`, `largest_positions_top_n` under
+`thresholds`; the boilerplate methodology notes plus the templated
+tickers-without-lot-data/stale-prices/short-holding/value-divergence messages
+under `caveats`; the three notification message templates under
+`notify_reasons`. To change a number or wording, edit `config.json` directly -
+no code change needed, and it takes effect on the next run of either script.
+
+`config.py` is a thin shared loader (`load_config()`) imported by both
+scripts - it does NOT duplicate `config.json`'s values as Python defaults.
+That's deliberate: this project already has one instance of "two copies of
+the same information silently drifting apart" (the Mermaid diagram, rule 8
+above) and the fix there was "exactly one place to keep in sync." Baking a
+second, hardcoded set of defaults into `config.py` would recreate that same
+failure mode for thresholds instead. So a missing or invalid `config.json`
+is a hard error (`SystemExit` with a clear message), not a silent fallback -
+consistent with rule 3's "report it and stop" for unattended runs.
+`config.json` is committed (shared/non-personal, like `ticker_map.csv`), so
+"missing" should only happen from local file damage, never a fresh clone.
+
+Message templates use Python `str.format()` placeholders (e.g. `{tickers}`,
+`{max_age_days}`, `{change_pct:+.1f}`) - if you edit a template's wording,
+keep its placeholder names intact or the corresponding `.format(...)` call in
+`analyze_portfolio.py`'s `main()` will raise a `KeyError`.
 
 ## Data provenance / secrets
 

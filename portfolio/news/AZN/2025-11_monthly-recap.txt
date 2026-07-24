@@ -1,0 +1,10 @@
+Ticker: AZN
+Company: AstraZeneca
+Period: 2025-11
+Compiled At: 2026-07-24T19:51:35.860372+02:00
+Method: WebSearch retrospective query (monthly recap)
+Sources:
+- https://ts2.tech/en/astrazeneca-azn-share-price-what-to-know-before-london-market-opens-on-17-november-2025/
+Retrieved For: monthly-recap historical backfill
+
+AstraZeneca delivered forecast-beating Q3 results and hit fresh record highs during November, closing around 13,532p in London on Friday November 14 (having briefly touched ~£134.6/share, valuing the company near £210bn); US ADRs closed near $88.20, close to a 12-month high. Shareholders approved an upgraded New York listing during the month, a step expected to increase US ownership/liquidity over time. The company continued to navigate political pricing pressure in both the US and UK.

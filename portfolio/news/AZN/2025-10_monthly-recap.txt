@@ -1,0 +1,10 @@
+Ticker: AZN
+Company: AstraZeneca
+Period: 2025-10
+Compiled At: 2026-07-24T19:50:16.056603+02:00
+Method: WebSearch retrospective query (monthly recap)
+Sources:
+- https://www.benzinga.com/quote/AZN/analyst-ratings
+Retrieved For: monthly-recap historical backfill
+
+On October 27, 2025, Jefferies issued a price target update on AstraZeneca while maintaining its Buy rating. (Coverage of this period was otherwise thin - this is the one clearly October-dated item found.)

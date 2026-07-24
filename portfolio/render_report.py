@@ -17,7 +17,7 @@ Usage: python3 analyze_portfolio.py | python3 render_report.py
 import json
 import sys
 
-SHORT_HOLD_DAYS_THRESHOLD = 90  # below this, XIRR is flagged as extrapolation noise
+from config import load_config
 
 def money(x):
     return f"-€{-x:,.2f}" if x < 0 else f"€{x:,.2f}"
@@ -121,14 +121,14 @@ def render_holdings_table(data):
     )
     return "\n".join(lines)
 
-def render_xirr_context(data):
+def render_xirr_context(data, short_hold_days_threshold):
     per_position = data["annualized_returns"]["per_position_xirr_pct"]
     lines = [
         "## XIRR Context",
         "",
         f"Portfolio XIRR: **{pct(data['annualized_returns']['portfolio_xirr_pct'])}** "
         "(target: 10-15%/yr). Per-position XIRRs below sorted by holding period - short "
-        f"holds (<{SHORT_HOLD_DAYS_THRESHOLD} days) produce mathematically extreme annualized "
+        f"holds (<{short_hold_days_threshold} days) produce mathematically extreme annualized "
         "numbers even for ordinary moves; treat those as extrapolation noise, not signal.",
         "",
         "| Ticker | XIRR | Holding Days | |",
@@ -141,8 +141,8 @@ def render_xirr_context(data):
     )
     for ticker, v in ordered:
         days = v["weighted_avg_holding_days"]
-        flag = f"short hold (<{SHORT_HOLD_DAYS_THRESHOLD}d) - extrapolation, not a measured trend" \
-            if days is not None and days < SHORT_HOLD_DAYS_THRESHOLD else ""
+        flag = f"short hold (<{short_hold_days_threshold}d) - extrapolation, not a measured trend" \
+            if days is not None and days < short_hold_days_threshold else ""
         xirr_str = pct(v["xirr_pct"]) if v["xirr_pct"] is not None else "n/a"
         lines.append(f"| {ticker} | {xirr_str} | {days if days is not None else 'n/a'} | {flag} |")
     if data["annualized_returns"]["tickers_without_lot_data"]:
@@ -167,14 +167,14 @@ def render_caveats(data):
         lines.append(f"- {c}")
     return "\n".join(lines)
 
-def render(data):
+def render(data, config):
     sections = [
         render_overview(data),
         render_sectors(data),
         render_largest_positions(data),
         render_movers(data),
         render_holdings_table(data),
-        render_xirr_context(data),
+        render_xirr_context(data, config["thresholds"]["short_hold_days_threshold"]),
         render_caveats(data),
     ]
     return "\n\n---\n\n".join(s for s in sections if s)
@@ -182,7 +182,7 @@ def render(data):
 def main():
     raw = open(sys.argv[1]) if len(sys.argv) > 1 else sys.stdin
     data = json.load(raw)
-    print(render(data))
+    print(render(data, load_config()))
 
 if __name__ == "__main__":
     main()

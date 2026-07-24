@@ -1,0 +1,9 @@
+Ticker: ARM
+Company: Arm Holdings ADR
+Period: 2025-11
+Compiled At: 2026-07-24T19:51:35.860372+02:00
+Method: WebSearch retrospective query (monthly recap)
+Sources:
+Retrieved For: monthly-recap historical backfill
+
+Institutional investors quietly added to ARM positions in November 2025 even as the share price pulled back from highs - filings showed roughly 377,300 additional shares purchased across three major institutions (~$50M). Analyst sentiment stayed broadly positive but showed more caution on valuation stretch. SoftBank continued to control ~87% of the equity (only ~12% free float), a structural factor in the stock's liquidity/volatility.

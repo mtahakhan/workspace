@@ -1,0 +1,9 @@
+Ticker: BAYN.DE
+Company: Bayer
+Period: 2025-12
+Compiled At: 2026-07-24T19:53:05.362122+02:00
+Method: WebSearch retrospective query (monthly recap)
+Sources:
+Retrieved For: monthly-recap historical backfill
+
+Bayer closed 2025 strong: shares ended December 31, 2025 at EUR37.01, up 92.5% year-over-year. In December, the US Solicitor General expressed support for a Supreme Court review of the Durnell Roundup case, adding to Trump-administration support for limiting Roundup litigation exposure - a significant tailwind for the stock's litigation overhang. On the pipeline side, Bayer started a Phase IIa trial for BAY 3401016 in Alport syndrome and advanced its gadoquatrane MRI contrast-agent program. Of 19 analyst recommendations at year-end, 9 were positive, 9 neutral, 1 negative.

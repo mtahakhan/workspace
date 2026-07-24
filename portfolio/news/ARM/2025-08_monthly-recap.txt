@@ -1,0 +1,10 @@
+Ticker: ARM
+Company: Arm Holdings ADR
+Period: 2025-08
+Compiled At: 2026-07-24T19:47:34.352063+02:00
+Method: WebSearch retrospective query (monthly recap)
+Sources:
+- https://www.tipranks.com/news/company-announcements/arm-holdings-plc-announces-successful-2025-agm-results
+Retrieved For: monthly-recap historical backfill
+
+Cadence Design Systems completed its acquisition of Arm's Artisan Foundation IP Business on August 27, 2025 - the month's most notable dated event. Broader context: Arm was riding strong AI/data-center demand momentum heading into this period, with Jefferies citing a $320 price target on expectations of $18B in AI CPU revenue by fiscal 2031.

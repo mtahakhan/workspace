@@ -1,0 +1,11 @@
+Ticker: ARM
+Company: Arm Holdings ADR
+Period: 2025-10
+Compiled At: 2026-07-24T19:50:16.056603+02:00
+Method: WebSearch retrospective query (monthly recap)
+Sources:
+- https://stockstotrade.com/news/arm-holdings-plc-arm-news-2025_10_14/
+- https://stockstotrade.com/news/arm-holdings-plc-arm-news-2025_10_13/
+Retrieved For: monthly-recap historical backfill
+
+Shares rose 11.05% on October 13 and a further 3.12% on October 14, 2025 - partly on a 6.8% pop after Qualcomm adopted Arm's advanced computing architecture for flagship chips. William O'Neill initiated coverage with a Buy rating. Morgan Stanley trimmed its price target to $171 while maintaining Overweight, citing licensing/custom-chip potential. SoftBank was reported in talks for a $5B margin loan using Arm shares as collateral to fund OpenAI investments. Arm confirmed it would report Q2 FY2026 results on November 5, with a ~28% sales increase anticipated on licensing/Apple iPhone demand.

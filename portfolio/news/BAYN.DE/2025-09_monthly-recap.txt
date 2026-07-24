@@ -1,0 +1,10 @@
+Ticker: BAYN.DE
+Company: Bayer
+Period: 2025-09
+Compiled At: 2026-07-24T19:48:59.352226+02:00
+Method: WebSearch retrospective query (monthly recap)
+Sources:
+- https://www.marketbeat.com/stocks/ETR/BAYN/news
+Retrieved For: monthly-recap historical backfill
+
+September 9: analysis questioned whether recent momentum signaled a valuation shift. September 16: commentary on whether Bayer's 42% rally (from earlier lows) signaled a 2025 turnaround. September 25: Bayer presented new KERENDIA (finerenone) data at the Heart Failure Society of America (HFSA) Annual Scientific Meeting.

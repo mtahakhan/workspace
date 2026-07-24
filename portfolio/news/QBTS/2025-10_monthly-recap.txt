@@ -1,0 +1,11 @@
+Ticker: QBTS
+Company: D-Wave Quantum
+Period: 2025-10
+Compiled At: 2026-07-24T19:50:16.056603+02:00
+Method: WebSearch retrospective query (monthly recap)
+Sources:
+- https://www.nasdaq.com/articles/why-d-wave-quantum-stock-spiked-50-october
+- https://finance.yahoo.com/news/why-d-wave-quantum-stock-194500521.html
+Retrieved For: monthly-recap historical backfill
+
+A volatile month: shares rose 49.9% over October on a string of positive catalysts - an innovation award (Fast Company named D-Wave a 2025 Next Big Things in Tech winner), reports of new European sales, and speculation the U.S. government might take a stake in the company. Momentum reversed on October 20 when D-Wave announced it was proceeding with redemption of outstanding stock warrants, sending shares down - the stock closed the following stretch down 14.8% even as the S&P 500 (+1.9%) and Nasdaq (+2.3%) rose. Still up ~289% year-to-date despite the pullback.

@@ -1,0 +1,11 @@
+Ticker: IONQ
+Company: IonQ
+Period: 2025-10
+Compiled At: 2026-07-24T19:50:16.056603+02:00
+Method: WebSearch retrospective query (monthly recap)
+Sources:
+- https://www.ionq.com/news/ionq-announces-pricing-of-usd2-0-billion-equity-offering
+- https://www.forbes.com/sites/greatspeculations/2025/10/16/how-low-can-ionq-stock-go/
+Retrieved For: monthly-recap historical backfill
+
+A major month: October 7, 2025 - completed the acquisition of Vector Atomic (quantum sensing). October 9 - ranked in the top 10 of Fortune's Future 50 list of global enterprise companies. October 10 - priced a $2.0B equity offering (16.5M shares at $93, plus pre-funded and 7-year warrants at $155, purchased by an entity managed by Heights Capital Management) to fund further acquisitions/expansion. October 13 - stock hit an all-time high of $84.64.

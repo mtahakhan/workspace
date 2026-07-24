@@ -1,0 +1,10 @@
+Ticker: SAP.DE
+Company: SAP SE
+Period: 2025-12
+Compiled At: 2026-07-24T19:53:05.362122+02:00
+Method: WebSearch retrospective query (monthly recap)
+Sources:
+- https://ts2.tech/en/sap-se-stock-on-december-2-2025-business-bydesign-exit-eu-ai-cloud-and-legal-risks-what-investors-need-to-know/
+Retrieved For: monthly-recap historical backfill
+
+SAP announced it would end new sales of its Business ByDesign midmarket ERP product (removed from SAP's price list April 20, 2026; existing customers keep security/compliance support). On December 2, 2025, shares traded around EUR209 on Xetra (~25-26% below the February 2025 all-time high of EUR280.30); the NYSE ADR closed December 1 at $242.08. Analyst sentiment stayed broadly Buy-rated, framing the pullback as a valuation reset rather than a fundamental problem.

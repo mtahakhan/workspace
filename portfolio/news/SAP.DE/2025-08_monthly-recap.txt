@@ -1,0 +1,11 @@
+Ticker: SAP.DE
+Company: SAP SE
+Period: 2025-08
+Compiled At: 2026-07-24T19:47:34.352063+02:00
+Method: WebSearch retrospective query (monthly recap)
+Sources:
+- https://www.ainvest.com/news/sap-se-plunge-3-21-analysts-divided-2508/
+- https://finviz.com/news/150138/sap-executives-to-participate-in-upcoming-investor-events-in-q3-2025
+Retrieved For: monthly-recap historical backfill
+
+SAP shares plunged 3.21% in pre-market trading on August 12, 2025, sparking investor uncertainty. Analyst reaction was split: TD Cowen upgraded its price target to $350 following SAP's Sapphire event despite some bearish signals, while others warned of continued weakness. SAP also announced executive participation in upcoming Q3 2025 investor events.

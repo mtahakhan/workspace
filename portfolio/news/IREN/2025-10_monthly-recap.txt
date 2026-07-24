@@ -1,0 +1,10 @@
+Ticker: IREN
+Company: Iren
+Period: 2025-10
+Compiled At: 2026-07-24T19:50:16.056603+02:00
+Method: WebSearch retrospective query (monthly recap)
+Sources:
+- https://markets.financialcontent.com/wral/article/predictstreet-2025-10-4-iris-energy-limited-iren-a-deep-dive-into-its-dual-engine-growth-in-bitcoin-mining-and-ai-cloud-services
+Retrieved For: monthly-recap historical backfill
+
+As of October 3, 2025, IREN was in sharp investor focus for its aggressive AI Cloud buildout alongside Bitcoin mining, following a fiscal 2025 "breakout year" ($501M revenue, first profitable year at $86.9M net income). Stock was up over 500% year-to-date as of early October.

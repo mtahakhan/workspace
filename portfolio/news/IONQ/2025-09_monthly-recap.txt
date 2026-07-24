@@ -1,0 +1,10 @@
+Ticker: IONQ
+Company: IonQ
+Period: 2025-09
+Compiled At: 2026-07-24T19:48:59.352226+02:00
+Method: WebSearch retrospective query (monthly recap)
+Sources:
+- https://www.financialcontent.com/article/bizwire-2025-10-15-ionq-to-report-third-quarter-2025-financial-results-on-november-5-2025
+Retrieved For: monthly-recap historical backfill
+
+An eventful month: September 4 - Inder M. Singh appointed CFO/COO. September 10 - IonQ Federal launched to serve U.S./allied government quantum demand, and Dean Acosta appointed Chief Corporate Affairs and Government Relations Officer. September 17 - intent to acquire Vector Atomic announced, and the Oxford Ionics acquisition completed the same day (shares rose >18% on the Oxford Ionics news). September 23 - quantum-internet milestone: demonstrated quantum frequency conversion to telecom wavelengths. September 25 - record quantum performance milestone of #AQ 64. An investor day was also held September 8.

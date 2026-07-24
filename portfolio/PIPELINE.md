@@ -40,11 +40,13 @@ flowchart TD
     subgraph DAILY["② SCHEDULED - Claude Code tasks, daily"]
         direction TB
         PRICES[("price_history/{TICKER}.jsonl<br/>one file per ticker")]:::data
-        JSONOUT[("analyze_portfolio.py output<br/>value, gain/loss, XIRR,<br/>drawdown, movers, trend, caveats")]:::data
+        JSONOUT[("analyze_portfolio.py output<br/>value, gain/loss, XIRR,<br/>drawdown, movers, trend, caveats,<br/>notable/notify_reasons")]:::data
         HIST[("analysis_history.jsonl<br/>generated_at, total_value, xirr_pct<br/>one line per run")]:::data
         MDOUT[("render_report.py output<br/>deterministic markdown sections")]:::data
         REPORT[("daily-analysis/YYYY-MM-DD.md")]:::data
         NEWS[("news/{TICKER}/*.txt<br/>one file per meaningful source<br/>URL + fetched-at + method + text")]:::data
+
+        CONFIG[("config.json<br/>thresholds + caveat/notify<br/>message templates")]:::data
 
         FETCH["fetch_prices.py<br/>Finnhub / yfinance"]:::script
         ANALYZE["analyze_portfolio.py<br/>incl. value-divergence check"]:::script
@@ -60,6 +62,8 @@ flowchart TD
         LOTS --> ANALYZE
         PRICES --> ANALYZE
         HIST -- "prior run's total_value" --> ANALYZE
+        CONFIG -- "thresholds/caveat templates" --> ANALYZE
+        CONFIG -- "short_hold_days_threshold" --> RENDER
         ANALYZE --> JSONOUT
         ANALYZE -- "appends" --> HIST
         JSONOUT --> RENDER

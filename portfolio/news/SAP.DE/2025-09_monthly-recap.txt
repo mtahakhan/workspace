@@ -1,0 +1,10 @@
+Ticker: SAP.DE
+Company: SAP SE
+Period: 2025-09
+Compiled At: 2026-07-24T19:48:59.352226+02:00
+Method: WebSearch retrospective query (monthly recap)
+Sources:
+- https://www.sap.com/investors/en.html
+Retrieved For: monthly-recap historical backfill
+
+On September 25, 2025, SAP confirmed the European Commission had opened formal proceedings involving the company (later developments: SAP reaffirmed its fair-competition stance on November 14, 2025, and the Commission concluded its investigation into on-premise maintenance/support policies on July 9, 2026).
