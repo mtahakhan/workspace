@@ -22,6 +22,8 @@ from pathlib import Path
 PORTFOLIO_DIR = Path(__file__).parent
 PRICE_HISTORY_DIR = PORTFOLIO_DIR / "price_history"
 TRANSACTION_LOTS_FILE = PORTFOLIO_DIR / "transaction_lots.csv"
+ANALYSIS_HISTORY_FILE = PORTFOLIO_DIR / "analysis_history.jsonl"
+VALUE_DIVERGENCE_THRESHOLD_PCT = 20  # flag run-over-run total_value swings bigger than this
 
 def load_transaction_lots():
     """Return {ticker: [{"date", "shares", "price", "company", "sector"}, ...]}
@@ -338,6 +340,39 @@ def compute_trend(full_value_series, lots):
         "last_365d": _trend_over(full_value_series, now - timedelta(days=365)),
     }
 
+def check_value_divergence(total_value, history_file=ANALYSIS_HISTORY_FILE):
+    """Compare against the previous run's total_value to catch data bugs (bad
+    ticker mappings, corrupted price history, etc.) that silently produce a
+    wildly wrong portfolio value instead of an error - see AGENT_NOTES.md
+    "Ticker resolution" incident, where a bad mapping roughly doubled the
+    reported value with no other symptom. Returns a caveat string, or None if
+    there's no prior run or the swing is unremarkable."""
+    if not history_file.exists():
+        return None
+    last_line = None
+    with open(history_file) as f:
+        for line in f:
+            if line.strip():
+                last_line = line
+    if last_line is None:
+        return None
+    prev = json.loads(last_line)
+    if not prev["total_value"]:
+        return None
+    change_pct = (total_value - prev["total_value"]) / prev["total_value"] * 100
+    if abs(change_pct) < VALUE_DIVERGENCE_THRESHOLD_PCT:
+        return None
+    return (
+        f"Total portfolio value moved {change_pct:+.1f}% since the previous analysis run "
+        f"(EUR {prev['total_value']:,.2f} at {prev['generated_at']} -> EUR {total_value:,.2f} now) - "
+        f"a swing this large between two runs is more often a data bug (ticker mapping, "
+        f"split-adjustment, stale history) than a real market move. Verify before reporting it as genuine."
+    )
+
+def record_analysis_history(generated_at, total_value, xirr_pct, history_file=ANALYSIS_HISTORY_FILE):
+    with open(history_file, "a") as f:
+        f.write(json.dumps({"generated_at": generated_at, "total_value": total_value, "xirr_pct": xirr_pct}) + "\n")
+
 def main():
     lots = load_transaction_lots()
     open_positions = load_open_positions(lots)
@@ -393,9 +428,13 @@ def main():
             "(weeks) will look extreme even for ordinary moves - check weighted_avg_holding_days "
             "before treating a per-position XIRR as meaningful."
         )
+    divergence = check_value_divergence(totals["total_value"])
+    if divergence:
+        caveats.append(divergence)
 
+    generated_at = datetime.now().isoformat()
     result = {
-        "generated_at": datetime.now().isoformat(),
+        "generated_at": generated_at,
         "totals": totals,
         "positions": positions,
         "sectors": sectors,
@@ -408,6 +447,7 @@ def main():
         "stale_prices": stale,
         "caveats": caveats,
     }
+    record_analysis_history(generated_at, totals["total_value"], annualized["portfolio_xirr_pct"])
     print(json.dumps(result, indent=2, default=str))
 
 if __name__ == "__main__":

@@ -7,6 +7,12 @@ system-level rules, past bugs, and design decisions. If you're about to change
 behavior, extend the pipeline, or debug something that looks wrong, read this
 first - the answer is very likely already written down here.
 
+**Giving investment analysis or advice from this data (chat questions, the
+daily report's Executive Summary/Holdings News Digest, or any explicit
+mode)?** Read **`INVESTMENT_FRAMEWORK.md`** first - it's the analysis/advisory
+layer on top of this pipeline's numbers, kept separate from this file because
+it governs interpretation and opinions, not data mechanics.
+
 ## Absolute rules (do these, always)
 
 1. **Never guess a ticker symbol.** Run `scaffold_metadata.py` for any new
@@ -43,10 +49,15 @@ first - the answer is very likely already written down here.
    `.env.example` to `.env` and have them fill it in themselves in their
    editor. Only check for the *absence* of the placeholder text - never
    read/print the real key.
-6. **Never do a serial web-search across every position** during daily
-   analysis. Research only the `movers` that `analyze_portfolio.py` flags.
-   A prior version of this pipeline timed out (600s, no output) doing a
-   full per-ticker deep-dive on all 23 holdings.
+6. **Never do a *serial* web-search across every position** during daily
+   analysis - dispatch all per-ticker searches as one parallel batch instead.
+   A prior version of this pipeline timed out (600s, no output) doing a full
+   per-ticker deep-dive on all 23 holdings *serially*; the failure was the
+   serial execution, not the full coverage, so full-portfolio news research
+   is fine as long as it's batched in parallel (see `tasks/daily-analysis.md`'s
+   Holdings News Digest step). Deeper research (multi-query, iterative) still
+   stays scoped to the flagged `movers` or an explicitly-invoked mode - see
+   `INVESTMENT_FRAMEWORK.md`'s "Research scope".
 7. **Edit `portfolio/tasks/*.md` to change scheduled-task behavior, not the
    schedule itself.** The schedule's prompt is just a one-line pointer to the
    file - the real instructions live in the file.
@@ -91,7 +102,9 @@ change - it's the authoritative inventory and must never drift from reality.
 | `ticker_map.csv` | ISIN, Ticker, Company, Sector - shared, committed | `scaffold_metadata.py` (Ticker/Company) + you (Sector) |
 | `transaction_lots.csv` | Current open positions - FIFO lots, real dates/prices | `compute_lots.py` |
 | `price_history/{TICKER}.jsonl` | Full sourced price history, one file per ticker | `fetch_prices.py` (daily) / `backfill_history.py` (one-off) |
+| `analysis_history.jsonl` | One line per `analyze_portfolio.py` run: `generated_at`, `total_value`, `xirr_pct` - append-only, used only for the run-over-run divergence check | `analyze_portfolio.py` |
 | `daily-analysis/*.md` | Generated reports | `portfolio-daily-analysis` task |
+| `news/{TICKER}/*.txt` | One file per fetched news source deemed meaningful (metadata header + fetched text) - see `INVESTMENT_FRAMEWORK.md` | `portfolio-daily-analysis` task + any ad-hoc analysis that fetches news |
 
 **Scripts - all deterministic, zero LLM involvement in the computation:**
 
@@ -102,14 +115,15 @@ change - it's the authoritative inventory and must never drift from reality.
 | `compute_lots.py` (re-run) | same | fresh `transaction_lots.csv` with resolved tickers | 3rd, after scaffold_metadata.py |
 | `fetch_prices.py` | `transaction_lots.csv` + Finnhub/yfinance | Appends to `price_history/*.jsonl` | daily |
 | `backfill_history.py` | `transaction_lots.csv` + yfinance historical | Rewrites `price_history/*.jsonl` (full history) | one-off/rare |
-| `analyze_portfolio.py` | `transaction_lots.csv` + `price_history/*.jsonl` | JSON: value, gain/loss, drawdown, XIRR, movers, trend, `stale_prices`, `caveats` | after fetch_prices.py |
+| `analyze_portfolio.py` | `transaction_lots.csv` + `price_history/*.jsonl` + last line of `analysis_history.jsonl` | JSON: value, gain/loss, drawdown, XIRR, movers, trend, `stale_prices`, `caveats` (incl. value-divergence check); appends a new line to `analysis_history.jsonl` | after fetch_prices.py |
+| `render_report.py` | `analyze_portfolio.py`'s JSON (via stdin/pipe) | Markdown: Portfolio Overview, Trend, Sector Breakdown, Largest Positions, Movers (numbers only), Complete Holdings Table, XIRR Context, Data Notes | after analyze_portfolio.py, before the report is written |
 
 **Scheduled tasks - thin LLM wrappers around the deterministic core:**
 
 | Task | Does | Deterministic or LLM? |
 |---|---|---|
 | `portfolio-price-fetch` (~07:11 Berlin) | Runs `fetch_prices.py`, reports one line | Almost entirely deterministic - LLM just runs the command and reports |
-| `portfolio-daily-analysis` (~07:25 Berlin) | Runs `analyze_portfolio.py`, then WebSearches only the flagged `movers`, then writes the markdown report | Hybrid - all numbers are untouched script output; LLM only adds prose/research |
+| `portfolio-daily-analysis` (~07:25 Berlin) | Runs `analyze_portfolio.py` piped into `render_report.py`, WebSearches the flagged `movers` (deeper context) and all other holdings (one-line news digest) in a single parallel batch, writes an Executive Summary, and prepends it to the rendered markdown | Hybrid - every number/table comes untouched from `render_report.py`; LLM only adds the Executive Summary and news-research prose, never hand-transcribes a figure |
 
 Both tasks' real instructions live in `tasks/*.md`, not the schedule itself.
 
@@ -117,7 +131,9 @@ Both tasks' real instructions live in `tasks/*.md`, not the schedule itself.
 `README.md` (human+agent overview), `PIPELINE.md` (Mermaid diagram of the
 whole pipeline - keep in sync, see rule 8 above), `BOOTSTRAP.md` (first-run
 setup), `QUICKSTART.md` (human-only, no-LLM manual usage), `CLAUDE.md`
-(workspace-root auto-loaded entry point).
+(workspace-root auto-loaded entry point), `INVESTMENT_FRAMEWORK.md`
+(analysis/advisory layer - modes, signals, portfolio/risk rules - used once
+pipeline output already exists; never touches the pipeline itself).
 
 ## Ticker resolution - what already went wrong once
 
@@ -144,6 +160,19 @@ EUR-native listings first specifically because of this.
 Historical bugs from earlier in this project's life (before `scaffold_metadata.py`
 existed) with the same root cause: `CAN`->Canaan Inc instead of Cantourage
 Group, `IRE`->a leveraged Iren SpA ETF instead of IREN Ltd.
+
+**2026-07-24: the above bugs reached a published report.** An 11:03 run of
+`portfolio-daily-analysis` used the still-bad `ticker_map.csv` and reported
+€32,568.97 (+64.4%) - built on fictitious/wrong tickers (`IXSK`, `XLK`
+outright didn't exist in the portfolio; gold read as `EGLD`; `CAN`/`IRE` as
+above). The mapping was fixed later that day and a re-run at 17:34 produced
+the real number, €16,113.58 (-3.53%, XIRR -12.64%) - roughly half the
+reported value. Nothing in the pipeline had flagged the first number as
+suspicious even though a portfolio doubling in hours is implausible. Fix:
+`analyze_portfolio.py` now records each run's `total_value` to
+`analysis_history.jsonl` and adds a `caveats` entry (`check_value_divergence`)
+if it moved >20% since the previous run - treat that caveat as "investigate
+before publishing," not as a real market move.
 
 ## Currency handling
 

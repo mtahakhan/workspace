@@ -1,0 +1,9 @@
+Ticker: IONQ
+Company: IonQ
+Source URL: https://stockstory.org/us/stocks/nyse/ionq/news/why-up-down/why-ionq-ionq-stock-is-nosediving
+Title: Why IonQ (IONQ) Stock Is Nosediving
+Fetched At: 2026-07-24T18:19:26+02:00
+Fetch Method: WebSearch (query: "IonQ IONQ stock news drop July 2026")
+Retrieved For: portfolio-daily-analysis (2026-07-24 run)
+
+IonQ shares fell 7.1% on July 7 amid growing caution around quantum-computing valuations and a new competitor, European firm IQM Quantum Computers, beginning trading on Nasdaq. Shares extended the decline to close around $34.24 by July 21 (roughly -36% over the past month) despite 755% Q1 revenue growth, as operating losses of $310-330M are projected for the full year. The company's most recent headline product news (Clavis XG Multiplex) dates to mid-June; CEO Niccolo de Masi attended a White House quantum summit in early July without major new announcements. Some reports also cited Pentagon-contract-loss rumors weighing on shares.

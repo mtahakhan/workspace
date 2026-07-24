@@ -15,8 +15,10 @@ a broker transaction export and it will:
 - Compute portfolio value, gain/loss, sector concentration, largest positions,
   high-water-mark/drawdown, daily movers, and a real money-weighted annualized
   return (XIRR) - all deterministic Python, not estimated by an LLM
-- Write a daily markdown report, researching only notable movers (not a
-  serial deep-dive on every position, which will time out)
+- Write a daily markdown report, researching every holding's news in a single
+  parallel batch (not a serial loop, which timed out previously), with deeper
+  context on notable movers, and archive every meaningful source fetched
+  (URL, timestamp, method) as its own file under `news/{TICKER}/`
 
 **Currently supports Scalable Capital's transaction export format.** Other
 brokers' CSV exports have different columns/formats and aren't parsed yet -
@@ -31,6 +33,11 @@ present yet).
 It consolidates every non-obvious rule, past bug, and design decision into one
 place, specifically so you never have to read the Python source to understand
 why something works the way it does.
+
+**Want investment analysis or advice from this data** (chat questions, or the
+daily report's Executive Summary/News Digest)? See **`INVESTMENT_FRAMEWORK.md`**
+- the analysis/advisory layer used once the pipeline's numbers already exist.
+It never changes a pipeline number itself.
 
 ## Data pipeline (in order)
 
@@ -64,14 +71,23 @@ See **`PIPELINE.md`** for a Mermaid diagram of everything below.
    sector breakdown, high-water-mark/drawdown, movers, trend, and a real
    money-weighted XIRR (annualized return) from `transaction_lots.csv`'s actual
    purchase dates. Also flags any ticker whose latest `price_history` entry is
-   more than 2 days old (stale/failed fetch) - see `stale_prices` in its output.
+   more than 2 days old (stale/failed fetch) - see `stale_prices` in its output
+   - and flags a run-over-run `total_value` swing >20% (see `analysis_history.jsonl`)
+   as a likely data bug rather than a real market move.
+6. **`render_report.py`** — takes `analyze_portfolio.py`'s JSON (piped via
+   stdin) and renders every table/figure in the daily report as markdown.
+   Exists so the LLM writing the report never hand-transcribes a number out of
+   the JSON - it only writes the Executive Summary and the Movers research
+   prose, and appends them around this script's output.
 
 ## Daily Workflow (scheduled tasks)
 
 - **`portfolio-price-fetch`** (~07:11 Berlin) — runs `fetch_prices.py`
-- **`portfolio-daily-analysis`** (~07:25 Berlin) — runs `analyze_portfolio.py`,
-  researches notable movers only (never all 23 serially — a prior full-scan
-  attempt timed out), writes `daily-analysis/YYYY-MM-DD.md`
+- **`portfolio-daily-analysis`** (~07:25 Berlin) — runs `analyze_portfolio.py`
+  piped into `render_report.py`, researches all holdings' news in one
+  parallel batch (never a serial loop — a prior serial full-scan attempt
+  timed out) with deeper context on notable movers, writes
+  `daily-analysis/YYYY-MM-DD.md`
 
 Each scheduled task's actual instructions are NOT stored in the schedule
 itself - the schedule's prompt is just a one-line pointer ("read and follow
@@ -105,9 +121,12 @@ there's no automation that detects a new trade on its own.
 | `ticker_map.csv` | ISIN, Ticker, Company, Sector. Shared, committed, ever-growing | `scaffold_metadata.py` (append-only) + you (Sector) |
 | `transaction_lots.csv` | FIFO-derived open lots (shares, dates, prices) | `compute_lots.py` |
 | `price_history/{TICKER}.jsonl` | Full sourced price history per ticker - last line = current price | `fetch_prices.py` (append) / `backfill_history.py` (seed) |
+| `analysis_history.jsonl` | One line per `analyze_portfolio.py` run (`generated_at`, `total_value`, `xirr_pct`) - powers the value-divergence caveat | `analyze_portfolio.py` (append) |
 | `daily-analysis/*.md` | Generated reports | scheduled task, output only |
+| `news/{TICKER}/*.txt` | One file per fetched news source deemed meaningful - metadata header (URL, fetched-at, fetch method) + the fetched text | scheduled task + ad-hoc analysis, output only |
 | `PIPELINE.md` | Mermaid diagram of the whole pipeline | Kept in sync by hand - see `AGENT_NOTES.md` rule 8 |
 | `tasks/*.md` | Actual scheduled-task instructions (schedule just points here) | You, when task behavior needs to change |
+| `INVESTMENT_FRAMEWORK.md` | Analysis/advisory layer (modes, signals, portfolio/risk rules) used on top of pipeline output | You, when analysis approach needs to change |
 | `.env` | Finnhub API key (gitignored, never committed) | You, rarely |
 | `.env.example` | Committed placeholder template - copy to `.env` and fill in your key | Ships with the repo |
 
@@ -139,7 +158,7 @@ Run the full pipeline manually:
 python3 portfolio/scaffold_metadata.py # only needed if you have a new, unmapped ISIN
 python3 portfolio/compute_lots.py      # only needed if transactions.csv changed
 python3 portfolio/fetch_prices.py
-python3 portfolio/analyze_portfolio.py
+python3 portfolio/analyze_portfolio.py | python3 portfolio/render_report.py
 ```
 
 ## API Status

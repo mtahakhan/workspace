@@ -132,29 +132,56 @@ Redirect it to a file or pipe it into `python3 -m json.tool` for readability:
 python3 analyze_portfolio.py | python3 -m json.tool
 ```
 
+It also appends `{generated_at, total_value, xirr_pct}` to `analysis_history.jsonl`
+each run, and adds a `caveats` entry if `total_value` swung more than 20% since
+the previous run - a real incident (a bad ticker mapping doubled the reported
+value) is what this guards against; see `AGENT_NOTES.md`.
+
+## 9. Render it as markdown
+
+```bash
+python3 analyze_portfolio.py | python3 render_report.py
+```
+
+Turns the JSON into the same markdown tables the daily report uses - Portfolio
+Overview, Trend, Sector Breakdown, Largest Positions, Movers, Complete
+Holdings Table, XIRR Context, Data Notes - no LLM involved, this is plain
+Python string formatting over the JSON above.
+
 ## Automating this without Claude
 
 Set up your own cron job (macOS/Linux) or Task Scheduler (Windows) to run
-step 6 (`fetch_prices.py`) daily, then step 8 (`analyze_portfolio.py`)
-shortly after. Example crontab entry (adjust the path and time):
+step 6 (`fetch_prices.py`) daily, then step 8+9 (`analyze_portfolio.py` piped
+into `render_report.py`) shortly after. Example crontab entry (adjust the
+path and time):
 ```
 7 7 * * *  cd /path/to/portfolio && python3 fetch_prices.py
-25 7 * * *  cd /path/to/portfolio && python3 analyze_portfolio.py > daily-analysis/$(date +\%Y-\%m-\%d).json
+25 7 * * *  cd /path/to/portfolio && python3 analyze_portfolio.py | python3 render_report.py > daily-analysis/$(date +\%Y-\%m-\%d).md
 ```
 
 ## What you lose without an LLM
 
-`analyze_portfolio.py`'s JSON output has everything numeric - nothing about
-using an LLM changes any of those numbers. What you don't get without one:
-- The **narrative markdown report** (`daily-analysis/YYYY-MM-DD.md`) - you'd
-  be reading the raw JSON, or writing your own summary from it
-- **Research on notable movers** - the daily task does a targeted web search
-  on whatever `analyze_portfolio.py` flags as a significant move; running the
-  pipeline yourself just gives you the flagged ticker/percentage, not the
-  "why" behind the move
+`analyze_portfolio.py` + `render_report.py` together produce every number and
+table in the daily report - nothing about using an LLM changes any of those.
+What you don't get without one:
+- **An Executive Summary** - the daily task writes a few sentences of framing
+  prose above the rendered tables; without an LLM you're reading the tables
+  cold
+- **News research on every holding** - the daily task web-searches all
+  positions in parallel (one-line digest each) plus deeper context on
+  whatever `analyze_portfolio.py` flags as a significant mover, filling in
+  the Movers table's Context column, and archives each meaningful source as
+  its own file under `news/{TICKER}/`; running the pipeline yourself just
+  gives you numbers and flagged tickers/percentages, not the "why" behind any
+  of it or a record of where it came from
+- **Investment analysis/advice grounded in this data** - if you ask Claude
+  about a specific holding, portfolio structure, or rebalancing, it follows
+  `INVESTMENT_FRAMEWORK.md`'s modes/signals; running the pipeline yourself
+  gives you the numbers those opinions would be based on, not the opinions
 - **Interactive ticker review** (step 4) - a human still has to eyeball the
   table either way; an LLM just makes confirming/asking follow-up questions
   faster than manually running `yfinance` lookups yourself
 
-Everything else - the actual financial computation - is identical either way,
-because it's the same deterministic Python code in both cases.
+Everything else - the actual financial computation, and every table in the
+report - is identical either way, because it's the same deterministic Python
+code in both cases.

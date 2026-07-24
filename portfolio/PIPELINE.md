@@ -5,6 +5,11 @@ pipeline" section - same information, diagram form. If this ever disagrees
 with either of those, trust the prose docs and fix this diagram (see the rule
 in `AGENT_NOTES.md` about keeping it in sync).
 
+This diagram covers the deterministic pipeline and its task wrappers only.
+The analysis/advisory layer applied on top of `TASKANALYSIS`'s output (or in
+ad-hoc chat) is `INVESTMENT_FRAMEWORK.md` - not part of this diagram since it
+doesn't read or write any pipeline file.
+
 **Legend:** cylinders = persisted data files, rectangles = deterministic
 scripts (no LLM involvement), hexagons = scheduled tasks (LLM-in-the-loop
 wrapper around a deterministic script). Dotted edges = rare/one-off, not part
@@ -36,13 +41,17 @@ flowchart TD
         direction TB
         PRICES[("price_history/{TICKER}.jsonl<br/>one file per ticker")]:::data
         JSONOUT[("analyze_portfolio.py output<br/>value, gain/loss, XIRR,<br/>drawdown, movers, trend, caveats")]:::data
+        HIST[("analysis_history.jsonl<br/>generated_at, total_value, xirr_pct<br/>one line per run")]:::data
+        MDOUT[("render_report.py output<br/>deterministic markdown sections")]:::data
         REPORT[("daily-analysis/YYYY-MM-DD.md")]:::data
+        NEWS[("news/{TICKER}/*.txt<br/>one file per meaningful source<br/>URL + fetched-at + method + text")]:::data
 
         FETCH["fetch_prices.py<br/>Finnhub / yfinance"]:::script
-        ANALYZE["analyze_portfolio.py"]:::script
+        ANALYZE["analyze_portfolio.py<br/>incl. value-divergence check"]:::script
+        RENDER["render_report.py"]:::script
 
         TASKFETCH{{"portfolio-price-fetch<br/>~07:11 Berlin<br/>LLM runs command, reports 1 line"}}:::task
-        TASKANALYSIS{{"portfolio-daily-analysis<br/>~07:25 Berlin<br/>LLM web-searches flagged movers only,<br/>writes the narrative report"}}:::task
+        TASKANALYSIS{{"portfolio-daily-analysis<br/>~07:25 Berlin<br/>LLM web-searches ALL holdings in parallel<br/>(deeper context on flagged movers),<br/>writes Executive Summary + News Digest,<br/>never hand-transcribes a number"}}:::task
 
         TASKFETCH -.triggers.-> FETCH
         LOTS --> FETCH
@@ -50,9 +59,14 @@ flowchart TD
 
         LOTS --> ANALYZE
         PRICES --> ANALYZE
+        HIST -- "prior run's total_value" --> ANALYZE
         ANALYZE --> JSONOUT
-        JSONOUT --> TASKANALYSIS
+        ANALYZE -- "appends" --> HIST
+        JSONOUT --> RENDER
+        RENDER --> MDOUT
+        MDOUT --> TASKANALYSIS
         TASKANALYSIS --> REPORT
+        TASKANALYSIS -- "meaningful sources" --> NEWS
     end
 
     BACKFILL["backfill_history.py<br/>one-off / rare, full history"]:::script
