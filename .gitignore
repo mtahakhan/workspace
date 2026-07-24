@@ -1,0 +1,21 @@
+# Personal financial data and secrets - never commit these.
+# This project is designed to be cloned with none of this present; BOOTSTRAP.md
+# rebuilds it all from a user-provided transactions.csv on first run.
+portfolio/.env
+portfolio/transactions.csv
+portfolio/transaction_lots.csv
+portfolio/price_history/*.jsonl
+portfolio/daily-analysis/*.md
+
+# NOTE: ticker_map.csv (ISIN, Ticker, Company, Sector) is deliberately NOT
+# listed here - it's a shared, committed, ever-growing lookup table, not
+# personal data. Don't add it back to this file.
+
+# Personal Claude memory (naming preferences, migration history tied to this
+# specific setup) - the generic/reusable parts already live in CLAUDE.md and
+# portfolio/README.md, which ARE meant to be public.
+.claude/memory/
+
+# OS cruft
+.DS_Store
+**/.DS_Store
