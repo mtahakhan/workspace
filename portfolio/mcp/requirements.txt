@@ -1,0 +1,8 @@
+# Pinned to the versions already validated against this pipeline on system
+# Python (see QUICKSTART.md) - the MCP server runs under a separate venv
+# (mcp requires Python >=3.10, system python3 here is 3.9) but must use the
+# same library versions so behavior doesn't silently drift from the CLI.
+yfinance==1.2.0
+pandas==2.3.3
+requests==2.32.5
+mcp[cli]

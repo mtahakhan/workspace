@@ -18,7 +18,7 @@ a broker transaction export and it will:
 - Write a daily markdown report, researching every holding's news in a single
   parallel batch (not a serial loop, which timed out previously), with deeper
   context on notable movers, and archive every meaningful source fetched
-  (URL, timestamp, method) as its own file under `news/{TICKER}/`
+  (URL, timestamp, method) as its own file under `data/news/{TICKER}/`
 
 **Currently supports Scalable Capital's transaction export format.** Other
 brokers' CSV exports have different columns/formats and aren't parsed yet -
@@ -26,8 +26,8 @@ see `compute_lots.py`'s `load_transactions()` if you need to adapt it for a
 different broker.
 
 **First time running this?** See `BOOTSTRAP.md` - Claude will walk through
-setup automatically if it detects this is a fresh clone (no `transactions.csv`
-present yet).
+setup automatically if it detects this is a fresh clone (no
+`data/manual/transactions.csv` present yet).
 
 **Working on this codebase (agent or human)?** Read **`AGENT_NOTES.md` first.**
 It consolidates every non-obvious rule, past bug, and design decision into one
@@ -39,48 +39,94 @@ daily report's Executive Summary/News Digest)? See **`INVESTMENT_FRAMEWORK.md`**
 - the analysis/advisory layer used once the pipeline's numbers already exist.
 It never changes a pipeline number itself.
 
+## Layout
+
+- `pipeline/` - the real logic (FIFO engine, ticker resolution, price
+  fetch/backfill, analysis, report rendering, config loading), as a proper
+  Python package. Neither you nor an agent runs anything in here directly.
+- `*.py` at the `portfolio/` root (`compute_lots.py`, `scaffold_metadata.py`,
+  `fetch_prices.py`, `backfill_history.py`, `analyze_portfolio.py`,
+  `render_report.py`) - thin CLI entry points that import from `pipeline/`;
+  this is what you actually run (`python3 compute_lots.py`, etc.)
+- `config.json`, `.env`/`.env.example` - config/secrets, at the `portfolio/`
+  root alongside the CLI entry points
+- `data/` - everything the pipeline reads or writes (see "Files" below);
+  `data/manual/transactions.csv` is the one file with no automated source -
+  everything else in `data/` is derived or fetched
+- `mcp/` - the `portfolio` MCP server (`mcp/server.py`, imports directly from
+  `pipeline/`) and its own venv/deps, see "Claude Skill / MCP server" below
+- `tasks/` - the two scheduled tasks' actual instructions
+- `.claude/skills/portfolio/` (workspace-level, not under `portfolio/`) - the
+  Claude Skill
+
 ## Data pipeline (in order)
 
 See **`PIPELINE.md`** for a Mermaid diagram of everything below.
 
-1. **`transactions.csv`** — raw broker transaction export (Scalable Capital). The
-   one file with no automated source; re-export from the broker and update
-   this whenever you trade. Everything else derives from it.
-2. **`compute_lots.py`** → **`transaction_lots.csv`** — FIFO cost-basis engine.
-   Reconstructs exactly which shares are still held, when, and at what price,
-   from the real transaction history (handles partial sells, the WisdomTree
-   ISIN-swap corporate action, and the Dec 2025 broker-migration transfer rows).
-   This is the sole source of current open positions (ticker, company, shares,
-   weighted-average cost) — there is no separate positions file.
-3. **`ticker_map.csv`** (ISIN, Ticker, Company, Sector) — the resolved ticker
-   symbol and sector, the two things broker exports can't provide. Shared and
-   committed - an ever-growing lookup table (see `scaffold_metadata.py`),
-   because resolving a ticker correctly once means nobody using this project
-   ever has to re-solve it. Run `python3 scaffold_metadata.py` to
-   deterministically resolve any new ISIN via a real yfinance lookup (never a
-   guess) whenever `compute_lots.py` reports one as unmapped; Sector still
-   needs a quick human judgment call afterward (see `AGENT_NOTES.md` for why
-   ticker guessing must never happen).
-4. **`fetch_prices.py`** → **`price_history/{TICKER}.jsonl`** — fetches the
-   ticker list from `transaction_lots.csv`, gets live prices (Finnhub primary,
-   yfinance fallback), and appends one fully-sourced record per ticker
-   (original currency, source name/URL, FX rate + source) to its own history
-   file. There is no separate latest-price snapshot file - each file's last
-   line IS the current price.
+1. **`data/manual/transactions.csv`** — raw broker transaction export
+   (Scalable Capital). The one file with no automated source; re-export from
+   the broker and update this whenever you trade. Everything else derives
+   from it.
+2. **`compute_lots.py`** → **`data/transaction_lots.csv`** — FIFO cost-basis
+   engine. Reconstructs exactly which shares are still held, when, and at
+   what price, from the real transaction history (handles partial sells, the
+   WisdomTree ISIN-swap corporate action, and the Dec 2025 broker-migration
+   transfer rows). This is the sole source of current open positions (ticker,
+   company, shares, weighted-average cost) — there is no separate positions
+   file.
+3. **`data/ticker_map.csv`** (ISIN, Ticker, Company, Sector) — the resolved
+   ticker symbol and sector, the two things broker exports can't provide.
+   Shared and committed - an ever-growing lookup table (see
+   `scaffold_metadata.py`), because resolving a ticker correctly once means
+   nobody using this project ever has to re-solve it. Run `python3
+   scaffold_metadata.py` to deterministically resolve any new ISIN via a real
+   yfinance lookup (never a guess) whenever `compute_lots.py` reports one as
+   unmapped; Sector still needs a quick human judgment call afterward (see
+   `AGENT_NOTES.md` for why ticker guessing must never happen).
+4. **`fetch_prices.py`** → **`data/price_history/{TICKER}.jsonl`** — fetches
+   the ticker list from `transaction_lots.csv`, gets live prices (Finnhub
+   primary, yfinance fallback), and appends one fully-sourced record per
+   ticker (original currency, source name/URL, FX rate + source) to its own
+   history file. There is no separate latest-price snapshot file - each
+   file's last line IS the current price.
 5. **`analyze_portfolio.py`** — deterministic numeric layer: value, gain/loss,
    sector breakdown, high-water-mark/drawdown, movers, trend, and a real
    money-weighted XIRR (annualized return) from `transaction_lots.csv`'s actual
    purchase dates. Also flags any ticker whose latest `price_history` entry is
    more than 2 days old (stale/failed fetch) - see `stale_prices` in its output
-   - and flags a run-over-run `total_value` swing >20% (see `analysis_history.jsonl`)
-   as a likely data bug rather than a real market move. Both thresholds (and
-   every other tunable number/message in the pipeline) live in `config.json`,
-   not hardcoded - see `AGENT_NOTES.md`'s "Configurable thresholds and caveats".
+   - and flags a run-over-run `total_value` swing >20% (see
+   `data/analysis_history.jsonl`) as a likely data bug rather than a real
+   market move. Both thresholds (and every other tunable number/message in
+   the pipeline) live in `config.json`, not hardcoded - see
+   `AGENT_NOTES.md`'s "Configurable thresholds and caveats".
 6. **`render_report.py`** — takes `analyze_portfolio.py`'s JSON (piped via
    stdin) and renders every table/figure in the daily report as markdown.
    Exists so the LLM writing the report never hand-transcribes a number out of
    the JSON - it only writes the Executive Summary and the Movers research
    prose, and appends them around this script's output.
+
+## Claude Skill / MCP server
+
+Two additive pieces wrap this pipeline for Claude Code, neither of which
+changes any script's logic or output:
+
+- **`portfolio` MCP server** (`mcp/server.py`) - exposes each script above as
+  a typed tool (`compute_lots`, `resolve_tickers`, `fetch_prices`,
+  `backfill_history`, `analyze_portfolio`, `render_report`), calling the
+  exact same functions the CLI does. Runs under its own venv at `mcp/.venv`
+  (Python >=3.10 required; `pip install -r mcp/requirements.txt` to set it
+  up) since system `python3` here may be older - the CLI scripts themselves
+  don't need this venv and keep running under whatever Python you already
+  use.
+- **`portfolio` skill** (`.claude/skills/portfolio/SKILL.md`, at the
+  workspace root) - packages when to use this pipeline, the MCP tool
+  mapping, and `AGENT_NOTES.md`'s absolute rules so they're loaded
+  automatically for portfolio-related requests instead of only living in
+  this workspace's `CLAUDE.md`.
+
+The scheduled tasks (below) and this skill call the MCP tools instead of
+`Bash python3 script.py`; running a script directly from a terminal (see
+`QUICKSTART.md`) is unaffected either way.
 
 ## Daily Workflow (scheduled tasks)
 
@@ -89,7 +135,7 @@ See **`PIPELINE.md`** for a Mermaid diagram of everything below.
   piped into `render_report.py`, researches all holdings' news in one
   parallel batch (never a serial loop — a prior serial full-scan attempt
   timed out) with deeper context on notable movers, writes
-  `daily-analysis/YYYY-MM-DD.md`
+  `data/daily-analysis/YYYY-MM-DD.md`
 
 Each scheduled task's actual instructions are NOT stored in the schedule
 itself - the schedule's prompt is just a one-line pointer ("read and follow
@@ -101,13 +147,13 @@ do, edit the file in `tasks/`, not the schedule.
 
 ## When you trade
 
-1. Re-export `transactions.csv` from Scalable Capital (or add the new rows)
-2. Run `python3 compute_lots.py` to regenerate `transaction_lots.csv` - this
+1. Re-export `data/manual/transactions.csv` from Scalable Capital (or add the new rows)
+2. Run `python3 compute_lots.py` to regenerate `data/transaction_lots.csv` - this
    picks up the new transaction(s), leaving `Ticker`/`Sector` blank for any
    brand-new ISIN
 3. If it reports a brand-new ISIN, run `python3 scaffold_metadata.py` to
-   resolve its ticker deterministically (appends to `ticker_map.csv`), review
-   the printed pick, then fill in its Sector directly in `ticker_map.csv`
+   resolve its ticker deterministically (appends to `data/ticker_map.csv`), review
+   the printed pick, then fill in its Sector directly in `data/ticker_map.csv`
 4. Re-run `python3 compute_lots.py` to pick up the resolved ticker
 5. (Optional) Run `python3 fetch_prices.py` to pick up the new ticker immediately
 
@@ -119,39 +165,40 @@ there's no automation that detects a new trade on its own.
 
 | File | Purpose | Maintained by |
 |------|---------|--------|
-| `transactions.csv` | Raw broker export — the actual source of truth | You, manually |
-| `ticker_map.csv` | ISIN, Ticker, Company, Sector. Shared, committed, ever-growing | `scaffold_metadata.py` (append-only) + you (Sector) |
-| `transaction_lots.csv` | FIFO-derived open lots (shares, dates, prices) | `compute_lots.py` |
-| `price_history/{TICKER}.jsonl` | Full sourced price history per ticker - last line = current price | `fetch_prices.py` (append) / `backfill_history.py` (seed) |
-| `analysis_history.jsonl` | One line per `analyze_portfolio.py` run (`generated_at`, `total_value`, `xirr_pct`) - powers the value-divergence caveat | `analyze_portfolio.py` (append) |
-| `daily-analysis/*.md` | Generated reports | scheduled task, output only |
-| `news/{TICKER}/*.txt` | One file per fetched news source deemed meaningful - metadata header (URL, fetched-at, fetch method) + the fetched text | scheduled task + ad-hoc analysis, output only |
+| `data/manual/transactions.csv` | Raw broker export — the actual source of truth | You, manually |
+| `data/ticker_map.csv` | ISIN, Ticker, Company, Sector. Shared, committed, ever-growing | `scaffold_metadata.py` (append-only) + you (Sector) |
+| `data/transaction_lots.csv` | FIFO-derived open lots (shares, dates, prices) | `compute_lots.py` |
+| `data/price_history/{TICKER}.jsonl` | Full sourced price history per ticker - last line = current price | `fetch_prices.py` (append) / `backfill_history.py` (seed) |
+| `data/analysis_history.jsonl` | One line per `analyze_portfolio.py` run (`generated_at`, `total_value`, `xirr_pct`) - powers the value-divergence caveat | `analyze_portfolio.py` (append) |
+| `data/daily-analysis/*.md` | Generated reports | scheduled task, output only |
+| `data/news/{TICKER}/*.txt` | One file per fetched news source deemed meaningful - metadata header (URL, fetched-at, fetch method) + the fetched text | scheduled task + ad-hoc analysis, output only |
 | `PIPELINE.md` | Mermaid diagram of the whole pipeline | Kept in sync by hand - see `AGENT_NOTES.md` rule 8 |
 | `tasks/*.md` | Actual scheduled-task instructions (schedule just points here) | You, when task behavior needs to change |
 | `INVESTMENT_FRAMEWORK.md` | Analysis/advisory layer (modes, signals, portfolio/risk rules) used on top of pipeline output | You, when analysis approach needs to change |
 | `.env` | Finnhub API key (gitignored, never committed) | You, rarely |
 | `.env.example` | Committed placeholder template - copy to `.env` and fill in your key | Ships with the repo |
+| `mcp/server.py`, `mcp/requirements.txt`, `mcp/.venv/` | The `portfolio` MCP server and its own dependencies/interpreter | You (setup), server code as needed |
 
 ## Troubleshooting
 
 ### Missing or stale prices
 - Check `fetch_prices.py` output for which tickers failed and why
 - Check `analyze_portfolio.py`'s `stale_prices` output field - flags any ticker whose last `price_history` entry is 2+ days old
-- Verify the ticker in `ticker_map.csv` is still the correct exchange symbol (companies occasionally change listings)
+- Verify the ticker in `data/ticker_map.csv` is still the correct exchange symbol (companies occasionally change listings)
 - Re-run `python3 fetch_prices.py`
 
 ### transaction_lots.csv share counts look wrong
-- Re-run `python3 compute_lots.py` — it prints current positions and flags any ISIN missing a `ticker_map.csv` row, or a row with a blank Sector
-- If a same-day buy/sell pair looks mis-sequenced, check `transactions.csv`'s `time` column - lots are sorted by full date+time, not date alone
+- Re-run `python3 compute_lots.py` — it prints current positions and flags any ISIN missing a `data/ticker_map.csv` row, or a row with a blank Sector
+- If a same-day buy/sell pair looks mis-sequenced, check `data/manual/transactions.csv`'s `time` column - lots are sorted by full date+time, not date alone
 
 ### Prices look wrong
-- Confirm the ticker in `ticker_map.csv` is the security you actually hold — a wrong/ambiguous ticker can silently resolve to an unrelated company. This is the single biggest real bug source in this project - confirmed cases: `CAN`→Canaan Inc instead of Cantourage Group `HIGH.DE`, `DTE`→DTE Energy instead of Deutsche Telekom `DTE.DE`, `IRE`→a leveraged Iren SpA ETF instead of IREN Ltd, and (from a bootstrap run by a smaller model that guessed tickers instead of using `scaffold_metadata.py`) `CCO`→a $2.41 unrelated stock instead of Cameco `CCJ`@$87, plus several London `.L` listings picked in GBp (pence) that should have been EUR-native alternatives. **Always resolve new tickers via `scaffold_metadata.py`, never by guessing a shorthand symbol.**
+- Confirm the ticker in `data/ticker_map.csv` is the security you actually hold — a wrong/ambiguous ticker can silently resolve to an unrelated company. This is the single biggest real bug source in this project - confirmed cases: `CAN`→Canaan Inc instead of Cantourage Group `HIGH.DE`, `DTE`→DTE Energy instead of Deutsche Telekom `DTE.DE`, `IRE`→a leveraged Iren SpA ETF instead of IREN Ltd, and (from a bootstrap run by a smaller model that guessed tickers instead of using `scaffold_metadata.py`) `CCO`→a $2.41 unrelated stock instead of Cameco `CCJ`@$87, plus several London `.L` listings picked in GBp (pence) that should have been EUR-native alternatives. **Always resolve new tickers via `scaffold_metadata.py`, never by guessing a shorthand symbol.**
 - Check Scalable Capital for any splits/adjustments
 - Finnhub prices are ~5 min delayed (not real-time)
 
 ### A price looks off by ~100x, or in the wrong currency entirely
-- Check `price_history/{TICKER}.jsonl`'s `original_currency` field for that ticker - the pipeline supports EUR, USD, GBP, and GBp (British pence, converted by /100 first). Any other currency is rejected, not silently mispriced.
-- If `ticker_map.csv` points at a listing in an unsupported currency (e.g. CAD, JPY), `scaffold_metadata.py` will flag it - find an EUR/USD/GBP-listed alternative for that ISIN instead
+- Check `data/price_history/{TICKER}.jsonl`'s `original_currency` field for that ticker - the pipeline supports EUR, USD, GBP, and GBp (British pence, converted by /100 first). Any other currency is rejected, not silently mispriced.
+- If `data/ticker_map.csv` points at a listing in an unsupported currency (e.g. CAD, JPY), `scaffold_metadata.py` will flag it - find an EUR/USD/GBP-listed alternative for that ISIN instead
 
 ## Testing
 
@@ -162,6 +209,9 @@ python3 portfolio/compute_lots.py      # only needed if transactions.csv changed
 python3 portfolio/fetch_prices.py
 python3 portfolio/analyze_portfolio.py | python3 portfolio/render_report.py
 ```
+
+Or via the MCP server (see "Claude Skill / MCP server" above) - the
+`portfolio` server's tools call the same functions, one per script.
 
 ## API Status
 

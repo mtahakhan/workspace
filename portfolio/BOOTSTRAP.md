@@ -1,7 +1,8 @@
 # First-run setup
 
 This file is instructions for Claude, not the human user - follow it whenever
-`portfolio/transactions.csv` doesn't exist yet (see `../CLAUDE.md`). Unlike a
+`portfolio/data/manual/transactions.csv` doesn't exist yet (see
+`../CLAUDE.md`). Unlike a
 typical onboarding doc, this one stays in the repo permanently - it's generic
 setup instructions, not personalized content, so future re-clones (by this
 user or anyone else) need it too. Each step below checks its own precondition
@@ -41,7 +42,7 @@ into chat** - it would end up in the session transcript. Instead:
 
 ## Step 3: Get transactions.csv
 
-Check if `portfolio/transactions.csv` exists. If not, ask the user to export
+Check if `portfolio/data/manual/transactions.csv` exists. If not, ask the user to export
 their transaction history from their broker and paste it or place the file at
 that path. Tell them plainly: **this currently only parses Scalable Capital's
 export format** (semicolon-delimited, German decimal commas, columns:
@@ -69,10 +70,10 @@ python3 scaffold_metadata.py
 ```
 
 - `compute_lots.py` prints which ISINs have an open position but no
-  `ticker_map.csv` row yet.
+  `data/ticker_map.csv` row yet.
 - `scaffold_metadata.py` looks each one up via a real `yfinance` search (not a
   guess), checks its actual currency and price, and APPENDS a proposed row to
-  `ticker_map.csv` (a shared file - it never overwrites existing rows). It
+  `data/ticker_map.csv` (a shared file - it never overwrites existing rows). It
   prints a review table like this:
 
 ```
@@ -86,7 +87,7 @@ For every line in that table:
    the same company? (A price that's wildly different from what you'd expect,
    or a currency you didn't expect, usually means it's the wrong company or
    wrong listing - that's the point of showing you the price.)
-2. If a line has a `⚠` warning, it needs a manual fix in `ticker_map.csv`:
+2. If a line has a `⚠` warning, it needs a manual fix in `data/ticker_map.csv`:
    open the file, replace that ticker with a better one, and verify the new
    one with `python3 -c "import yfinance as yf; print(yf.Ticker('TICKER').fast_info)"`
    before trusting it - check `currency` is one of EUR/USD/GBP/GBp.
@@ -94,13 +95,13 @@ For every line in that table:
    moving on - don't silently accept an uncertain pick.
 
 Once every row looks right, fill in the blank Sector column directly in
-`ticker_map.csv` for each new row (it's `ISIN,Ticker,Company,Sector` - one
+`data/ticker_map.csv` for each new row (it's `ISIN,Ticker,Company,Sector` - one
 file, all four columns, shared and committed) - ask the user what taxonomy
 they want (Technology, Healthcare, Commodities, etc; there's no fixed list,
 this one's just their preference).
 
 Re-run `python3 compute_lots.py` after all of this. It will now report two
-separate things if anything is still missing: ISINs with no `ticker_map.csv`
+separate things if anything is still missing: ISINs with no `data/ticker_map.csv`
 row at all (re-run `scaffold_metadata.py`, or fix manually), and rows that
 have a Ticker but a blank Sector (fill it in). Repeat until neither list has
 entries, and the printed position share counts look sane to the user.
@@ -111,7 +112,7 @@ Run `python3 fetch_prices.py` (live prices) then `python3 backfill_history.py`
 (full historical backfill per ticker, needed for accurate drawdown/trend -
 takes a little longer, uses `period="max"` by default). Report any tickers
 that failed to resolve and work through them the same way as Step 4 (usually
-means the ticker in `ticker_map.csv` isn't quite right, or is in a currency
+means the ticker in `data/ticker_map.csv` isn't quite right, or is in a currency
 the pipeline doesn't support - see README's "Supported currencies").
 
 ## Step 6: Verify the numbers

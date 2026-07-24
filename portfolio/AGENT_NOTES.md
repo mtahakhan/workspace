@@ -24,9 +24,11 @@ it governs interpretation and opinions, not data mechanics.
 2. **Never recompute `analyze_portfolio.py`'s numbers by hand.** If a number
    looks wrong, that's a bug to fix in the script, not something to
    override by reasoning over the raw data yourself.
-3. **Never modify any deterministic script (`compute_lots.py`,
-   `fetch_prices.py`, `backfill_history.py`, `analyze_portfolio.py`,
-   `scaffold_metadata.py`, `render_report.py`, `config.py`) without first
+3. **Never modify any deterministic script or its `pipeline/` package module
+   (`compute_lots.py`/`pipeline/lots.py`, `fetch_prices.py`/`pipeline/prices.py`,
+   `backfill_history.py`/`pipeline/backfill.py`, `analyze_portfolio.py`/
+   `pipeline/analysis.py`, `scaffold_metadata.py`/`pipeline/tickers.py`,
+   `render_report.py`/`pipeline/report.py`, `pipeline/config.py`) without first
    confirming intent with the user.** If something looks wrong or errors, the
    default action is to **report it** - what happened, why it might be
    happening, and 2-3 concrete options for how to debug or fix it - and stop
@@ -81,49 +83,73 @@ above) - not duplicated here so there's exactly one diagram to keep in sync,
 not two that can silently drift apart.
 
 **Run order matters**: `compute_lots.py` runs FIRST (it works fine even with
-an empty/missing `ticker_map.csv` - just leaves `Ticker`/`Sector` blank), THEN
-`scaffold_metadata.py` (reads `transaction_lots.csv`'s blank-`Ticker` rows -
-which is why it needs an `ISIN` column - to resolve and append to
-`ticker_map.csv`), THEN re-run `compute_lots.py` to pick up the resolved
+an empty/missing `data/ticker_map.csv` - just leaves `Ticker`/`Sector` blank),
+THEN `scaffold_metadata.py` (reads `data/transaction_lots.csv`'s blank-`Ticker`
+rows - which is why it needs an `ISIN` column - to resolve and append to
+`data/ticker_map.csv`), THEN re-run `compute_lots.py` to pick up the resolved
 tickers. `scaffold_metadata.py` deliberately does NOT re-run the FIFO engine
 itself - it reads the ISIN+blank-Ticker rows straight from
-`transaction_lots.csv`, which is already exactly that computation's output.
+`data/transaction_lots.csv`, which is already exactly that computation's output.
 
-`ticker_map.csv` is the ONLY file resolved by `scaffold_metadata.py` and the
-only manually-maintained input besides `transactions.csv` itself. It's
-shared/committed (not personal data - a factual ISIN->ticker mapping is the
-same for everyone), and append-only in practice: once an ISIN is resolved
-correctly, that entry should never need to change.
+`data/ticker_map.csv` is the ONLY file resolved by `scaffold_metadata.py` and
+the only manually-maintained input besides `data/manual/transactions.csv`
+itself. It's shared/committed (not personal data - a factual ISIN->ticker
+mapping is the same for everyone), and append-only in practice: once an ISIN
+is resolved correctly, that entry should never need to change.
 
 ## Pipeline components (KEEP THIS TABLE UP TO DATE)
 
 Whenever a script, task, or file's role changes, update this table in the same
 change - it's the authoritative inventory and must never drift from reality.
 
+All data paths below are relative to `portfolio/data/` unless noted -
+`transactions.csv` lives in `data/manual/` specifically since it's the one
+file with no automated source; everything else in `data/` is derived or
+fetched. `config.json`, `.env`/`.env.example`, and the `*.py` scripts stay at
+the `portfolio/` root (not `data/`) since they're config/code, not data.
+
+**Code layout: `portfolio/pipeline/` package + thin root-level CLI wrappers.**
+The actual logic (FIFO engine, ticker resolution, price fetch/backfill,
+analysis, report rendering, config loading) lives in `portfolio/pipeline/`
+(`lots.py`, `tickers.py`, `prices.py`, `backfill.py`, `analysis.py`,
+`report.py`, `config.py`, plus `paths.py` for the single `PORTFOLIO_DIR`/
+`DATA_DIR` definition every other module imports - see AGENT_NOTES.md rule 8's
+"exactly one place to keep in sync" principle applied to path constants too).
+The root-level `compute_lots.py`/`scaffold_metadata.py`/`fetch_prices.py`/
+`backfill_history.py`/`analyze_portfolio.py`/`render_report.py` are thin CLI
+entry points (import the package's `main()`/`render()`, handle argv/stdin/
+print where the CLI needs it) - this is what keeps `QUICKSTART.md`'s `python3
+compute_lots.py`-style commands working unchanged. `mcp/server.py` imports
+from the same `pipeline` package directly (not through the wrapper scripts),
+so there is exactly one implementation of each computation, used by both the
+CLI and the MCP server - never add logic to a wrapper script that the package
+module doesn't already have, and never duplicate a function between a wrapper
+and its package module.
+
 **Data files:**
 
 | File | Holds | Produced by |
 |---|---|---|
-| `transactions.csv` | Raw broker export - the only external input | You (manual export) |
-| `ticker_map.csv` | ISIN, Ticker, Company, Sector - shared, committed | `scaffold_metadata.py` (Ticker/Company) + you (Sector) |
+| `data/manual/transactions.csv` | Raw broker export - the only external input | You (manual export) |
+| `data/ticker_map.csv` | ISIN, Ticker, Company, Sector - shared, committed | `scaffold_metadata.py` (Ticker/Company) + you (Sector) |
 | `config.json` | All tunable thresholds (stale-price age, mover/divergence %, split-sanity ratio, short-hold days, top-N counts) and every caveat/notify-reason message template - shared, committed, not personal data. Edit values here, not in code - see "Configurable thresholds and caveats" below | You (hand-edited); `config.py` just loads it |
-| `transaction_lots.csv` | Current open positions - FIFO lots, real dates/prices | `compute_lots.py` |
-| `price_history/{TICKER}.jsonl` | Full sourced price history, one file per ticker | `fetch_prices.py` (daily) / `backfill_history.py` (one-off) |
-| `analysis_history.jsonl` | One line per `analyze_portfolio.py` run: `generated_at`, `total_value`, `xirr_pct` - append-only, used only for the run-over-run divergence check | `analyze_portfolio.py` |
-| `daily-analysis/*.md` | Generated reports | `portfolio-daily-analysis` task |
-| `news/{TICKER}/*.txt` | One file per fetched news source deemed meaningful (metadata header + fetched text) - see `INVESTMENT_FRAMEWORK.md` | `portfolio-daily-analysis` task + any ad-hoc analysis that fetches news |
+| `data/transaction_lots.csv` | Current open positions - FIFO lots, real dates/prices | `compute_lots.py` |
+| `data/price_history/{TICKER}.jsonl` | Full sourced price history, one file per ticker | `fetch_prices.py` (daily) / `backfill_history.py` (one-off) |
+| `data/analysis_history.jsonl` | One line per `analyze_portfolio.py` run: `generated_at`, `total_value`, `xirr_pct` - append-only, used only for the run-over-run divergence check | `analyze_portfolio.py` |
+| `data/daily-analysis/*.md` | Generated reports | `portfolio-daily-analysis` task |
+| `data/news/{TICKER}/*.txt` | One file per fetched news source deemed meaningful (metadata header + fetched text) - see `INVESTMENT_FRAMEWORK.md` | `portfolio-daily-analysis` task + any ad-hoc analysis that fetches news |
 
 **Scripts - all deterministic, zero LLM involvement in the computation:**
 
 | Script | Uses | Produces | Run order |
 |---|---|---|---|
-| `compute_lots.py` | `transactions.csv` + `ticker_map.csv` | `transaction_lots.csv` | 1st (works even if ticker_map.csv is empty/missing) |
-| `scaffold_metadata.py` | `transaction_lots.csv` (blank-Ticker rows, by ISIN) + `yfinance` search/currency/history checks | Appends rows to `ticker_map.csv` (Sector blank) | 2nd, only when needed |
-| `compute_lots.py` (re-run) | same | fresh `transaction_lots.csv` with resolved tickers | 3rd, after scaffold_metadata.py |
-| `fetch_prices.py` | `transaction_lots.csv` + Finnhub/yfinance | Appends to `price_history/*.jsonl` | daily |
-| `backfill_history.py` | `transaction_lots.csv` + yfinance historical | Rewrites `price_history/*.jsonl` (full history) | one-off/rare |
-| `config.py` | `config.json` | `load_config()` helper, imported by `analyze_portfolio.py`/`render_report.py` - no file output of its own | n/a (shared loader) |
-| `analyze_portfolio.py` | `transaction_lots.csv` + `price_history/*.jsonl` + last line of `analysis_history.jsonl` + `config.json` (thresholds/caveat templates) | JSON: value, gain/loss, drawdown, XIRR, movers, trend, `stale_prices`, `caveats` (incl. value-divergence check), `notable`/`notify_reasons` (deterministic push-notification signal - see below); appends a new line to `analysis_history.jsonl` | after fetch_prices.py |
+| `compute_lots.py` | `data/manual/transactions.csv` + `data/ticker_map.csv` | `data/transaction_lots.csv` | 1st (works even if ticker_map.csv is empty/missing) |
+| `scaffold_metadata.py` | `data/transaction_lots.csv` (blank-Ticker rows, by ISIN) + `yfinance` search/currency/history checks | Appends rows to `data/ticker_map.csv` (Sector blank) | 2nd, only when needed |
+| `compute_lots.py` (re-run) | same | fresh `data/transaction_lots.csv` with resolved tickers | 3rd, after scaffold_metadata.py |
+| `fetch_prices.py` | `data/transaction_lots.csv` + Finnhub/yfinance | Appends to `data/price_history/*.jsonl` | daily |
+| `backfill_history.py` | `data/transaction_lots.csv` + yfinance historical | Rewrites `data/price_history/*.jsonl` (full history) | one-off/rare |
+| `pipeline/config.py` | `config.json` | `load_config()` helper, imported by `pipeline/analysis.py`/`pipeline/report.py` - no file output of its own | n/a (shared loader) |
+| `analyze_portfolio.py` | `data/transaction_lots.csv` + `data/price_history/*.jsonl` + last line of `data/analysis_history.jsonl` + `config.json` (thresholds/caveat templates) | JSON: value, gain/loss, drawdown, XIRR, movers, trend, `stale_prices`, `caveats` (incl. value-divergence check), `notable`/`notify_reasons` (deterministic push-notification signal - see below); appends a new line to `data/analysis_history.jsonl` | after fetch_prices.py |
 | `render_report.py` | `analyze_portfolio.py`'s JSON (via stdin/pipe) + `config.json` (`short_hold_days_threshold`) | Markdown: Portfolio Overview, Trend, Sector Breakdown, Largest Positions, Movers (numbers only), Complete Holdings Table, XIRR Context, Data Notes | after analyze_portfolio.py, before the report is written |
 
 **Scheduled tasks - thin LLM wrappers around the deterministic core:**
@@ -135,13 +161,28 @@ change - it's the authoritative inventory and must never drift from reality.
 
 Both tasks' real instructions live in `tasks/*.md`, not the schedule itself.
 
+**`mcp/server.py`** - a FastMCP server, in its own `portfolio/mcp/`
+subdirectory, exposing each script above as a typed tool (`compute_lots`,
+`resolve_tickers`, `fetch_prices`, `backfill_history`, `analyze_portfolio`,
+`render_report`) that calls the exact same functions these scripts do - no
+reimplementation, no second copy of the logic. Runs under `mcp/.venv`
+(Python >=3.10; system `python3` here is 3.9) with dependency versions in
+`mcp/requirements.txt` pinned to match what the CLI scripts are validated
+against. This is the invocation path the `portfolio` skill
+(`.claude/skills/portfolio/SKILL.md`) and the scheduled tasks use instead of
+`Bash python3 script.py` - the scripts themselves stay fully standalone (see
+`QUICKSTART.md`) and stay at the `portfolio/` root, not under `mcp/`.
+
 **Reference/instruction files (not executed):** `AGENT_NOTES.md` (this file),
 `README.md` (human+agent overview), `PIPELINE.md` (Mermaid diagram of the
 whole pipeline - keep in sync, see rule 8 above), `BOOTSTRAP.md` (first-run
 setup), `QUICKSTART.md` (human-only, no-LLM manual usage), `CLAUDE.md`
 (workspace-root auto-loaded entry point), `INVESTMENT_FRAMEWORK.md`
 (analysis/advisory layer - modes, signals, portfolio/risk rules - used once
-pipeline output already exists; never touches the pipeline itself).
+pipeline output already exists; never touches the pipeline itself),
+`.claude/skills/portfolio/SKILL.md` (packages this file's absolute rules +
+the MCP tool mapping so they're loaded automatically for portfolio-related
+requests, without duplicating this content - see that file).
 
 ## Ticker resolution - what already went wrong once
 
@@ -236,7 +277,7 @@ generous so it never triggers on ordinary volatility.
   and already agreed on: it answers "what's the worst-case value swing of my
   current holdings," not a claim about the portfolio's real historical value.
 - **`trend.since_inception`** is anchored to the EARLIEST actual purchase date
-  in `transaction_lots.csv`, NOT the earliest available price-history point.
+  in `data/transaction_lots.csv`, NOT the earliest available price-history point.
   Using full history here was tried and produced a real, confirmed bug: it
   showed **+57,000%** using a Siemens price from 1996, because the portfolio
   (in its current form) didn't exist until 2024. Don't "fix" this back to
@@ -246,7 +287,7 @@ generous so it never triggers on ordinary volatility.
 ## Annualized return (XIRR)
 
 `annualized_returns` is a real money-weighted XIRR computed from
-`transaction_lots.csv`'s actual purchase dates/prices - not `total_return /
+`data/transaction_lots.csv`'s actual purchase dates/prices - not `total_return /
 years_held`. Check `weighted_avg_holding_days` before treating any single
 position's XIRR as meaningful: annualizing a short real holding period
 produces mathematically extreme numbers (e.g. a genuine 37% gain over 12
@@ -291,7 +332,7 @@ second, hardcoded set of defaults into `config.py` would recreate that same
 failure mode for thresholds instead. So a missing or invalid `config.json`
 is a hard error (`SystemExit` with a clear message), not a silent fallback -
 consistent with rule 3's "report it and stop" for unattended runs.
-`config.json` is committed (shared/non-personal, like `ticker_map.csv`), so
+`config.json` is committed (shared/non-personal, like `data/ticker_map.csv`), so
 "missing" should only happen from local file damage, never a fresh clone.
 
 Message templates use Python `str.format()` placeholders (e.g. `{tickers}`,
@@ -301,7 +342,7 @@ keep its placeholder names intact or the corresponding `.format(...)` call in
 
 ## Data provenance / secrets
 
-Every `price_history/{TICKER}.jsonl` record for a non-EUR ticker carries its
+Every `data/price_history/{TICKER}.jsonl` record for a non-EUR ticker carries its
 original currency, raw price, exact source URL (API token redacted before
 persisting), and the FX rate + source used. EUR-native records omit all of
 this (would just be no-op restatements). Never persist an API token/secret

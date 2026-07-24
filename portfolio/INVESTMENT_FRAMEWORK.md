@@ -101,7 +101,7 @@ is "reject or watchlist," not a deep analysis.
 
 **Persist meaningful sources.** Whenever a fetched piece of news/research text
 actually informs an opinion here (not just the daily task's news digest),
-save it under `news/{TICKER}/` using the same convention as
+save it under `data/news/{TICKER}/` using the same convention as
 `tasks/daily-analysis.md`'s research step - one file per source, filename
 `YYYY-MM-DD_HHMMSS_short-slug.txt`, metadata header (Ticker, Company, Source
 URL, Title, Fetched At, Fetch Method) then a blank line then the fetched

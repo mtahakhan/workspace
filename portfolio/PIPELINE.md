@@ -15,13 +15,25 @@ scripts (no LLM involvement), hexagons = scheduled tasks (LLM-in-the-loop
 wrapper around a deterministic script). Dotted edges = rare/one-off, not part
 of the regular cycle.
 
+Every rectangle below can also be invoked as a typed MCP tool via
+`mcp/server.py` (same function, same output, no separate implementation) -
+that's the invocation path the `portfolio` skill and scheduled tasks use.
+See `AGENT_NOTES.md`'s pipeline components table for the tool-name mapping.
+This diagram covers data flow, which doesn't change based on invocation
+transport, so it isn't redrawn for this.
+
+All data-file paths below are relative to `portfolio/data/`, except
+`transactions.csv` which lives in `data/manual/` specifically (the one file
+with no automated source) and `config.json` which stays at the `portfolio/`
+root alongside the scripts.
+
 ```mermaid
 flowchart TD
     subgraph SETUP["① MANUAL - whenever you trade (run from a terminal)"]
         direction TB
-        TXN[("transactions.csv<br/>raw broker export<br/>(only external input)")]:::data
-        TMAP[("ticker_map.csv<br/>ISIN, Ticker, Company, Sector<br/>shared / committed")]:::data
-        LOTS[("transaction_lots.csv<br/>FIFO open lots<br/>ISIN, Ticker, Shares, dates, cost")]:::data
+        TXN[("data/manual/transactions.csv<br/>raw broker export<br/>(only external input)")]:::data
+        TMAP[("data/ticker_map.csv<br/>ISIN, Ticker, Company, Sector<br/>shared / committed")]:::data
+        LOTS[("data/transaction_lots.csv<br/>FIFO open lots<br/>ISIN, Ticker, Shares, dates, cost")]:::data
 
         CL1["compute_lots.py<br/>FIFO engine"]:::script
         SCAFF["scaffold_metadata.py<br/>yfinance resolve<br/>(only if new ISIN)"]:::script
@@ -39,12 +51,12 @@ flowchart TD
 
     subgraph DAILY["② SCHEDULED - Claude Code tasks, daily"]
         direction TB
-        PRICES[("price_history/{TICKER}.jsonl<br/>one file per ticker")]:::data
+        PRICES[("data/price_history/{TICKER}.jsonl<br/>one file per ticker")]:::data
         JSONOUT[("analyze_portfolio.py output<br/>value, gain/loss, XIRR,<br/>drawdown, movers, trend, caveats,<br/>notable/notify_reasons")]:::data
-        HIST[("analysis_history.jsonl<br/>generated_at, total_value, xirr_pct<br/>one line per run")]:::data
+        HIST[("data/analysis_history.jsonl<br/>generated_at, total_value, xirr_pct<br/>one line per run")]:::data
         MDOUT[("render_report.py output<br/>deterministic markdown sections")]:::data
-        REPORT[("daily-analysis/YYYY-MM-DD.md")]:::data
-        NEWS[("news/{TICKER}/*.txt<br/>one file per meaningful source<br/>URL + fetched-at + method + text")]:::data
+        REPORT[("data/daily-analysis/YYYY-MM-DD.md")]:::data
+        NEWS[("data/news/{TICKER}/*.txt<br/>one file per meaningful source<br/>URL + fetched-at + method + text")]:::data
 
         CONFIG[("config.json<br/>thresholds + caveat/notify<br/>message templates")]:::data
 

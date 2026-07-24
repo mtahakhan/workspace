@@ -2,12 +2,12 @@
 # This project is designed to be cloned with none of this present; BOOTSTRAP.md
 # rebuilds it all from a user-provided transactions.csv on first run.
 portfolio/.env
-portfolio/transactions.csv
-portfolio/transaction_lots.csv
-portfolio/price_history/*.jsonl
-portfolio/daily-analysis/*.md
+portfolio/data/manual/transactions.csv
+portfolio/data/transaction_lots.csv
+portfolio/data/price_history/*.jsonl
+portfolio/data/daily-analysis/*.md
 
-# NOTE: ticker_map.csv (ISIN, Ticker, Company, Sector) is deliberately NOT
+# NOTE: data/ticker_map.csv (ISIN, Ticker, Company, Sector) is deliberately NOT
 # listed here - it's a shared, committed, ever-growing lookup table, not
 # personal data. Don't add it back to this file.
 
@@ -19,3 +19,9 @@ portfolio/daily-analysis/*.md
 # OS cruft
 .DS_Store
 **/.DS_Store
+
+# portfolio MCP server's venv (mcp/server.py needs Python >=3.10; system
+# python3 here is 3.9) - reproducible via `pip install -r portfolio/mcp/requirements.txt`
+portfolio/mcp/.venv/
+__pycache__/
+**/__pycache__/

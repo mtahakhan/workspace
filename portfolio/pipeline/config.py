@@ -9,9 +9,10 @@ over with a second, silently-drifting copy of the same values.
 """
 
 import json
-from pathlib import Path
 
-CONFIG_FILE = Path(__file__).parent / "config.json"
+from .paths import PORTFOLIO_DIR
+
+CONFIG_FILE = PORTFOLIO_DIR / "config.json"  # stays at the portfolio root, not data/ - it's config, not data
 
 def load_config():
     if not CONFIG_FILE.exists():

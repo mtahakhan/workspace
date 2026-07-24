@@ -25,7 +25,7 @@ exports differently, you'll need to adapt `compute_lots.py`'s
 `load_transactions()` function, or convert your export to match this format
 first.
 
-Save the export as `portfolio/transactions.csv`.
+Save the export as `portfolio/data/manual/transactions.csv`.
 
 ## 3. (Optional) Finnhub API key
 
@@ -48,8 +48,8 @@ python3 compute_lots.py
 Reconstructs exactly which shares you still hold, and when/at what price you
 bought them, from your full transaction history (handles partial sells,
 corporate actions, and broker-migration artifacts automatically). Writes
-`transaction_lots.csv`, including a blank `Ticker`/`Sector` for any ISIN
-`ticker_map.csv` doesn't have yet - that's expected on a first run and is
+`data/transaction_lots.csv`, including a blank `Ticker`/`Sector` for any ISIN
+`data/ticker_map.csv` doesn't have yet - that's expected on a first run and is
 exactly what the next step resolves.
 
 ## 5. Resolve tickers for your holdings
@@ -58,7 +58,7 @@ exactly what the next step resolves.
 python3 scaffold_metadata.py
 ```
 
-Reads `transaction_lots.csv` for any open position with a blank `Ticker`,
+Reads `data/transaction_lots.csv` for any open position with a blank `Ticker`,
 looks each one up via a real `yfinance` search, and prints a review table like:
 
 ```
@@ -71,7 +71,7 @@ looks each one up via a real `yfinance` search, and prints a review table like:
 human judgment replaces what an LLM would otherwise help verify. For each row:
 - Does the picked ticker match the company name? A wildly-off price or
   unexpected currency usually means it's the wrong company or listing.
-- Any row with a `⚠` warning needs a manual fix: open `ticker_map.csv` in a
+- Any row with a `⚠` warning needs a manual fix: open `data/ticker_map.csv` in a
   text editor and replace that ticker with a better one. You can check any
   candidate yourself:
   ```bash
@@ -82,7 +82,7 @@ human judgment replaces what an LLM would otherwise help verify. For each row:
   /100 to GBP). Anything else isn't supported - find a different EUR/USD/GBP
   listing for that same ISIN rather than trying to add a new currency yourself.
 
-Then open `portfolio/ticker_map.csv` and fill in the blank `Sector` column
+Then open `portfolio/data/ticker_map.csv` and fill in the blank `Sector` column
 for each new row (any taxonomy you like - Technology, Healthcare, Commodities,
 etc; it's just used for the sector-concentration breakdown).
 
@@ -98,9 +98,9 @@ this step.
 python3 fetch_prices.py
 ```
 
-Gets live prices for every ticker in `transaction_lots.csv` (Finnhub first if
+Gets live prices for every ticker in `data/transaction_lots.csv` (Finnhub first if
 you set up a key, yfinance otherwise), and appends one line per ticker to its
-own history file at `price_history/{TICKER}.jsonl`.
+own history file at `data/price_history/{TICKER}.jsonl`.
 
 ## 7. (One-time) Backfill historical prices
 
@@ -132,7 +132,7 @@ Redirect it to a file or pipe it into `python3 -m json.tool` for readability:
 python3 analyze_portfolio.py | python3 -m json.tool
 ```
 
-It also appends `{generated_at, total_value, xirr_pct}` to `analysis_history.jsonl`
+It also appends `{generated_at, total_value, xirr_pct}` to `data/analysis_history.jsonl`
 each run, and adds a `caveats` entry if `total_value` swung more than 20%
 (configurable in `config.json`) since the previous run - a real incident (a
 bad ticker mapping doubled the reported
@@ -157,7 +157,7 @@ into `render_report.py`) shortly after. Example crontab entry (adjust the
 path and time):
 ```
 7 7 * * *  cd /path/to/portfolio && python3 fetch_prices.py
-25 7 * * *  cd /path/to/portfolio && python3 analyze_portfolio.py | python3 render_report.py > daily-analysis/$(date +\%Y-\%m-\%d).md
+25 7 * * *  cd /path/to/portfolio && python3 analyze_portfolio.py | python3 render_report.py > data/daily-analysis/$(date +\%Y-\%m-\%d).md
 ```
 
 ## What you lose without an LLM
@@ -172,7 +172,7 @@ What you don't get without one:
   positions in parallel (one-line digest each) plus deeper context on
   whatever `analyze_portfolio.py` flags as a significant mover, filling in
   the Movers table's Context column, and archives each meaningful source as
-  its own file under `news/{TICKER}/`; running the pipeline yourself just
+  its own file under `data/news/{TICKER}/`; running the pipeline yourself just
   gives you numbers and flagged tickers/percentages, not the "why" behind any
   of it or a record of where it came from
 - **Investment analysis/advice grounded in this data** - if you ask Claude
