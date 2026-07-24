@@ -15,21 +15,19 @@ it governs interpretation and opinions, not data mechanics.
 
 ## Absolute rules (do these, always)
 
-1. **Never guess a ticker symbol.** Run `scaffold_metadata.py` for any new
-   ISIN - it does a real `yfinance` search and checks actual currency/price.
-   Freehand ticker guessing has a confirmed 0% success rate in this project:
-   a bootstrap run by a smaller model guessed 7 tickers and got all 7 wrong
-   (see "Ticker resolution" below for the specific failures). A wrong ticker
-   doesn't error - it silently prices an unrelated company.
-2. **Never recompute `analyze_portfolio.py`'s numbers by hand.** If a number
-   looks wrong, that's a bug to fix in the script, not something to
+1. **Never guess a ticker symbol.** Run `python3 -m pipeline.tickers` for any
+   new ISIN - it does a real `yfinance` search and checks actual
+   currency/price. Freehand ticker guessing has a confirmed 0% success rate
+   in this project: a bootstrap run by a smaller model guessed 7 tickers and
+   got all 7 wrong (see "Ticker resolution" below for the specific failures).
+   A wrong ticker doesn't error - it silently prices an unrelated company.
+2. **Never recompute `pipeline.analysis`'s numbers by hand.** If a number
+   looks wrong, that's a bug to fix in the module, not something to
    override by reasoning over the raw data yourself.
-3. **Never modify any deterministic script or its `pipeline/` package module
-   (`compute_lots.py`/`pipeline/lots.py`, `fetch_prices.py`/`pipeline/prices.py`,
-   `backfill_history.py`/`pipeline/backfill.py`, `analyze_portfolio.py`/
-   `pipeline/analysis.py`, `scaffold_metadata.py`/`pipeline/tickers.py`,
-   `render_report.py`/`pipeline/report.py`, `pipeline/config.py`) without first
-   confirming intent with the user.** If something looks wrong or errors, the
+3. **Never modify any deterministic pipeline module** (`pipeline/lots.py`,
+   `pipeline/prices.py`, `pipeline/backfill.py`, `pipeline/analysis.py`,
+   `pipeline/tickers.py`, `pipeline/report.py`, `pipeline/config.py`)
+   **without first confirming intent with the user.** If something looks wrong or errors, the
    default action is to **report it** - what happened, why it might be
    happening, and 2-3 concrete options for how to debug or fix it - and stop
    there. Only edit the code once the user has confirmed they want a change
@@ -46,11 +44,11 @@ it governs interpretation and opinions, not data mechanics.
 4. **Never write ad-hoc currency-conversion code.** The pipeline supports
    EUR, USD, GBP, and GBp (British pence, /100 to GBP). If you hit another
    currency, that's a sign the ticker/listing is wrong - find a supported
-   listing for that ISIN via `scaffold_metadata.py`, don't add a new
+   listing for that ISIN via `python3 -m pipeline.tickers`, don't add a new
    conversion path. (This already happened once: a bootstrap picked a London
    `.L` listing quoted in GBp and invented one-off GBP conversion code instead
    of recognizing the real fix was a different, EUR-native listing. GBp
-   support is now built into `fetch_prices.py`/`backfill_history.py`
+   support is now built into `pipeline/prices.py`/`pipeline/backfill.py`
    permanently, so this specific gap shouldn't recur - but the general
    principle holds for any future unsupported currency.)
 5. **Never ask the user to paste an API key into chat.** Copy
@@ -82,16 +80,16 @@ See **`PIPELINE.md`** for the diagram (Mermaid, kept up to date per rule 8
 above) - not duplicated here so there's exactly one diagram to keep in sync,
 not two that can silently drift apart.
 
-**Run order matters**: `compute_lots.py` runs FIRST (it works fine even with
+**Run order matters**: `pipeline.lots` runs FIRST (it works fine even with
 an empty/missing `data/ticker_map.csv` - just leaves `Ticker`/`Sector` blank),
-THEN `scaffold_metadata.py` (reads `data/transaction_lots.csv`'s blank-`Ticker`
+THEN `pipeline.tickers` (reads `data/transaction_lots.csv`'s blank-`Ticker`
 rows - which is why it needs an `ISIN` column - to resolve and append to
-`data/ticker_map.csv`), THEN re-run `compute_lots.py` to pick up the resolved
-tickers. `scaffold_metadata.py` deliberately does NOT re-run the FIFO engine
+`data/ticker_map.csv`), THEN re-run `pipeline.lots` to pick up the resolved
+tickers. `pipeline.tickers` deliberately does NOT re-run the FIFO engine
 itself - it reads the ISIN+blank-Ticker rows straight from
 `data/transaction_lots.csv`, which is already exactly that computation's output.
 
-`data/ticker_map.csv` is the ONLY file resolved by `scaffold_metadata.py` and
+`data/ticker_map.csv` is the ONLY file resolved by `pipeline.tickers` and
 the only manually-maintained input besides `data/manual/transactions.csv`
 itself. It's shared/committed (not personal data - a factual ISIN->ticker
 mapping is the same for everyone), and append-only in practice: once an ISIN
@@ -105,73 +103,70 @@ change - it's the authoritative inventory and must never drift from reality.
 All data paths below are relative to `portfolio/data/` unless noted -
 `transactions.csv` lives in `data/manual/` specifically since it's the one
 file with no automated source; everything else in `data/` is derived or
-fetched. `config.json`, `.env`/`.env.example`, and the `*.py` scripts stay at
-the `portfolio/` root (not `data/`) since they're config/code, not data.
+fetched. `config.json` and `.env`/`.env.example` stay at the `portfolio/`
+root (not `data/`) since they're config/secrets, not data.
 
-**Code layout: `portfolio/pipeline/` package + thin root-level CLI wrappers.**
-The actual logic (FIFO engine, ticker resolution, price fetch/backfill,
+**Code layout: `portfolio/pipeline/` package, no standalone script files.**
+The entire pipeline (FIFO engine, ticker resolution, price fetch/backfill,
 analysis, report rendering, config loading) lives in `portfolio/pipeline/`
 (`lots.py`, `tickers.py`, `prices.py`, `backfill.py`, `analysis.py`,
 `report.py`, `config.py`, plus `paths.py` for the single `PORTFOLIO_DIR`/
-`DATA_DIR` definition every other module imports - see AGENT_NOTES.md rule 8's
-"exactly one place to keep in sync" principle applied to path constants too).
-The root-level `compute_lots.py`/`scaffold_metadata.py`/`fetch_prices.py`/
-`backfill_history.py`/`analyze_portfolio.py`/`render_report.py` are thin CLI
-entry points (import the package's `main()`/`render()`, handle argv/stdin/
-print where the CLI needs it) - this is what keeps `QUICKSTART.md`'s `python3
-compute_lots.py`-style commands working unchanged. `mcp/server.py` imports
-from the same `pipeline` package directly (not through the wrapper scripts),
-so there is exactly one implementation of each computation, used by both the
-CLI and the MCP server - never add logic to a wrapper script that the package
-module doesn't already have, and never duplicate a function between a wrapper
-and its package module.
+`DATA_DIR` definition every other module imports - see AGENT_NOTES.md rule
+8's "exactly one place to keep in sync" principle applied to path constants
+too). Each module is directly runnable as `python3 -m pipeline.<name>` from
+inside `portfolio/` (own `if __name__ == "__main__":` block) - see
+`QUICKSTART.md`. `mcp/server.py` imports the exact same modules, so there is
+exactly one implementation of each computation, used by both the CLI and the
+MCP server.
 
 **Data files:**
 
 | File | Holds | Produced by |
 |---|---|---|
 | `data/manual/transactions.csv` | Raw broker export - the only external input | You (manual export) |
-| `data/ticker_map.csv` | ISIN, Ticker, Company, Sector - shared, committed | `scaffold_metadata.py` (Ticker/Company) + you (Sector) |
-| `config.json` | All tunable thresholds (stale-price age, mover/divergence %, split-sanity ratio, short-hold days, top-N counts) and every caveat/notify-reason message template - shared, committed, not personal data. Edit values here, not in code - see "Configurable thresholds and caveats" below | You (hand-edited); `config.py` just loads it |
-| `data/transaction_lots.csv` | Current open positions - FIFO lots, real dates/prices | `compute_lots.py` |
-| `data/price_history/{TICKER}.jsonl` | Full sourced price history, one file per ticker | `fetch_prices.py` (daily) / `backfill_history.py` (one-off) |
-| `data/analysis_history.jsonl` | One line per `analyze_portfolio.py` run: `generated_at`, `total_value`, `xirr_pct` - append-only, used only for the run-over-run divergence check | `analyze_portfolio.py` |
+| `data/ticker_map.csv` | ISIN, Ticker, Company, Sector - shared, committed | `pipeline.tickers` (Ticker/Company) + you (Sector) |
+| `config.json` | All tunable thresholds (stale-price age, mover/divergence %, split-sanity ratio, short-hold days, top-N counts) and every caveat/notify-reason message template - shared, committed, not personal data. Edit values here, not in code - see "Configurable thresholds and caveats" below | You (hand-edited); `pipeline/config.py` just loads it |
+| `data/transaction_lots.csv` | Current open positions - FIFO lots, real dates/prices | `pipeline.lots` |
+| `data/price_history/{TICKER}.jsonl` | Full sourced price history, one file per ticker | `pipeline.prices` (daily) / `pipeline.backfill` (one-off) |
+| `data/analysis_history.jsonl` | One line per `pipeline.analysis` run: `generated_at`, `total_value`, `xirr_pct` - append-only, used only for the run-over-run divergence check | `pipeline.analysis` |
 | `data/daily-analysis/*.md` | Generated reports | `portfolio-daily-analysis` task |
 | `data/news/{TICKER}/*.txt` | One file per fetched news source deemed meaningful (metadata header + fetched text) - see `INVESTMENT_FRAMEWORK.md` | `portfolio-daily-analysis` task + any ad-hoc analysis that fetches news |
 
-**Scripts - all deterministic, zero LLM involvement in the computation:**
+**Pipeline modules (`portfolio/pipeline/`) - all deterministic, zero LLM
+involvement in the computation. Each is run as `python3 -m pipeline.<name>`
+from inside `portfolio/`, or via the matching MCP tool:**
 
-| Script | Uses | Produces | Run order |
+| Module | Uses | Produces | Run order |
 |---|---|---|---|
-| `compute_lots.py` | `data/manual/transactions.csv` + `data/ticker_map.csv` | `data/transaction_lots.csv` | 1st (works even if ticker_map.csv is empty/missing) |
-| `scaffold_metadata.py` | `data/transaction_lots.csv` (blank-Ticker rows, by ISIN) + `yfinance` search/currency/history checks | Appends rows to `data/ticker_map.csv` (Sector blank) | 2nd, only when needed |
-| `compute_lots.py` (re-run) | same | fresh `data/transaction_lots.csv` with resolved tickers | 3rd, after scaffold_metadata.py |
-| `fetch_prices.py` | `data/transaction_lots.csv` + Finnhub/yfinance | Appends to `data/price_history/*.jsonl` | daily |
-| `backfill_history.py` | `data/transaction_lots.csv` + yfinance historical | Rewrites `data/price_history/*.jsonl` (full history) | one-off/rare |
-| `pipeline/config.py` | `config.json` | `load_config()` helper, imported by `pipeline/analysis.py`/`pipeline/report.py` - no file output of its own | n/a (shared loader) |
-| `analyze_portfolio.py` | `data/transaction_lots.csv` + `data/price_history/*.jsonl` + last line of `data/analysis_history.jsonl` + `config.json` (thresholds/caveat templates) | JSON: value, gain/loss, drawdown, XIRR, movers, trend, `stale_prices`, `caveats` (incl. value-divergence check), `notable`/`notify_reasons` (deterministic push-notification signal - see below); appends a new line to `data/analysis_history.jsonl` | after fetch_prices.py |
-| `render_report.py` | `analyze_portfolio.py`'s JSON (via stdin/pipe) + `config.json` (`short_hold_days_threshold`) | Markdown: Portfolio Overview, Trend, Sector Breakdown, Largest Positions, Movers (numbers only), Complete Holdings Table, XIRR Context, Data Notes | after analyze_portfolio.py, before the report is written |
+| `pipeline.lots` | `data/manual/transactions.csv` + `data/ticker_map.csv` | `data/transaction_lots.csv` | 1st (works even if ticker_map.csv is empty/missing) |
+| `pipeline.tickers` | `data/transaction_lots.csv` (blank-Ticker rows, by ISIN) + `yfinance` search/currency/history checks | Appends rows to `data/ticker_map.csv` (Sector blank) | 2nd, only when needed |
+| `pipeline.lots` (re-run) | same | fresh `data/transaction_lots.csv` with resolved tickers | 3rd, after pipeline.tickers |
+| `pipeline.prices` | `data/transaction_lots.csv` + Finnhub/yfinance | Appends to `data/price_history/*.jsonl` | daily |
+| `pipeline.backfill` | `data/transaction_lots.csv` + yfinance historical | Rewrites `data/price_history/*.jsonl` (full history) | one-off/rare |
+| `pipeline.config` | `config.json` | `load_config()` helper, imported by `pipeline.analysis`/`pipeline.report` - no file output of its own | n/a (shared loader) |
+| `pipeline.analysis` | `data/transaction_lots.csv` + `data/price_history/*.jsonl` + last line of `data/analysis_history.jsonl` + `config.json` (thresholds/caveat templates) | JSON: value, gain/loss, drawdown, XIRR, movers, trend, `stale_prices`, `caveats` (incl. value-divergence check), `notable`/`notify_reasons` (deterministic push-notification signal - see below); appends a new line to `data/analysis_history.jsonl` | after pipeline.prices |
+| `pipeline.report` | `pipeline.analysis`'s JSON (via stdin/pipe) + `config.json` (`short_hold_days_threshold`) | Markdown: Portfolio Overview, Trend, Sector Breakdown, Largest Positions, Movers (numbers only), Complete Holdings Table, XIRR Context, Data Notes | after pipeline.analysis, before the report is written |
 
 **Scheduled tasks - thin LLM wrappers around the deterministic core:**
 
 | Task | Does | Deterministic or LLM? |
 |---|---|---|
-| `portfolio-price-fetch` (~07:11 Berlin) | Runs `fetch_prices.py`, reports one line | Almost entirely deterministic - LLM just runs the command and reports |
-| `portfolio-daily-analysis` (~07:25 Berlin) | Runs `analyze_portfolio.py` piped into `render_report.py`, WebSearches the flagged `movers` (deeper context) and all other holdings (one-line news digest) in a single parallel batch, writes an Executive Summary, and prepends it to the rendered markdown | Hybrid - every number/table comes untouched from `render_report.py`; LLM only adds the Executive Summary and news-research prose, never hand-transcribes a figure |
+| `portfolio-price-fetch` (~07:11 Berlin) | Runs `pipeline.prices`, reports one line | Almost entirely deterministic - LLM just runs the command and reports |
+| `portfolio-daily-analysis` (~07:25 Berlin) | Runs `pipeline.analysis` piped into `pipeline.report`, WebSearches the flagged `movers` (deeper context) and all other holdings (one-line news digest) in a single parallel batch, writes an Executive Summary, and prepends it to the rendered markdown | Hybrid - every number/table comes untouched from `pipeline.report`; LLM only adds the Executive Summary and news-research prose, never hand-transcribes a figure |
 
 Both tasks' real instructions live in `tasks/*.md`, not the schedule itself.
 
 **`mcp/server.py`** - a FastMCP server, in its own `portfolio/mcp/`
-subdirectory, exposing each script above as a typed tool (`compute_lots`,
+subdirectory, exposing each module above as a typed tool (`compute_lots`,
 `resolve_tickers`, `fetch_prices`, `backfill_history`, `analyze_portfolio`,
-`render_report`) that calls the exact same functions these scripts do - no
+`render_report`) that calls the exact same functions these modules do - no
 reimplementation, no second copy of the logic. Runs under `mcp/.venv`
 (Python >=3.10; system `python3` here is 3.9) with dependency versions in
-`mcp/requirements.txt` pinned to match what the CLI scripts are validated
-against. This is the invocation path the `portfolio` skill
+`mcp/requirements.txt` pinned to match what the CLI is validated against.
+This is the invocation path the `portfolio` skill
 (`.claude/skills/portfolio/SKILL.md`) and the scheduled tasks use instead of
-`Bash python3 script.py` - the scripts themselves stay fully standalone (see
-`QUICKSTART.md`) and stay at the `portfolio/` root, not under `mcp/`.
+`Bash python3 -m pipeline.X` - the pipeline modules themselves stay fully
+usable standalone from a terminal (see `QUICKSTART.md`).
 
 **Reference/instruction files (not executed):** `AGENT_NOTES.md` (this file),
 `README.md` (human+agent overview), `PIPELINE.md` (Mermaid diagram of the
@@ -187,7 +182,7 @@ requests, without duplicating this content - see that file).
 ## Ticker resolution - what already went wrong once
 
 A bootstrap run by a smaller model (Haiku) guessed tickers instead of running
-`scaffold_metadata.py`. All 7 of its guesses were wrong:
+`pipeline.tickers`. All 7 of its guesses were wrong:
 
 | ISIN (company) | Guessed | Reality |
 |---|---|---|
@@ -203,10 +198,10 @@ Same underlying lesson twice: (1) a bare/shorthand ticker frequently collides
 with an unrelated company on a different exchange, and (2) even when a
 guessed listing "works" (returns a price), it may be on a worse exchange
 (wrong currency, needs an FX hop) when a EUR-native listing of the exact same
-security exists. `scaffold_metadata.py` now checks currency and ranks
+security exists. `pipeline.tickers` now checks currency and ranks
 EUR-native listings first specifically because of this.
 
-Historical bugs from earlier in this project's life (before `scaffold_metadata.py`
+Historical bugs from earlier in this project's life (before `pipeline.tickers`
 existed) with the same root cause: `CAN`->Canaan Inc instead of Cantourage
 Group, `IRE`->a leveraged Iren SpA ETF instead of IREN Ltd.
 
@@ -218,8 +213,8 @@ above). The mapping was fixed later that day and a re-run at 17:34 produced
 the real number, €16,113.58 (-3.53%, XIRR -12.64%) - roughly half the
 reported value. Nothing in the pipeline had flagged the first number as
 suspicious even though a portfolio doubling in hours is implausible. Fix:
-`analyze_portfolio.py` now records each run's `total_value` to
-`analysis_history.jsonl` and adds a `caveats` entry (`check_value_divergence`)
+`pipeline.analysis` now records each run's `total_value` to
+`data/analysis_history.jsonl` and adds a `caveats` entry (`check_value_divergence`)
 if it moved >20% since the previous run - treat that caveat as "investigate
 before publishing," not as a real market move.
 
@@ -231,14 +226,14 @@ rejected (returns `None`/skipped), not silently mispriced - this is
 intentional. `price_eur` is the one field every downstream script reads;
 never read `price_original_currency` for computation, only for display/audit.
 
-`fetch_prices.py` (live) and `backfill_history.py` (historical) each implement
+`pipeline.prices` (live) and `pipeline.backfill` (historical) each implement
 this independently but must stay in sync - if you add a currency to one, add
 it to the other. Historical FX rates are used for backfill (not today's rate
 applied retroactively) - each FX pair's series only goes back so far (e.g.
 EUR/USD data starts 2003-12-01, since the Euro didn't exist before 1999), so
 older ticker history is truncated rather than priced with a fabricated rate.
 
-## FIFO / transaction parsing rules (compute_lots.py)
+## FIFO / transaction parsing rules (pipeline.lots)
 
 - Sort transactions by full **date+time**, not date alone. A previous version
   sorted by date only; since the broker export lists transactions newest-first,
@@ -258,7 +253,7 @@ older ticker history is truncated rather than priced with a fabricated rate.
 
 ## Historical price data quality
 
-`analyze_portfolio.py` drops historical price points that are more than 100x
+`pipeline.analysis` drops historical price points that are more than 100x
 away from a ticker's current price (`SPLIT_ADJUSTMENT_SANITY_RATIO`). This
 guards against a real, confirmed data bug: `yfinance`'s historical data for
 some thinly-traded/leveraged ETPs isn't retroactively adjusted for later
@@ -298,7 +293,7 @@ have been held a full year for the *portfolio-wide* XIRR to be meaningful.
 ## Notification signal (notable/notify_reasons)
 
 Whether the daily task sends a push notification is a fixed rule evaluated by
-`analyze_portfolio.py`, not a judgment call made fresh each run - see
+`pipeline.analysis`, not a judgment call made fresh each run - see
 `tasks/daily-analysis.md` step 8. `notable` is `true` if any of: a mover's
 `|change_pct|` is >= `config.json`'s `thresholds.mover_notable_pct` (5% by
 default, percentage move, not EUR size - consistent with how `compute_movers`
@@ -313,22 +308,22 @@ per-position price targets are ever actually added as a feature.
 ## Configurable thresholds and caveats (config.json)
 
 Every numeric threshold and every caveat/notify-reason message string used by
-`analyze_portfolio.py` and `render_report.py` lives in `config.json`, not
-hardcoded in the scripts - `stale_price_max_age_days`, `mover_notable_pct`,
+`pipeline.analysis` and `pipeline.report` lives in `config.json`, not
+hardcoded in the modules - `stale_price_max_age_days`, `mover_notable_pct`,
 `value_divergence_pct`, `split_adjustment_sanity_ratio`, `full_year_holding_days`,
 `short_hold_days_threshold`, `movers_top_n`, `largest_positions_top_n` under
 `thresholds`; the boilerplate methodology notes plus the templated
 tickers-without-lot-data/stale-prices/short-holding/value-divergence messages
 under `caveats`; the three notification message templates under
 `notify_reasons`. To change a number or wording, edit `config.json` directly -
-no code change needed, and it takes effect on the next run of either script.
+no code change needed, and it takes effect on the next run of either module.
 
-`config.py` is a thin shared loader (`load_config()`) imported by both
-scripts - it does NOT duplicate `config.json`'s values as Python defaults.
+`pipeline/config.py` is a thin shared loader (`load_config()`) imported by both
+- it does NOT duplicate `config.json`'s values as Python defaults.
 That's deliberate: this project already has one instance of "two copies of
 the same information silently drifting apart" (the Mermaid diagram, rule 8
 above) and the fix there was "exactly one place to keep in sync." Baking a
-second, hardcoded set of defaults into `config.py` would recreate that same
+second, hardcoded set of defaults into `pipeline/config.py` would recreate that same
 failure mode for thresholds instead. So a missing or invalid `config.json`
 is a hard error (`SystemExit` with a clear message), not a silent fallback -
 consistent with rule 3's "report it and stop" for unattended runs.
@@ -338,7 +333,7 @@ consistent with rule 3's "report it and stop" for unattended runs.
 Message templates use Python `str.format()` placeholders (e.g. `{tickers}`,
 `{max_age_days}`, `{change_pct:+.1f}`) - if you edit a template's wording,
 keep its placeholder names intact or the corresponding `.format(...)` call in
-`analyze_portfolio.py`'s `main()` will raise a `KeyError`.
+`pipeline.analysis`'s `main()` will raise a `KeyError`.
 
 ## Data provenance / secrets
 

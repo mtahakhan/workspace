@@ -24,17 +24,18 @@ see `AGENT_NOTES.md` rule 8 on keeping exactly one copy of anything in sync).
 
 | Need to... | Call this MCP tool | Wraps |
 |---|---|---|
-| Rebuild positions after a new trade | `compute_lots` | `compute_lots.py` |
-| Resolve a new ISIN to a real ticker | `resolve_tickers` | `scaffold_metadata.py` |
-| Fetch today's live prices | `fetch_prices` | `fetch_prices.py` |
-| Backfill full price history (rare/one-off) | `backfill_history` | `backfill_history.py` |
-| Compute portfolio value/gain/XIRR/movers/etc. | `analyze_portfolio` | `analyze_portfolio.py` |
-| Render that JSON as report markdown | `render_report` | `render_report.py` |
+| Rebuild positions after a new trade | `compute_lots` | `pipeline.lots` |
+| Resolve a new ISIN to a real ticker | `resolve_tickers` | `pipeline.tickers` |
+| Fetch today's live prices | `fetch_prices` | `pipeline.prices` |
+| Backfill full price history (rare/one-off) | `backfill_history` | `pipeline.backfill` |
+| Compute portfolio value/gain/XIRR/movers/etc. | `analyze_portfolio` | `pipeline.analysis` |
+| Render that JSON as report markdown | `render_report` | `pipeline.report` |
 
-These tools call the exact same functions the CLI scripts use - same
-computation, same output, just typed instead of Bash+stdout parsing. The
-scripts are still fully standalone-runnable (`portfolio/QUICKSTART.md`); the
-MCP server doesn't replace them, it's just how this skill should invoke them.
+These tools call the exact same functions the CLI (`python3 -m pipeline.X`,
+run from inside `portfolio/`) uses - same computation, same output, just
+typed instead of Bash+stdout parsing. The modules are still fully
+standalone-runnable (`portfolio/QUICKSTART.md`); the MCP server doesn't
+replace them, it's just how this skill should invoke them.
 
 Standard daily flow: `fetch_prices` → `analyze_portfolio` → `render_report`
 (pass `render_report` the exact dict `analyze_portfolio` returned) → then
@@ -51,10 +52,10 @@ research news and write the Executive Summary yourself - see
    `render_report` renders every table. If a number looks wrong, that's a bug
    to report (see rule 3), not something to override by reasoning over raw
    data.
-3. **Never modify a deterministic script** (`compute_lots.py`,
-   `fetch_prices.py`, `backfill_history.py`, `analyze_portfolio.py`,
-   `scaffold_metadata.py`, `render_report.py`, `config.py`, `mcp/server.py`)
-   **without confirming intent with the user first.** Default action on an
+3. **Never modify a deterministic pipeline module** (`pipeline/lots.py`,
+   `pipeline/prices.py`, `pipeline/backfill.py`, `pipeline/analysis.py`,
+   `pipeline/tickers.py`, `pipeline/report.py`, `pipeline/config.py`,
+   `mcp/server.py`) **without confirming intent with the user first.** Default action on an
    error: report what happened and 2-3 concrete options, then stop -
    especially during an unattended scheduled-task run, where there's no one
    to confirm with. `config.json` is the deliberate exception (a threshold

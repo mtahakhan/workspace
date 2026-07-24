@@ -179,10 +179,13 @@ def main():
     no_ticker = sorted(isin for isin in lots if isin not in metadata)
     if no_ticker:
         print(f"\nISINs with open positions but NO row in ticker_map.csv - "
-              f"run scaffold_metadata.py, or add manually: {no_ticker}")
+              f"run `python3 -m pipeline.tickers`, or add manually: {no_ticker}")
 
     no_sector = sorted(metadata[isin]["ticker"] for isin in lots
                         if isin in metadata and not metadata[isin]["sector"])
     if no_sector:
         print(f"\nticker_map.csv rows with a Ticker but a blank Sector - "
               f"fill in Sector for: {no_sector}")
+
+if __name__ == "__main__":
+    main()

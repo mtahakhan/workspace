@@ -64,7 +64,7 @@ if ENV_FILE.exists():
 
 def load_tickers():
     """Return the list of currently-open-position tickers, derived from
-    transaction_lots.csv (run compute_lots.py first if it's stale)."""
+    transaction_lots.csv (run `python3 -m pipeline.lots` first if it's stale)."""
     tickers = []
     seen = set()
     with open(TRANSACTION_LOTS_FILE) as f:
@@ -197,3 +197,6 @@ def main():
     print(f"\nAppended {len(records)} sourced prices to {PRICE_HISTORY_DIR}/")
     if missing:
         print(f"⚠️  {len(missing)} tickers missing: {', '.join(sorted(missing))}")
+
+if __name__ == "__main__":
+    main()

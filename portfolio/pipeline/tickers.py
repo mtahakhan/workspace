@@ -34,7 +34,7 @@ def load_positions():
     Deliberately does NOT re-run compute_lots' FIFO engine - that would just
     recompute exactly what's already sitting in transaction_lots.csv."""
     if not TRANSACTION_LOTS_FILE.exists():
-        print("transaction_lots.csv not found - run compute_lots.py first.", file=sys.stderr)
+        print("transaction_lots.csv not found - run `python3 -m pipeline.lots` first.", file=sys.stderr)
         return 0, {}
     all_isins = set()
     unmapped = {}
@@ -110,7 +110,7 @@ def main():
 
     if not new_isins:
         if total_open:
-            print("Nothing new to resolve. Run compute_lots.py to confirm everything maps cleanly.")
+            print("Nothing new to resolve. Run `python3 -m pipeline.lots` to confirm everything maps cleanly.")
         return
 
     new_rows = []
@@ -151,4 +151,7 @@ def main():
             print(f"      ⚠ {fl}")
     print("\nNext: eyeball the prices above (a wrong ticker usually shows an absurd price or "
           "wrong currency), fix any flagged rows, fill in the blank Sector column for each new "
-          "row in ticker_map.csv, then re-run compute_lots.py to confirm everything maps cleanly.")
+          "row in ticker_map.csv, then re-run `python3 -m pipeline.lots` to confirm everything maps cleanly.")
+
+if __name__ == "__main__":
+    main()

@@ -453,3 +453,6 @@ def main():
     }
     record_analysis_history(generated_at, totals["total_value"], annualized["portfolio_xirr_pct"])
     return result
+
+if __name__ == "__main__":
+    print(json.dumps(main(), indent=2, default=str))

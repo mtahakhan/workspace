@@ -1,7 +1,7 @@
 # Investment Framework
 
 **Scope:** this file governs how analysis and advice get formed once
-`analyze_portfolio.py` / `render_report.py` output already exists - for
+`pipeline.analysis` / `pipeline.report` output already exists - for
 on-demand chat questions ("what do you think about AMD", "should I trim
 IREN", "score my portfolio") and, in lighter form, the daily automated
 report's Executive Summary and Holdings News Digest (see
@@ -47,7 +47,7 @@ to this.
 
 **2. Portfolio Review** - structure only, no per-stock deep dive:
 sector/geographic diversification, concentration risk, correlation risk,
-balance improvements. Ground the diagnosis in `analyze_portfolio.py`'s
+balance improvements. Ground the diagnosis in `pipeline.analysis`'s
 actual `sectors`/`largest_positions` output, not guessed weights.
 
 **3. Macro** - global macro environment: rates, inflation, liquidity,
@@ -116,7 +116,7 @@ Portfolio roles (assign one per position when relevant):
 - Opportunistic (≤15%): cyclical, turnaround, special situations
 - Defensive/Cash (5-20%): stability and optionality
 
-Constraints to flag against (compare to `analyze_portfolio.py`'s real
+Constraints to flag against (compare to `pipeline.analysis`'s real
 position/sector weights, never estimated ones):
 - Max single position: 20%
 - Top 3 positions combined: ≤40%

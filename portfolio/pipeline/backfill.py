@@ -37,7 +37,7 @@ def _fx_source_name(pair):
 
 def load_tickers():
     """Currently-held tickers, derived from transaction_lots.csv (run
-    compute_lots.py first if you've traded since it was last generated)."""
+    `python3 -m pipeline.lots` first if you've traded since it was last generated)."""
     tickers, seen = [], set()
     with open(TRANSACTION_LOTS_FILE) as f:
         for row in csv.DictReader(f):
@@ -127,3 +127,6 @@ def main(period="max"):
         print(f"  {t}: {len(prices_eur)} rows ({currency}), {hist.index[0].date()} to {hist.index[-1].date()} -> {out_file.name}")
 
     print(f"\nDone. Wrote per-ticker files to {PRICE_HISTORY_DIR}/")
+
+if __name__ == "__main__":
+    main()

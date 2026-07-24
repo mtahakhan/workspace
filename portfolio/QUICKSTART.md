@@ -6,6 +6,11 @@ this guide walks through exactly that. The one place an LLM genuinely adds
 something is writing the narrative daily report (research on notable movers,
 prose) - see "What you lose without an LLM" at the end.
 
+Every command below is run as `python3 -m pipeline.<module>` from inside
+`portfolio/` - there are no standalone script files; the pipeline is a
+regular Python package (`portfolio/pipeline/`) and `-m` is how you invoke a
+module in it directly.
+
 ## 1. Prerequisites
 
 - Python 3.9+
@@ -21,7 +26,7 @@ Export your transaction history from your broker. **This currently only
 parses Scalable Capital's export format**: a semicolon-delimited CSV with
 columns `date;time;status;reference;description;assetType;type;isin;shares;price;amount;fee;tax;currency`,
 prices using German decimal commas (`1.074,00` = 1074.00). If your broker
-exports differently, you'll need to adapt `compute_lots.py`'s
+exports differently, you'll need to adapt `pipeline/lots.py`'s
 `load_transactions()` function, or convert your export to match this format
 first.
 
@@ -38,11 +43,11 @@ cp portfolio/.env.example portfolio/.env
 Then open `portfolio/.env` in any text editor and replace the placeholder
 with a real key from https://finnhub.io/register (free, no card required).
 
-## 4. Build your current positions (run this first - scaffold_metadata.py needs its output)
+## 4. Build your current positions (run this first - pipeline.tickers needs its output)
 
 ```bash
 cd portfolio
-python3 compute_lots.py
+python3 -m pipeline.lots
 ```
 
 Reconstructs exactly which shares you still hold, and when/at what price you
@@ -55,7 +60,7 @@ exactly what the next step resolves.
 ## 5. Resolve tickers for your holdings
 
 ```bash
-python3 scaffold_metadata.py
+python3 -m pipeline.tickers
 ```
 
 Reads `data/transaction_lots.csv` for any open position with a blank `Ticker`,
@@ -86,16 +91,16 @@ Then open `portfolio/data/ticker_map.csv` and fill in the blank `Sector` column
 for each new row (any taxonomy you like - Technology, Healthcare, Commodities,
 etc; it's just used for the sector-concentration breakdown).
 
-Re-run `python3 compute_lots.py` then `python3 scaffold_metadata.py` any time
+Re-run `python3 -m pipeline.lots` then `python3 -m pipeline.tickers` any time
 you buy a new security for the first time - the latter only resolves ISINs
 it hasn't seen before and never overwrites existing rows. Once
-`compute_lots.py` reports no missing tickers or sectors, you're done with
+`pipeline.lots` reports no missing tickers or sectors, you're done with
 this step.
 
 ## 6. Fetch prices
 
 ```bash
-python3 fetch_prices.py
+python3 -m pipeline.prices
 ```
 
 Gets live prices for every ticker in `data/transaction_lots.csv` (Finnhub first if
@@ -105,18 +110,18 @@ own history file at `data/price_history/{TICKER}.jsonl`.
 ## 7. (One-time) Backfill historical prices
 
 ```bash
-python3 backfill_history.py
+python3 -m pipeline.backfill
 ```
 
 Pulls each ticker's full available price history (as far back as `yfinance`
 has data) so drawdown/trend analysis has real history instead of a single
 day. Takes a bit longer than step 6. You only need to run this once per
-ticker - `fetch_prices.py` keeps appending to the same files daily after that.
+ticker - `pipeline.prices` keeps appending to the same files daily after that.
 
 ## 8. Compute your portfolio metrics
 
 ```bash
-python3 analyze_portfolio.py
+python3 -m pipeline.analysis
 ```
 
 Prints a single JSON object to stdout with everything: per-position value and
@@ -129,7 +134,7 @@ and a `stale_prices` list flagging any ticker that hasn't updated in 2+ days.
 
 Redirect it to a file or pipe it into `python3 -m json.tool` for readability:
 ```bash
-python3 analyze_portfolio.py | python3 -m json.tool
+python3 -m pipeline.analysis | python3 -m json.tool
 ```
 
 It also appends `{generated_at, total_value, xirr_pct}` to `data/analysis_history.jsonl`
@@ -141,7 +146,7 @@ value) is what this guards against; see `AGENT_NOTES.md`.
 ## 9. Render it as markdown
 
 ```bash
-python3 analyze_portfolio.py | python3 render_report.py
+python3 -m pipeline.analysis | python3 -m pipeline.report
 ```
 
 Turns the JSON into the same markdown tables the daily report uses - Portfolio
@@ -152,17 +157,17 @@ Python string formatting over the JSON above.
 ## Automating this without Claude
 
 Set up your own cron job (macOS/Linux) or Task Scheduler (Windows) to run
-step 6 (`fetch_prices.py`) daily, then step 8+9 (`analyze_portfolio.py` piped
-into `render_report.py`) shortly after. Example crontab entry (adjust the
+step 6 (`pipeline.prices`) daily, then step 8+9 (`pipeline.analysis` piped
+into `pipeline.report`) shortly after. Example crontab entry (adjust the
 path and time):
 ```
-7 7 * * *  cd /path/to/portfolio && python3 fetch_prices.py
-25 7 * * *  cd /path/to/portfolio && python3 analyze_portfolio.py | python3 render_report.py > data/daily-analysis/$(date +\%Y-\%m-\%d).md
+7 7 * * *  cd /path/to/portfolio && python3 -m pipeline.prices
+25 7 * * *  cd /path/to/portfolio && python3 -m pipeline.analysis | python3 -m pipeline.report > data/daily-analysis/$(date +\%Y-\%m-\%d).md
 ```
 
 ## What you lose without an LLM
 
-`analyze_portfolio.py` + `render_report.py` together produce every number and
+`pipeline.analysis` + `pipeline.report` together produce every number and
 table in the daily report - nothing about using an LLM changes any of those.
 What you don't get without one:
 - **An Executive Summary** - the daily task writes a few sentences of framing
@@ -170,7 +175,7 @@ What you don't get without one:
   cold
 - **News research on every holding** - the daily task web-searches all
   positions in parallel (one-line digest each) plus deeper context on
-  whatever `analyze_portfolio.py` flags as a significant mover, filling in
+  whatever `pipeline.analysis` flags as a significant mover, filling in
   the Movers table's Context column, and archives each meaningful source as
   its own file under `data/news/{TICKER}/`; running the pipeline yourself just
   gives you numbers and flagged tickers/percentages, not the "why" behind any

@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-Renders analyze_portfolio.py's JSON into the deterministic markdown sections
-of the daily report (tables and figures only - no judgment calls).
+Renders analyze_portfolio's JSON into the deterministic markdown sections
+of the daily report (tables and figures only - no judgment calls). Reads
+JSON from stdin or a file path argument, prints markdown to stdout.
 
 This exists so the LLM-driven daily-analysis task never hand-transcribes
 numbers out of the JSON into prose/tables - every figure in these sections is
@@ -10,9 +11,15 @@ rule in AGENT_NOTES.md. The task still writes its own Executive Summary and
 the Movers "Context" research (using the Movers table's Ticker column as the
 targeted-WebSearch list), and appends them around this output.
 
-CLI entry point (stdin/argv handling) lives in the root-level render_report.py
-wrapper, not here - this module only exposes render(data, config).
+Usage: python3 -m pipeline.analysis | python3 -m pipeline.report
+The MCP server's render_report tool calls render(data, config) directly,
+bypassing this CLI-only main() (it already has the dict, not stdin JSON).
 """
+
+import json
+import sys
+
+from .config import load_config
 
 def money(x):
     return f"-€{-x:,.2f}" if x < 0 else f"€{x:,.2f}"
@@ -173,3 +180,11 @@ def render(data, config):
         render_caveats(data),
     ]
     return "\n\n---\n\n".join(s for s in sections if s)
+
+def main():
+    raw = open(sys.argv[1]) if len(sys.argv) > 1 else sys.stdin
+    data = json.load(raw)
+    return render(data, load_config())
+
+if __name__ == "__main__":
+    print(main())

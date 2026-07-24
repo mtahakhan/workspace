@@ -11,11 +11,12 @@ ad-hoc chat) is `INVESTMENT_FRAMEWORK.md` - not part of this diagram since it
 doesn't read or write any pipeline file.
 
 **Legend:** cylinders = persisted data files, rectangles = deterministic
-scripts (no LLM involvement), hexagons = scheduled tasks (LLM-in-the-loop
-wrapper around a deterministic script). Dotted edges = rare/one-off, not part
-of the regular cycle.
+`pipeline/` modules (no LLM involvement), hexagons = scheduled tasks
+(LLM-in-the-loop wrapper around a deterministic module). Dotted edges =
+rare/one-off, not part of the regular cycle.
 
-Every rectangle below can also be invoked as a typed MCP tool via
+Every rectangle below is a `python3 -m pipeline.<name>`-runnable module (see
+`QUICKSTART.md`) and can also be invoked as a typed MCP tool via
 `mcp/server.py` (same function, same output, no separate implementation) -
 that's the invocation path the `portfolio` skill and scheduled tasks use.
 See `AGENT_NOTES.md`'s pipeline components table for the tool-name mapping.
@@ -25,7 +26,7 @@ transport, so it isn't redrawn for this.
 All data-file paths below are relative to `portfolio/data/`, except
 `transactions.csv` which lives in `data/manual/` specifically (the one file
 with no automated source) and `config.json` which stays at the `portfolio/`
-root alongside the scripts.
+root, not under `pipeline/`.
 
 ```mermaid
 flowchart TD
@@ -35,9 +36,9 @@ flowchart TD
         TMAP[("data/ticker_map.csv<br/>ISIN, Ticker, Company, Sector<br/>shared / committed")]:::data
         LOTS[("data/transaction_lots.csv<br/>FIFO open lots<br/>ISIN, Ticker, Shares, dates, cost")]:::data
 
-        CL1["compute_lots.py<br/>FIFO engine"]:::script
-        SCAFF["scaffold_metadata.py<br/>yfinance resolve<br/>(only if new ISIN)"]:::script
-        CL2["compute_lots.py<br/>(re-run)"]:::script
+        CL1["pipeline.lots<br/>FIFO engine"]:::script
+        SCAFF["pipeline.tickers<br/>yfinance resolve<br/>(only if new ISIN)"]:::script
+        CL2["pipeline.lots<br/>(re-run)"]:::script
 
         TXN --> CL1
         TMAP --> CL1
@@ -52,17 +53,17 @@ flowchart TD
     subgraph DAILY["② SCHEDULED - Claude Code tasks, daily"]
         direction TB
         PRICES[("data/price_history/{TICKER}.jsonl<br/>one file per ticker")]:::data
-        JSONOUT[("analyze_portfolio.py output<br/>value, gain/loss, XIRR,<br/>drawdown, movers, trend, caveats,<br/>notable/notify_reasons")]:::data
+        JSONOUT[("pipeline.analysis output<br/>value, gain/loss, XIRR,<br/>drawdown, movers, trend, caveats,<br/>notable/notify_reasons")]:::data
         HIST[("data/analysis_history.jsonl<br/>generated_at, total_value, xirr_pct<br/>one line per run")]:::data
-        MDOUT[("render_report.py output<br/>deterministic markdown sections")]:::data
+        MDOUT[("pipeline.report output<br/>deterministic markdown sections")]:::data
         REPORT[("data/daily-analysis/YYYY-MM-DD.md")]:::data
         NEWS[("data/news/{TICKER}/*.txt<br/>one file per meaningful source<br/>URL + fetched-at + method + text")]:::data
 
         CONFIG[("config.json<br/>thresholds + caveat/notify<br/>message templates")]:::data
 
-        FETCH["fetch_prices.py<br/>Finnhub / yfinance"]:::script
-        ANALYZE["analyze_portfolio.py<br/>incl. value-divergence check"]:::script
-        RENDER["render_report.py"]:::script
+        FETCH["pipeline.prices<br/>Finnhub / yfinance"]:::script
+        ANALYZE["pipeline.analysis<br/>incl. value-divergence check"]:::script
+        RENDER["pipeline.report"]:::script
 
         TASKFETCH{{"portfolio-price-fetch<br/>~07:11 Berlin<br/>LLM runs command, reports 1 line"}}:::task
         TASKANALYSIS{{"portfolio-daily-analysis<br/>~07:25 Berlin<br/>LLM web-searches ALL holdings in parallel<br/>(deeper context on flagged movers),<br/>writes Executive Summary + News Digest,<br/>never hand-transcribes a number"}}:::task
@@ -85,7 +86,7 @@ flowchart TD
         TASKANALYSIS -- "meaningful sources" --> NEWS
     end
 
-    BACKFILL["backfill_history.py<br/>one-off / rare, full history"]:::script
+    BACKFILL["pipeline.backfill<br/>one-off / rare, full history"]:::script
     LOTS -. seeds .-> BACKFILL
     BACKFILL -. rewrites .-> PRICES
 

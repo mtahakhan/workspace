@@ -48,7 +48,7 @@ that path. Tell them plainly: **this currently only parses Scalable Capital's
 export format** (semicolon-delimited, German decimal commas, columns:
 date;time;status;reference;description;assetType;type;isin;shares;price;amount;fee;tax;currency).
 If they're on a different broker, say so clearly and offer to look at
-`compute_lots.py`'s `load_transactions()` together to adapt it, rather than
+`pipeline/lots.py`'s `load_transactions()` together to adapt it, rather than
 silently guessing at their format.
 
 ## Step 4: Resolve tickers - run the script, DO NOT guess tickers yourself
@@ -62,16 +62,18 @@ Cameco/`CCJ` at $87) and picking London listings priced in GBp (pence, not
 pounds) that then required inventing currency-conversion code that didn't
 exist. None of that is hypothetical - it already happened once.
 
-Run these two commands, in order, exactly as written:
+Run these two commands, in order, exactly as written (from inside
+`portfolio/` - both are Python modules run with `-m`, not standalone scripts):
 
 ```
-python3 compute_lots.py
-python3 scaffold_metadata.py
+cd portfolio
+python3 -m pipeline.lots
+python3 -m pipeline.tickers
 ```
 
-- `compute_lots.py` prints which ISINs have an open position but no
+- `pipeline.lots` prints which ISINs have an open position but no
   `data/ticker_map.csv` row yet.
-- `scaffold_metadata.py` looks each one up via a real `yfinance` search (not a
+- `pipeline.tickers` looks each one up via a real `yfinance` search (not a
   guess), checks its actual currency and price, and APPENDS a proposed row to
   `data/ticker_map.csv` (a shared file - it never overwrites existing rows). It
   prints a review table like this:
@@ -100,15 +102,15 @@ file, all four columns, shared and committed) - ask the user what taxonomy
 they want (Technology, Healthcare, Commodities, etc; there's no fixed list,
 this one's just their preference).
 
-Re-run `python3 compute_lots.py` after all of this. It will now report two
+Re-run `python3 -m pipeline.lots` after all of this. It will now report two
 separate things if anything is still missing: ISINs with no `data/ticker_map.csv`
-row at all (re-run `scaffold_metadata.py`, or fix manually), and rows that
+row at all (re-run `python3 -m pipeline.tickers`, or fix manually), and rows that
 have a Ticker but a blank Sector (fill it in). Repeat until neither list has
 entries, and the printed position share counts look sane to the user.
 
 ## Step 5: Fetch prices and seed history
 
-Run `python3 fetch_prices.py` (live prices) then `python3 backfill_history.py`
+Run `python3 -m pipeline.prices` (live prices) then `python3 -m pipeline.backfill`
 (full historical backfill per ticker, needed for accurate drawdown/trend -
 takes a little longer, uses `period="max"` by default). Report any tickers
 that failed to resolve and work through them the same way as Step 4 (usually
@@ -117,7 +119,7 @@ the pipeline doesn't support - see README's "Supported currencies").
 
 ## Step 6: Verify the numbers
 
-Run `python3 analyze_portfolio.py` and show the user the resulting portfolio
+Run `python3 -m pipeline.analysis` and show the user the resulting portfolio
 value, gain/loss, and any entries in `caveats` or `stale_prices`. Confirm the
 total roughly matches what they'd expect before considering setup done - this
 is the same kind of sanity check that caught several real bugs during this

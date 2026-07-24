@@ -2,12 +2,14 @@
 """MCP server exposing the portfolio/pipeline package's functions as typed tools.
 
 Every tool below is a thin wrapper around the exact same function the
-matching CLI script (in portfolio/, e.g. compute_lots.py) uses - both import
-from the same pipeline/ package, so there is exactly one implementation of
-each computation (see PIPELINE.md / AGENT_NOTES.md's component table). This
-file adds no new computation, it only changes how the deterministic layer is
-invoked (a typed tool call instead of Bash + stdout/JSON parsing). The CLI
-scripts themselves remain fully usable standalone (see QUICKSTART.md).
+matching CLI entry point (`python3 -m pipeline.lots`, etc. - see
+QUICKSTART.md) uses - there is no separate wrapper script, both this server
+and the CLI import directly from the pipeline/ package, so there is exactly
+one implementation of each computation (see PIPELINE.md / AGENT_NOTES.md's
+component table). This file adds no new computation, it only changes how the
+deterministic layer is invoked (a typed tool call instead of Bash +
+stdout/JSON parsing). The CLI entry points remain fully usable standalone
+(see QUICKSTART.md).
 
 pipeline.lots / pipeline.tickers / pipeline.prices / pipeline.backfill's
 main() produce human-readable progress/review text as their actual product
