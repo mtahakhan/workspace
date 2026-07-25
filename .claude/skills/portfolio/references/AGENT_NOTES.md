@@ -70,12 +70,16 @@ it governs interpretation and opinions, not data mechanics.
    Holdings News Digest step). Deeper research (multi-query, iterative) still
    stays scoped to the flagged `movers` or an explicitly-invoked mode - see
    `INVESTMENT_FRAMEWORK.md`'s "Research scope".
-7. **Edit the source repo's `portfolio/tasks/*.md` to change scheduled-task
+7. **Edit this skill's own `references/tasks/*.md` to change scheduled-task
    behavior, not the schedule itself.** The schedule's prompt is just a
-   one-line pointer to that file - the real instructions live there, not in
-   this reference copy's own `tasks/*.md` (which is read-only documentation
-   of what they do - see SKILL.md's "Reading vs. editing"). If you don't
-   know the source repo's location, ask the user rather than guessing.
+   one-line pointer to the skill, which in turn points at this file - the
+   real instructions live here now, in the bundled reference copy itself
+   (not a separate source-repo file). Edit the repo's
+   `.claude/skills/portfolio/references/tasks/*.md`, then re-run
+   `bootstrap.sh` so the globally-deployed copy actually used at scheduled-task
+   runtime picks up the change - editing only the deployed
+   `~/.claude/skills/...` copy works too but drifts from the repo until the
+   next `bootstrap.sh` overwrites it.
 8. **Keep `PIPELINE.md`'s Mermaid diagram in sync.** Any change to
    a module's inputs/outputs, the run order, a data file, or a scheduled
    task - in this file's "Pipeline components" table, `README.md`'s "Data
@@ -213,9 +217,9 @@ lock:**
 | `portfolio-price-fetch` (~07:11 Berlin) | Calls `fetch_prices`, reports one line | Almost entirely deterministic - LLM just calls the tool and reports |
 | `portfolio-daily-analysis` (~07:25 Berlin) | Calls `analyze_portfolio` then `render_report`, WebSearches the flagged `movers` (deeper context) and all other holdings (one-line news digest) in a single parallel batch, writes an Executive Summary, and prepends it to the rendered markdown | Hybrid - every number/table comes untouched from `render_report`; LLM only adds the Executive Summary and news-research prose, never hand-transcribes a figure |
 
-Both tasks' real instructions live in the source repo's `portfolio/tasks/*.md`,
-not the schedule itself (this file's own `tasks/*.md` sibling is a read-only
-copy for reference - see SKILL.md's "Reading vs. editing").
+Both tasks' real instructions live in this skill's own `tasks/*.md` sibling
+(`references/tasks/*.md`), not the schedule itself - see SKILL.md's
+"Reading vs. editing".
 
 **Reference/instruction files (not executed):** `AGENT_NOTES.md` (this file),
 `README.md` (human+agent overview), `PIPELINE.md` (Mermaid diagram of the

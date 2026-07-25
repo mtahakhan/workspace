@@ -115,9 +115,11 @@ the `portfolio_mcp/` root since they're config/secrets, not data.
 
 **Scheduled orchestration:** two Claude Code scheduled tasks,
 `portfolio-price-fetch` and `portfolio-daily-analysis`, whose real
-instructions live in `portfolio/tasks/*.md` (the schedule itself is just a
-one-line pointer to the file - edit the file, not the schedule, to change
-behavior). The daily-analysis task is the only place that mixes deterministic
+instructions live in `.claude/skills/portfolio/references/tasks/*.md` (the
+schedule itself is just a one-line pointer to the skill, which in turn
+points at that file - edit the file, not the schedule, to change behavior;
+`bootstrap.sh` must be re-run afterward so the globally-deployed skill copy
+picks up the change). The daily-analysis task is the only place that mixes deterministic
 output with LLM work: it calls the MCP tools for every number, then
 researches news for all holdings in one parallel batch (never serially - a
 prior serial version timed out) and writes the Executive Summary, using

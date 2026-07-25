@@ -22,26 +22,33 @@ regardless of which project triggered this skill:
 - `references/INVESTMENT_FRAMEWORK.md` - **read before giving analysis/advice** (chat questions, Executive Summary, scoring, rebalancing) - modes, signals, portfolio/risk rules
 - `references/PIPELINE.md` - Mermaid diagram of the whole data flow
 - `references/BOOTSTRAP.md` - **follow this instead of everything else** if `upload_transactions` hasn't been called yet (fresh setup - no transaction data at all)
-- `references/tasks/*.md` - what the two daily scheduled tasks do (read-only
-  copies - see "Reading vs. editing" below if you need to *change* one)
+- `references/tasks/*.md` - what the two daily scheduled tasks do - **this is
+  the actual operational file the schedule follows**, not a read-only copy
+  (see "Reading vs. editing" below)
 
-These are copies of the source repo's `portfolio/*.md`, kept in sync by the
-repo's `make` targets (see that repo's `Makefile`) - never hand-edit anything
-under `references/` directly, and don't fork this content elsewhere either
-(see `AGENT_NOTES.md` rule 8 on keeping exactly one place to keep in sync -
-here, that place is the source repo, and `references/` is a generated copy
-of it).
+Most of these (`README.md`, `AGENT_NOTES.md`, `INVESTMENT_FRAMEWORK.md`,
+`PIPELINE.md`, `BOOTSTRAP.md`, `QUICKSTART.md`) are copies of the source
+repo's `portfolio/*.md`, kept in sync by re-running `bootstrap.sh` - never
+hand-edit those directly, and don't fork this content elsewhere either (see
+`AGENT_NOTES.md` rule 8 on keeping exactly one place to keep in sync). The
+exception is `references/tasks/*.md`: there is no separate source-repo copy
+of it any more - this bundled file *is* the source of truth for scheduled-task
+behavior (see below).
 
 ## Reading vs. editing
 
-Everything above is read-only reference material, safe to consult from any
-project. **Modifying the actual system - a pipeline module, `config.json`,
-or a scheduled task's instructions - always requires the source repo**,
-which is a specific fixed location on this machine, not something that
-travels with the skill. If you don't already know that path from earlier in
-the conversation, **ask the user** rather than guessing or searching for it -
-don't assume the current project is that repo just because this skill
-triggered.
+Most of the above is read-only reference material, safe to consult from any
+project. **Modifying the actual system - a pipeline module or `config.json` -
+always requires the source repo**, which is a specific fixed location on this
+machine, not something that travels with the skill. If you don't already know
+that path from earlier in the conversation, **ask the user** rather than
+guessing or searching for it - don't assume the current project is that repo
+just because this skill triggered.
+
+`references/tasks/*.md` is the one exception: it's edited in place, right
+here in the skill bundle (in the source repo at
+`.claude/skills/portfolio/references/tasks/*.md`, then re-deployed via
+`bootstrap.sh`) - see rule 7 below.
 
 ## Use the `portfolio` MCP tools for every deterministic step - never Bash, never guess
 
@@ -97,7 +104,8 @@ research news and write the Executive Summary yourself - see
 6. **Research news in one parallel batch, never a serial per-ticker loop** -
    a prior serial version timed out. Full-portfolio coverage is fine as long
    as it's dispatched in parallel.
-7. **Edit the source repo's `tasks/*.md` to change scheduled-task behavior,
-   never the schedule itself** - the schedule's prompt is just a pointer to
-   the file. Editing this skill's `references/tasks/*.md` copy does nothing
-   to actual task behavior - see "Reading vs. editing" above.
+7. **Edit this skill's own `references/tasks/*.md` to change scheduled-task
+   behavior, never the schedule itself** - the schedule's prompt is just a
+   pointer to the skill, which points at this file. Edit it in the source
+   repo (`.claude/skills/portfolio/references/tasks/*.md`) and re-run
+   `bootstrap.sh` to redeploy - see "Reading vs. editing" above.
