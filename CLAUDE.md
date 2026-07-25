@@ -1,54 +1,127 @@
-# Portfolio pipeline workspace
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 **Address the user as "Developer" in this project.**
 
-**First run?** If `portfolio/data/manual/transactions.csv` does not exist, this is a fresh
-clone with no personal data set up yet - stop and follow
-`portfolio/BOOTSTRAP.md` before doing anything else. Don't try to run any
-pipeline module or assume default/example data; there is none by design (see
-`.gitignore` - all personal data and secrets are excluded from this repo).
+## What this is
 
-This workspace holds one project: a portfolio price-tracking and analysis
-pipeline in `portfolio/`. It runs entirely on Claude Code scheduled tasks and
-a deterministic Python package (`portfolio/pipeline/`) - no external server,
-no other agent framework. The pipeline is also exposed as the `portfolio` MCP
-server (`portfolio/mcp/`) and a Claude Skill (`.claude/skills/portfolio/`) -
-see `portfolio/README.md`'s "Claude Skill / MCP server" section.
+One project: a portfolio price-tracking and analysis pipeline, packaged as a
+single MCP server (`portfolio/portfolio_mcp/`) registered **globally** via
+`bootstrap.sh` - not project-scoped. All computation is deterministic Python
+(`portfolio_mcp/pipeline/`, a subpackage of the server itself, not a sibling
+project); Claude's role is orchestration, news research, and prose - it
+never computes a number itself. The server is reached over HTTP
+(`streamable-http`, localhost-only) and is the only sanctioned way to invoke
+this pipeline day to day - see `.claude/skills/portfolio/references/AGENT_NOTES.md`'s "Deployment
+model" before assuming anything about paths, "the project," or how to run
+something.
 
-**Read `portfolio/AGENT_NOTES.md` before making ANY change to this pipeline.**
-It's the systematic, consolidated rule set - every non-obvious behavior, past
-bug, and design decision - written specifically so you never have to read the
-Python source to understand why something works the way it does. Code
-comments cover local line-level logic only; system-level rules live there.
+**First run?** If `upload_transactions` hasn't been called yet (no
+`portfolio_mcp/data/manual/transactions.csv`), this is a fresh setup with no
+personal data yet - stop and follow `.claude/skills/portfolio/references/BOOTSTRAP.md` before doing
+anything else. Don't assume default/example data; there is none by design
+(see `.gitignore` - all personal data and secrets are excluded from this repo).
 
-**Read `portfolio/README.md` first** for the full pipeline (data flow, file
-purposes, troubleshooting). The essentials (full detail + rationale in
-`AGENT_NOTES.md`):
+**Read `.claude/skills/portfolio/references/AGENT_NOTES.md` before making ANY change to the pipeline.**
+It's the consolidated rule set - every non-obvious behavior, past bug, and
+design decision - so you never have to reverse-engineer the "why" from
+source. Code comments cover local logic only; system-level rules live there.
 
-- `data/manual/transactions.csv` (raw broker export) is the only source of
-  truth for positions - there is no static holdings file. Everything else
-  (shares, cost basis, purchase dates) is derived from it via
-  `pipeline.lots`'s FIFO engine.
-- Tickers must be the real, exchange-specific symbol (e.g. `BAYN.DE`, `SAN.PA`,
-  `QBTS`), resolved via `pipeline.tickers` against the actual ISIN - never
-  guessed. `data/ticker_map.csv` (ISIN, Ticker, Company, Sector) is shared/committed
-  and append-only - a confirmed bug source when this rule was skipped once.
-- All prices are stored and computed in EUR. `data/price_history/{TICKER}.jsonl`'s
-  `price_eur` field is the one canonical value - never read a raw-currency
-  field directly. Supported currencies: EUR, USD, GBP, GBp only.
-- Two scheduled tasks run this daily: `portfolio-price-fetch` then
-  `portfolio-daily-analysis`, both via the `portfolio` MCP server's tools
-  (`fetch_prices`, `analyze_portfolio`, `render_report`, etc. - not Bash).
-  `pipeline.analysis` is the deterministic numeric layer - don't recompute its
-  numbers by hand; if one looks wrong, fix the module. Each task's real
-  instructions live in `portfolio/tasks/*.md`, not in the schedule itself (the
-  schedule's prompt is just a one-line pointer to the file) - edit the file,
-  not the schedule, to change task behavior.
-- When new trades happen: re-export `data/manual/transactions.csv`, run
-  `python3 -m pipeline.lots` (from inside `portfolio/`) to pick up the new
-  rows, resolve any new ISIN it reports via `python3 -m pipeline.tickers`,
-  then run `python3 -m pipeline.lots` again to pick up the resolved ticker -
-  nothing detects new trades on its own.
+## Commands
+
+**Setup / (re)deployment** - `bootstrap.sh` (repo root) does all of this,
+idempotently:
+```bash
+./bootstrap.sh
+```
+It creates `portfolio/portfolio_mcp/.venv` (needs Python >=3.10 - it
+searches python3.10 through python3.13), starts the server in the
+background (`portfolio_mcp/.server.pid`/`.server.log`), registers it with
+`claude mcp add --scope user --transport http`, and copies
+`.claude/skills/portfolio/` to `~/.claude/skills/portfolio/`. Re-run it any
+time (after a reboot, a `requirements.txt` change, or just to confirm
+everything's still wired up) - every step is skip-if-already-done except the
+MCP registration, which is always replaced cleanly.
+
+**Day to day**: everything goes through the `portfolio` MCP tools
+(`upload_transactions`, `compute_lots`, `resolve_tickers`, `fetch_prices`,
+`backfill_history`, `analyze_portfolio`, `render_report`) - never Bash, never
+a standalone script (there isn't one). See `.claude/skills/portfolio/references/AGENT_NOTES.md`'s
+pipeline components table for what each wraps.
+
+**Direct module invocation** (debugging only, not the primary interface):
+```bash
+cd portfolio
+portfolio_mcp/.venv/bin/python3 -m portfolio_mcp.pipeline.lots
+portfolio_mcp/.venv/bin/python3 -m portfolio_mcp.pipeline.analysis | portfolio_mcp/.venv/bin/python3 -m portfolio_mcp.pipeline.report
+```
+
+**No automated test suite.** Verify a change by calling the affected tool
+(or running its module directly) and inspecting the output; for anything
+touching `analyze_portfolio`/`render_report`, diff the JSON/markdown against
+a known-good run rather than eyeballing it - that's the pattern this
+codebase has actually been validated with throughout its history.
+
+## Architecture
+
+**One package, no code outside it - `portfolio/portfolio_mcp/`:**
+- `server.py` - FastMCP server, HTTP-only (`streamable-http`, bound to
+  `127.0.0.1`), one typed tool per pipeline step. Wraps every tool call in a
+  lock (`lock.py`, `fcntl.flock` on `data/.pipeline.lock`) since it's one
+  long-running process potentially reached by concurrent
+  sessions/projects - see "Deployment model" in `.claude/skills/portfolio/references/AGENT_NOTES.md` for why a
+  single global lock, not per-file locks.
+- `pipeline/` - the actual computation (`lots.py`, `tickers.py`,
+  `prices.py`, `backfill.py`, `analysis.py`, `report.py`, `config.py`,
+  `uploads.py`), nested inside the server package, not a sibling. Each
+  module still has its own `main()` and is runnable directly for debugging.
+- `paths.py` - single source of truth for every path (`PACKAGE_ROOT =
+  Path(__file__).resolve().parent`, then `DATA_DIR`/`CONFIG_FILE`/
+  `ENV_FILE`/`MANUAL_DIR` relative to that) - never cwd- or
+  project-relative, since there's no "current project" for a globally
+  registered server.
+- `data/` - internal default location for everything the pipeline reads or
+  writes; `data/manual/transactions.csv` arrives via the
+  `upload_transactions` tool (raw CSV text as an argument), not by anyone
+  placing a file there.
+
+Named `portfolio_mcp`, not `mcp`, so it never collides with the third-party
+`mcp` SDK package this server imports - don't rename it back.
+
+`.claude/skills/portfolio/SKILL.md` is a thin pointer (triggers on
+portfolio-related requests, lists the MCP tool mapping, restates
+`.claude/skills/portfolio/references/AGENT_NOTES.md`'s absolute rules) - it does not fork any of that content,
+and `bootstrap.sh` keeps a copy of it at `~/.claude/skills/portfolio/` in
+sync with whatever's checked in here (re-run `bootstrap.sh` after editing
+the skill).
+
+**Data flow (see `.claude/skills/portfolio/references/PIPELINE.md` for the full Mermaid diagram):**
+`upload_transactions` saves `data/manual/transactions.csv` (the one manual
+input, raw broker export) → `compute_lots` FIFOs it into
+`data/transaction_lots.csv` → any ISIN missing from `data/ticker_map.csv`
+gets resolved by `resolve_tickers` (real `yfinance` search, **never a
+guessed symbol** - a prior guess-based run got 7/7 wrong, see
+`.claude/skills/portfolio/references/AGENT_NOTES.md`) → `fetch_prices` appends today's price to
+`data/price_history/{TICKER}.jsonl` → `analyze_portfolio` computes
+value/gain/XIRR/drawdown/movers/trend into JSON (also appending to
+`data/analysis_history.jsonl` for its own run-over-run divergence check) →
+`render_report` renders that JSON into markdown tables, verbatim, so the LLM
+layer never hand-transcribes a figure.
+
+`data/` holds everything the pipeline reads or writes; `config.json` (all
+tunable thresholds and message templates) and `.env` (Finnhub key) stay at
+the `portfolio_mcp/` root since they're config/secrets, not data.
+
+**Scheduled orchestration:** two Claude Code scheduled tasks,
+`portfolio-price-fetch` and `portfolio-daily-analysis`, whose real
+instructions live in `portfolio/tasks/*.md` (the schedule itself is just a
+one-line pointer to the file - edit the file, not the schedule, to change
+behavior). The daily-analysis task is the only place that mixes deterministic
+output with LLM work: it calls the MCP tools for every number, then
+researches news for all holdings in one parallel batch (never serially - a
+prior serial version timed out) and writes the Executive Summary, using
+`.claude/skills/portfolio/references/INVESTMENT_FRAMEWORK.md` for framing/signal vocabulary.
 
 ## Memory for this project
 

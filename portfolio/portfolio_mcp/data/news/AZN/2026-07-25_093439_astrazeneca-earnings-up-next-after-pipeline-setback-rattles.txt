@@ -1,0 +1,9 @@
+Ticker: AZN
+Company: AstraZeneca
+Source URL: https://www.investing.com/news/earnings/astrazeneca-earnings-up-next-after-pipeline-setback-rattles-investors-93CH-4811970
+Title: AstraZeneca earnings up next after pipeline setback rattles investors
+Fetched At: 2026-07-25T09:34:39+02:00
+Fetch Method: WebSearch (query: "AstraZeneca AZN stock news earnings July 2026")
+Retrieved For: portfolio-daily-analysis (2026-07-25 run)
+
+AstraZeneca reports Q2 2026 results before market open on Monday, July 27, with a conference call at 6:45 AM ET. Analysts expect EPS of $2.50 (+14.7% YoY) on revenue of $15.31B (+5.9% YoY). Shares are down 6.5% over the past month (vs +0.3% for the S&P 500 composite) and carry a Zacks Rank #4 (Sell), suggesting possible near-term underperformance. Investors are watching management's response to a recent clinical trial failure that has cast doubt on the growth trajectory, plus oncology trends given the cancer franchise (Tagrisso, Imfinzi, Enhertu) grew 14% in 2025.

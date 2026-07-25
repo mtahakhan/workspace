@@ -1,46 +1,69 @@
 ---
 name: portfolio
-description: Use for anything about the user's Scalable Capital investment portfolio - checking holdings/value, running the daily price-fetch or analysis pipeline, questions about a specific held ticker, rebalancing, XIRR/performance, sector exposure, or giving buy/hold/trim/exit opinions. Also use when a new trade needs to be recorded, a new ISIN needs a ticker resolved, or a deterministic pipeline script errors and needs debugging.
+description: Use for anything about the user's Scalable Capital investment portfolio - checking holdings/value, running the daily price-fetch or analysis pipeline, questions about a specific held ticker, rebalancing, XIRR/performance, sector exposure, or giving buy/hold/trim/exit opinions. Also use when a new trade needs to be recorded (including uploading a fresh transactions export), a new ISIN needs a ticker resolved, or a deterministic pipeline module errors and needs debugging.
 ---
 
 # Portfolio pipeline
 
-`portfolio/` is a deterministic portfolio tracker + analysis pipeline (FIFO
-cost basis from real broker transactions, live/historical prices, XIRR,
-drawdown, sector concentration) plus an LLM-driven daily report on top of it.
-Full detail lives in the docs below - this file is a thin pointer + the rules
-that apply on every invocation, not a copy of that content (don't fork it -
-see `AGENT_NOTES.md` rule 8 on keeping exactly one copy of anything in sync).
+A deterministic portfolio tracker + analysis pipeline (FIFO cost basis from
+real broker transactions, live/historical prices, XIRR, drawdown, sector
+concentration) plus an LLM-driven daily report on top of it, reachable via
+the `portfolio` MCP server - registered globally, so these tools may show up
+in any project, not just one specific workspace. **They always operate on
+the same one portfolio's data regardless of which project you're in** - that
+is deliberate, not a bug (see `references/AGENT_NOTES.md`'s "Deployment model").
 
-**Read first, depending on what's being asked:**
-- `portfolio/README.md` - what the pipeline does, file map, troubleshooting
-- `portfolio/AGENT_NOTES.md` - **read before changing or debugging any script** - absolute rules, every past bug and why, config.json
-- `portfolio/INVESTMENT_FRAMEWORK.md` - **read before giving analysis/advice** (chat questions, Executive Summary, scoring, rebalancing) - modes, signals, portfolio/risk rules
-- `portfolio/PIPELINE.md` - Mermaid diagram of the whole data flow
-- `portfolio/BOOTSTRAP.md` - **follow this instead of everything else** if `portfolio/data/manual/transactions.csv` doesn't exist yet (fresh clone)
-- `portfolio/tasks/*.md` - the actual instructions for the two daily scheduled tasks
+**Read first, depending on what's being asked** - these are self-contained
+copies bundled with this skill (`references/`), not links back to wherever
+the source repo happens to be cloned, so they resolve the same way
+regardless of which project triggered this skill:
+- `references/README.md` - what the pipeline does, file map, troubleshooting
+- `references/AGENT_NOTES.md` - **read before debugging any pipeline module** - absolute rules, every past bug and why, the deployment/locking model, config.json
+- `references/INVESTMENT_FRAMEWORK.md` - **read before giving analysis/advice** (chat questions, Executive Summary, scoring, rebalancing) - modes, signals, portfolio/risk rules
+- `references/PIPELINE.md` - Mermaid diagram of the whole data flow
+- `references/BOOTSTRAP.md` - **follow this instead of everything else** if `upload_transactions` hasn't been called yet (fresh setup - no transaction data at all)
+- `references/tasks/*.md` - what the two daily scheduled tasks do (read-only
+  copies - see "Reading vs. editing" below if you need to *change* one)
 
-## Use the `portfolio` MCP server, not Bash, for every deterministic step
+These are copies of the source repo's `portfolio/*.md`, kept in sync by the
+repo's `make` targets (see that repo's `Makefile`) - never hand-edit anything
+under `references/` directly, and don't fork this content elsewhere either
+(see `AGENT_NOTES.md` rule 8 on keeping exactly one place to keep in sync -
+here, that place is the source repo, and `references/` is a generated copy
+of it).
+
+## Reading vs. editing
+
+Everything above is read-only reference material, safe to consult from any
+project. **Modifying the actual system - a pipeline module, `config.json`,
+or a scheduled task's instructions - always requires the source repo**,
+which is a specific fixed location on this machine, not something that
+travels with the skill. If you don't already know that path from earlier in
+the conversation, **ask the user** rather than guessing or searching for it -
+don't assume the current project is that repo just because this skill
+triggered.
+
+## Use the `portfolio` MCP tools for every deterministic step - never Bash, never guess
 
 | Need to... | Call this MCP tool | Wraps |
 |---|---|---|
-| Rebuild positions after a new trade | `compute_lots` | `pipeline.lots` |
-| Resolve a new ISIN to a real ticker | `resolve_tickers` | `pipeline.tickers` |
-| Fetch today's live prices | `fetch_prices` | `pipeline.prices` |
-| Backfill full price history (rare/one-off) | `backfill_history` | `pipeline.backfill` |
-| Compute portfolio value/gain/XIRR/movers/etc. | `analyze_portfolio` | `pipeline.analysis` |
-| Render that JSON as report markdown | `render_report` | `pipeline.report` |
+| Record a new/updated transaction history | `upload_transactions` | `pipeline/uploads.py` |
+| Rebuild positions after a new trade | `compute_lots` | `pipeline/lots.py` |
+| Resolve a new ISIN to a real ticker | `resolve_tickers` | `pipeline/tickers.py` |
+| Fetch today's live prices | `fetch_prices` | `pipeline/prices.py` |
+| Backfill full price history (rare/one-off) | `backfill_history` | `pipeline/backfill.py` |
+| Compute portfolio value/gain/XIRR/movers/etc. | `analyze_portfolio` | `pipeline/analysis.py` |
+| Render that JSON as report markdown | `render_report` | `pipeline/report.py` |
 
-These tools call the exact same functions the CLI (`python3 -m pipeline.X`,
-run from inside `portfolio/`) uses - same computation, same output, just
-typed instead of Bash+stdout parsing. The modules are still fully
-standalone-runnable (`portfolio/QUICKSTART.md`); the MCP server doesn't
-replace them, it's just how this skill should invoke them.
+These tools call the exact same functions direct module invocation would -
+same computation, same output, just typed and reachable over HTTP instead of
+Bash+stdout parsing. There is no other supported way to run this pipeline
+day to day; don't fall back to Bash if a tool call errors (see rule 3 below).
 
 Standard daily flow: `fetch_prices` → `analyze_portfolio` → `render_report`
 (pass `render_report` the exact dict `analyze_portfolio` returned) → then
 research news and write the Executive Summary yourself - see
-`portfolio/tasks/daily-analysis.md` for the full, current step-by-step.
+`references/tasks/daily-analysis.md` for the full, current step-by-step.
 
 ## Absolute rules (apply every time, not just when debugging)
 
@@ -52,20 +75,29 @@ research news and write the Executive Summary yourself - see
    `render_report` renders every table. If a number looks wrong, that's a bug
    to report (see rule 3), not something to override by reasoning over raw
    data.
-3. **Never modify a deterministic pipeline module** (`pipeline/lots.py`,
-   `pipeline/prices.py`, `pipeline/backfill.py`, `pipeline/analysis.py`,
-   `pipeline/tickers.py`, `pipeline/report.py`, `pipeline/config.py`,
-   `mcp/server.py`) **without confirming intent with the user first.** Default action on an
-   error: report what happened and 2-3 concrete options, then stop -
-   especially during an unattended scheduled-task run, where there's no one
-   to confirm with. `config.json` is the deliberate exception (a threshold
-   tweak is a config change, not a code change).
+3. **Never modify a deterministic pipeline module**
+   (`portfolio_mcp/pipeline/lots.py`, `prices.py`, `backfill.py`,
+   `analysis.py`, `tickers.py`, `report.py`, `config.py`, `uploads.py`, or
+   `portfolio_mcp/server.py`/`lock.py`/`paths.py`, all in the source repo -
+   see "Reading vs. editing" above) **without confirming intent with the
+   user first.** Default action on an error: report what happened and 2-3
+   concrete options, then stop - especially during an unattended
+   scheduled-task run, where there's no one to confirm with. `config.json`
+   is the deliberate exception (a threshold tweak is a config change, not a
+   code change).
 4. **Never write ad-hoc currency-conversion code.** Supported: EUR, USD, GBP,
    GBp. Anything else means the ticker/listing is wrong - resolve a different
    listing via `resolve_tickers`, don't add a new conversion path.
-5. **Never ask the user to paste an API key into chat.**
+5. **Never ask the user to paste an API key, or their transactions CSV,
+   directly into chat as prose.** For a new/updated transaction history,
+   call `upload_transactions` with the file content - that's what it's for,
+   and it keeps the raw data out of the transcript as much as a tool call
+   allows. For the Finnhub key, point them at `.env`/`.env.example` (in the
+   source repo) instead.
 6. **Research news in one parallel batch, never a serial per-ticker loop** -
    a prior serial version timed out. Full-portfolio coverage is fine as long
    as it's dispatched in parallel.
-7. Edit `portfolio/tasks/*.md` to change scheduled-task behavior, never the
-   schedule itself - the schedule's prompt is just a pointer to the file.
+7. **Edit the source repo's `tasks/*.md` to change scheduled-task behavior,
+   never the schedule itself** - the schedule's prompt is just a pointer to
+   the file. Editing this skill's `references/tasks/*.md` copy does nothing
+   to actual task behavior - see "Reading vs. editing" above.

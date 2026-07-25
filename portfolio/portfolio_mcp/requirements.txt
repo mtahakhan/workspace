@@ -1,0 +1,8 @@
+# The pipeline (portfolio_mcp/pipeline/) lives inside this same package, so
+# there's one venv for everything - server and pipeline share it. Needs
+# Python >=3.10 (for `mcp`); see bootstrap.sh, which picks whatever >=3.10
+# interpreter it finds.
+yfinance==1.2.0
+pandas==2.3.3
+requests==2.32.5
+mcp[cli]

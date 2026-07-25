@@ -1,11 +1,12 @@
 # Personal financial data and secrets - never commit these.
 # This project is designed to be cloned with none of this present; BOOTSTRAP.md
 # rebuilds it all from a user-provided transactions.csv on first run.
-portfolio/.env
-portfolio/data/manual/transactions.csv
-portfolio/data/transaction_lots.csv
-portfolio/data/price_history/*.jsonl
-portfolio/data/daily-analysis/*.md
+portfolio/portfolio_mcp/.env
+portfolio/portfolio_mcp/data/manual/transactions.csv
+portfolio/portfolio_mcp/data/manual/transactions.csv.bak
+portfolio/portfolio_mcp/data/transaction_lots.csv
+portfolio/portfolio_mcp/data/price_history/*.jsonl
+portfolio/portfolio_mcp/data/daily-analysis/*.md
 
 # NOTE: data/ticker_map.csv (ISIN, Ticker, Company, Sector) is deliberately NOT
 # listed here - it's a shared, committed, ever-growing lookup table, not
@@ -20,8 +21,13 @@ portfolio/data/daily-analysis/*.md
 .DS_Store
 **/.DS_Store
 
-# portfolio MCP server's venv (mcp/server.py needs Python >=3.10; system
-# python3 here is 3.9) - reproducible via `pip install -r portfolio/mcp/requirements.txt`
-portfolio/mcp/.venv/
+# portfolio MCP server's venv (needs Python >=3.10) - reproducible via
+# `pip install -r portfolio/portfolio_mcp/requirements.txt`, see bootstrap.sh
+portfolio/portfolio_mcp/.venv/
 __pycache__/
 **/__pycache__/
+
+# Server runtime state - process metadata, not source or data
+portfolio/portfolio_mcp/data/.pipeline.lock
+portfolio/portfolio_mcp/.server.pid
+portfolio/portfolio_mcp/.server.log

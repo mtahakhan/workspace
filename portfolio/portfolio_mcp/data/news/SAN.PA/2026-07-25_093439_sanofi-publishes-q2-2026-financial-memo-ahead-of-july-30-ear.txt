@@ -1,0 +1,9 @@
+Ticker: SAN.PA
+Company: Sanofi
+Source URL: https://pluang.com/en/news-feed/sanofi-rilis-dokumen-pra-tinjauan-laba-q2-2026
+Title: Sanofi publishes Q2 2026 financial memo ahead of July 30 earnings release
+Fetched At: 2026-07-25T09:34:39+02:00
+Fetch Method: WebSearch (query: "Sanofi SAN stock news earnings July 2026")
+Retrieved For: portfolio-daily-analysis (2026-07-25 run)
+
+Sanofi reports Q2 2026 results before market open Thursday, July 30; analysts expect EPS of $1.09 and revenue of $12.4453B. 52-week range is $40.89-52.68, market cap ~$106.17B, P/E 12.23, PEG 1.11, beta 0.34. In the prior quarter (Q1 2026), Sanofi significantly beat expectations with EPS of $2.17 (vs $1.79 forecast) and sales up 13.6%, supported by pharma launches and a recent acquisition; business EPS was up 14%. Analyst sentiment is mixed to improving - Weiss Ratings raised Sanofi from Sell to Hold in mid-May.
