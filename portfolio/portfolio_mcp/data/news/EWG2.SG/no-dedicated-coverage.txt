@@ -1,8 +1,0 @@
-Ticker: EWG2.SG
-Company: Boerse Stuttgart EUWAX Gold II
-Period: N/A (passive fund - no dedicated news coverage)
-Compiled At: 2026-07-24T19:44:01.232883+02:00
-Method: N/A
-Retrieved For: monthly-recap historical backfill (2026-07-24 research)
-
-EWG2.SG (Boerse Stuttgart EUWAX Gold II) is a passive ETF/ETC, not an operating company - it has no dedicated news coverage in any source. Confirmed during 2026-07-24 news-pipeline research: Finnhub, yfinance, and WebSearch monthly-retrospective queries all returned either nothing or generic commodity/index price-level trivia, never fund-specific news. What actually exists for this position is underlying-commodity or underlying-index market context (oil, gold, silver, the tech/semis sector) - not something worth a per-month recap file for the fund itself. Skipped from the monthly-recap historical backfill for this reason; the daily-analysis task's Holdings News Digest still gives it a lightweight one-line note each day.

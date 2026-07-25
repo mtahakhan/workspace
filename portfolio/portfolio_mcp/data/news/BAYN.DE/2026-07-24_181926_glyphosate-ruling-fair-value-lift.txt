@@ -1,9 +1,0 @@
-Ticker: BAYN.DE
-Company: Bayer
-Source URL: https://finance.yahoo.com/markets/stocks/articles/bayer-xtra-bayn-stock-sees-161016515.html
-Title: Bayer (XTRA:BAYN) Stock Sees Fair Value Lift As Analysts Reassess Litigation Risk
-Fetched At: 2026-07-24T18:19:26+02:00
-Fetch Method: WebSearch (query: "Bayer BAYN stock news July 2026")
-Retrieved For: portfolio-daily-analysis (2026-07-24 run)
-
-Deutsche Bank upgraded Bayer to Buy and lifted its price target to €60 from €45 following a Supreme Court ruling on glyphosate liability; DZ Bank also moved to Buy with a €51 target, citing a clearer litigation framework. Goldman Sachs, however, removed Bayer from its European Conviction List. A fair-value reassessment lifted the central valuation mark from €34.97 to €54.92 per share, reflecting contained-but-ongoing litigation risk and portfolio execution. Bayer also announced a strategic alliance with the University of Colorado Anschutz, UCHealth and Children's Hospital Colorado on drug development. Next earnings: August 4, 2026.

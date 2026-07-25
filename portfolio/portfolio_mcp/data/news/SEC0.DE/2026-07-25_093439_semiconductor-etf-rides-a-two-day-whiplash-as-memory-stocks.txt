@@ -1,9 +1,0 @@
-Ticker: SEC0.DE
-Company: iShares MSCI Global Semiconductors (Acc)
-Source URL: https://www.ad-hoc-news.de/boerse/news/ueberblick/semiconductor-etf-rides-a-two-day-whiplash-as-memory-stocks-and-tsmc/69839151
-Title: Semiconductor ETF Rides a Two-Day Whiplash as Memory Stocks and TSMC Pricing Power Collide
-Fetched At: 2026-07-25T09:34:39+02:00
-Fetch Method: WebSearch (query: "iShares MSCI Global Semiconductors ETF news July 2026")
-Retrieved For: portfolio-daily-analysis (2026-07-25 run)
-
-The underlying semiconductor ETF (SEMI, tracked in EUR as SEC0.DE) surged 5.54% then a further 1% in a sharp reversal from a stretch that had pushed it into technical bear-market territory (~20% below its June peak). The rally was powered by memory-chip makers; ASML rose ~3.3% on stronger H2 2026 gross-margin expectations (56%, long-term above 60%). Nvidia gained 2% on initial 'Vera Rubin' AI platform delivery news, though still ~12% below its all-time high. Intel jumped 8.6% ahead of its July 23 earnings after unveiling additional job cuts, seen by investors as a sign of renewed profitability focus. The fund returned 132.46% over the trailing year including dividends.

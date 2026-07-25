@@ -1,9 +1,0 @@
-Ticker: IREN
-Company: Iren
-Source URL: https://finance.yahoo.com/markets/stocks/articles/iren-just-collapsed-41-month-180536020.html
-Title: IREN Just Collapsed 41% in a Month: Is This Dead Money or an Abandoned Gem?
-Fetched At: 2026-07-24T18:19:26+02:00
-Fetch Method: WebSearch (query: "Iren Limited IREN stock news drop July 2026")
-Retrieved For: portfolio-daily-analysis (2026-07-24 run)
-
-IREN shares fell roughly 42% over 30 days, from $66.60 on June 2 to $38.83 by July 2, and continued sliding through mid-July (over -43% monthly at one point), driven by a sharp Bitcoin decline below $60,000, broader AI-spending concerns hitting Nasdaq/semiconductor names, a fiscal Q3 revenue miss ($144.8M vs. consensus), a $2B convertible notes offering, and tabled Oklahoma tax incentives. Meta's reported plans for a commercial cloud infrastructure business added competitive pressure. Shares later attempted a recovery (+9% premarket on one session) after IREN raised its 2026 AI Cloud annualized run-rate revenue target on new multi-year cloud contracts.

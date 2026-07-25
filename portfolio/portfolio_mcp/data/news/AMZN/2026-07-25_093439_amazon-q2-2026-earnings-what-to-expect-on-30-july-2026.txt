@@ -1,9 +1,0 @@
-Ticker: AMZN
-Company: Amazon.com
-Source URL: https://www.financecalendar.com/event/amzn-earnings-july-2026/
-Title: Amazon Q2 2026 Earnings: What to Expect on 30 July 2026
-Fetched At: 2026-07-25T09:34:39+02:00
-Fetch Method: WebSearch (query: "Amazon AMZN stock news earnings July 2026")
-Retrieved For: portfolio-daily-analysis (2026-07-25 run)
-
-Amazon reports Q2 2026 results on July 30 after market close. Analysts expect EPS of $1.82 (vs $1.68 a year ago) and revenue up 17.3% to $196.71B. Amazon is launching a $25B bond sale to fund AI infrastructure ahead of earnings; 2026 capex is tracking toward roughly $200B, mostly for data centers, chips and cloud infrastructure. Wall Street rates the stock Strong Buy (45 Buys, 1 Hold) with an average price target of $318.98 (~29% upside). Key things to watch: Prime Day falling into Q2, continued AWS acceleration, and the advertising business.

@@ -1,9 +1,0 @@
-Ticker: IBM
-Company: IBM
-Period: 2026-01
-Compiled At: 2026-07-24T19:54:23.035870+02:00
-Method: WebSearch retrospective query (monthly recap)
-Sources:
-Retrieved For: monthly-recap historical backfill
-
-IBM shares fell sharply from a mid-January swing high of $319.57 to $220.62 by mid-February amid broader macroeconomic instability (the specific catalyst wasn't identified in available results - flagged as price action to note, not a confirmed company-specific event).

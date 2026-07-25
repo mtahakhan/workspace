@@ -1,33 +1,31 @@
 # Personal financial data and secrets - never commit these.
-# This project is designed to be cloned with none of this present; BOOTSTRAP.md
-# rebuilds it all from a user-provided transactions.csv on first run.
-portfolio/portfolio_mcp/.env
-portfolio/portfolio_mcp/data/manual/transactions.csv
-portfolio/portfolio_mcp/data/manual/transactions.csv.bak
-portfolio/portfolio_mcp/data/transaction_lots.csv
-portfolio/portfolio_mcp/data/price_history/*.jsonl
-portfolio/portfolio_mcp/data/daily-analysis/*.md
+# This project is designed to be cloned with none of this present;
+# skills/portfolio/references/BOOTSTRAP.md rebuilds it all from a
+# user-provided transactions.csv on first run.
+mcp_servers/portfolio_tools/.env
+mcp_servers/portfolio_tools/data/manual/transactions.csv
+mcp_servers/portfolio_tools/data/manual/transactions.csv.bak
+mcp_servers/portfolio_tools/data/transaction_lots.csv
+mcp_servers/portfolio_tools/data/price_history/*.jsonl
+mcp_servers/portfolio_tools/data/daily-analysis/*.md
+mcp_servers/portfolio_tools/data/analysis_history.jsonl
+mcp_servers/portfolio_tools/data/news/**/*.txt
 
 # NOTE: data/ticker_map.csv (ISIN, Ticker, Company, Sector) is deliberately NOT
 # listed here - it's a shared, committed, ever-growing lookup table, not
 # personal data. Don't add it back to this file.
-
-# Personal Claude memory (naming preferences, migration history tied to this
-# specific setup) - the generic/reusable parts already live in CLAUDE.md and
-# portfolio/README.md, which ARE meant to be public.
-.claude/memory/
 
 # OS cruft
 .DS_Store
 **/.DS_Store
 
 # portfolio MCP server's venv (needs Python >=3.10) - reproducible via
-# `pip install -r portfolio/portfolio_mcp/requirements.txt`, see bootstrap.sh
-portfolio/portfolio_mcp/.venv/
+# `pip install -r mcp_servers/portfolio_tools/requirements.txt`, see bootstrap.sh
+mcp_servers/portfolio_tools/.venv/
 __pycache__/
 **/__pycache__/
 
 # Server runtime state - process metadata, not source or data
-portfolio/portfolio_mcp/data/.pipeline.lock
-portfolio/portfolio_mcp/.server.pid
-portfolio/portfolio_mcp/.server.log
+mcp_servers/portfolio_tools/data/.pipeline.lock
+mcp_servers/portfolio_tools/.server.pid
+mcp_servers/portfolio_tools/.server.log

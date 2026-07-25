@@ -1,9 +1,0 @@
-Ticker: IQQH.DE
-Company: iShares Global Clean Energy Transition (Dist)
-Source URL: https://www.ainvest.com/news/ishares-global-clean-energy-etf-icln-capture-2026-growth-wave-2601/
-Title: Can the iShares Global Clean Energy ETF (ICLN) Capture 2026's Growth Wave?
-Fetched At: 2026-07-25T09:34:39+02:00
-Fetch Method: WebSearch (query: "iShares Global Clean Energy Transition ETF news July 2026")
-Retrieved For: portfolio-daily-analysis (2026-07-25 run)
-
-No distinct July 2026 company/fund-specific news was found for this ETF beyond routine holdings/factsheet updates (MSCI ESG data as of July 17, holdings as of June 30). Broader context from earlier 2026 reporting: the related iShares Global Clean Energy ETF (ICLN) returned 47% in 2025, with alignment to 2026 growth drivers (policy mandates, global adoption, AI power demand) suggesting the clean-energy rally may still be in early stages.

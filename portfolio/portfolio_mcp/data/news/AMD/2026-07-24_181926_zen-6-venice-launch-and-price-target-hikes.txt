@@ -1,9 +1,0 @@
-Ticker: AMD
-Company: Advanced Micro Devices
-Source URL: https://www.tradingkey.com/analysis/stocks/us-stocks/262025935-amd-stock-forecast-july-2026-zen-6-venice-advancing-ai-helios-tradingkey
-Title: AMD (AMD) Stock Price Forecast: Zen 6 Venice Launches July 22, Helios vs Nvidia Vera Rubin; Is $584 Next?
-Fetched At: 2026-07-24T18:19:26+02:00
-Fetch Method: WebSearch (query: "AMD stock news July 2026")
-Retrieved For: portfolio-daily-analysis (2026-07-24 run)
-
-AMD shares have soared 131% in H1 2026, though momentum weakened over the past month as the stock dropped nearly 5% amid a broader semiconductor sell-off. Goldman Sachs maintained a Buy rating and raised its price target from $450 to $640; Rosenblatt raised to $655 from $490; UBS raised to $700 from $670. AMD's July 22-23 Advancing AI conference featured the launch of 2nm Zen 6 "Venice" server CPUs and updates on the Helios rack-scale platform. Microsoft announced it will use AMD's upcoming Helios rackscale AI platform to power Azure workloads. Wall Street expects Q2 2026 EPS to climb 400% y/y to $1.35; Q2 earnings land August 4, 2026.

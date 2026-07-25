@@ -1,9 +1,0 @@
-Ticker: IBM
-Company: IBM
-Source URL: https://www.cnbc.com/2026/07/22/ibm-q2-earnings-report-2026.html
-Title: IBM Q2 earnings report 2026
-Fetched At: 2026-07-25T09:34:39+02:00
-Fetch Method: WebSearch (query: "IBM stock news July 2026")
-Retrieved For: portfolio-daily-analysis (2026-07-25 run)
-
-IBM's formal Q2 2026 report (released July 22) confirmed the earlier profit-warning miss and a lowered FY26 outlook, following the July 14 record ~25% single-day stock crash triggered by the surprise pre-announcement.

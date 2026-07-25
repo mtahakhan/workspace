@@ -1,9 +1,0 @@
-Ticker: MSFT
-Company: Microsoft
-Source URL: https://www.forbes.com/sites/investor-hub/article/microsoft-msft-stock-outlook-2026/
-Title: Microsoft (MSFT) Stock Outlook for 2026 | July Edition
-Fetched At: 2026-07-24T18:19:26+02:00
-Fetch Method: WebSearch (query: "Microsoft MSFT stock news July 2026")
-Retrieved For: portfolio-daily-analysis (2026-07-24 run)
-
-Microsoft is down roughly 18-20% YTD as of late July, the clear laggard among the "Magnificent Seven" versus the S&P 500's +9%, on investor skepticism about its AI infrastructure spending (FY26 capex guidance raised to $190B, +61% y/y) despite solid underlying business momentum. On July 2, shares rose 1.6% after Microsoft announced a $2.50B investment in a new AI unit, Microsoft Frontier Co. Analyst sentiment stays overwhelmingly bullish (~97 analysts, mostly Strong Buy/Buy, average target $589-592). Q4 FY26 earnings on July 29 are seen by some as a potential turning point.

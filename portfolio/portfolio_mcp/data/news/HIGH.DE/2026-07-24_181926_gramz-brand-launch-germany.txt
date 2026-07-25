@@ -1,9 +1,0 @@
-Ticker: HIGH.DE
-Company: Cantourage Group
-Source URL: https://www.eqs-news.com/news/corporate/cantourage-launches-proprietary-medical-cannabis-brand-gramz-in-germany/66a42421-bb38-4740-b15d-a2a9cce76a63_en
-Title: Cantourage Launches Proprietary Medical Cannabis Brand gramz. in Germany
-Fetched At: 2026-07-24T18:19:26+02:00
-Fetch Method: WebSearch (query: "Cantourage Group stock news July 2026")
-Retrieved For: portfolio-daily-analysis (2026-07-24 run)
-
-Cantourage launched its proprietary medical cannabis brand "gramz." in Germany on July 15, 2026, alongside a Q1 2026 report showing significantly increased profitability. As of July 20, shares traded at €5.44 (52-week range €2.32-€6.86). The average 12-month analyst price target is €10.00, with 3 analysts rating it Strong Buy and none recommending sell. Next earnings: September 2, 2026.

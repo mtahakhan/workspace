@@ -1,9 +1,0 @@
-Ticker: MSFT
-Company: Microsoft
-Source URL: https://www.stocktitan.net/news/MSFT/microsoft-announces-quarterly-earnings-release-psph9cb4ty1d.html
-Title: Microsoft sets Q4 earnings release for July 29
-Fetched At: 2026-07-25T09:34:39+02:00
-Fetch Method: WebSearch (query: "Microsoft MSFT stock news earnings July 2026")
-Retrieved For: portfolio-daily-analysis (2026-07-25 run)
-
-Microsoft reports fiscal Q4 2026 results July 29, webcast at 2:30pm PT. Guidance calls for revenue of $86.7-87.8B (+13-15% YoY); consensus EPS estimate has slipped 0.2% over 30 days to $4.21. Capex is expected to exceed $40B for the quarter on continued AI-infrastructure investment. In the prior quarter (fiscal Q2 2026), Microsoft beat expectations with $81.3B revenue (+17% YoY) and adjusted EPS of $4.14. Analyst consensus remains overwhelmingly Strong Buy/Buy with average price targets of $589-592.

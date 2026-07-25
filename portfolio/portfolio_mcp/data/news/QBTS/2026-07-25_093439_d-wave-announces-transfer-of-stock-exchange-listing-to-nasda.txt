@@ -1,9 +1,0 @@
-Ticker: QBTS
-Company: D-Wave Quantum
-Source URL: https://www.businesswire.com/news/home/20260714481869/en/D-Wave-Announces-Transfer-of-Stock-Exchange-Listing-to-Nasdaq
-Title: D-Wave Announces Transfer of Stock Exchange Listing to Nasdaq
-Fetched At: 2026-07-25T09:34:39+02:00
-Fetch Method: WebSearch (query: "D-Wave Quantum QBTS stock news July 2026")
-Retrieved For: portfolio-daily-analysis (2026-07-25 run)
-
-D-Wave announced July 14 it will transfer its listing from NYSE to Nasdaq under the unchanged ticker QBTS - NYSE trading ended July 24, Nasdaq trading began July 27 with a Nasdaq Opening Bell ceremony. Separately, D-Wave shares are down 29.4% month-to-date in July (vs -1.4% for the Computer/Technology sector and +1.2% for the S&P 500), attributed to profit-taking after earlier gains, valuation concerns across quantum names, elevated Treasury yields, and higher-for-longer Fed rate signals - a technical/administrative listing change, not a fundamental red flag. Consensus estimates call for a Q2 loss of $0.08/share (an 85.5% YoY improvement); most recent analyst rating is Buy with a $40 price target.

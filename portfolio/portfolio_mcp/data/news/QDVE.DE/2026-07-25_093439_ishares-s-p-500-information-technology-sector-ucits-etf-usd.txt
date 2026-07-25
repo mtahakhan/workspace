@@ -1,9 +1,0 @@
-Ticker: QDVE.DE
-Company: iShares S&P 500 Information Technology Sector (Acc)
-Source URL: https://www.justetf.com/en/etf-profile.html?isin=IE00B3WJKG14
-Title: iShares S&P 500 Information Technology Sector UCITS ETF USD (Acc) | A142N1 | IE00B3WJKG14
-Fetched At: 2026-07-25T09:34:39+02:00
-Fetch Method: WebSearch (query: "iShares S&P 500 Information Technology Sector ETF QDVE news July 2026")
-Retrieved For: portfolio-daily-analysis (2026-07-25 run)
-
-No distinct July 2026 news or announcements were found for this ETF beyond routine fund factsheet data (TER 0.15% p.a., accumulating share class). General context: the fund tracks the S&P 500 Information Technology sector, so its performance this month has moved with the broader tech/semiconductor volatility affecting its large constituent holdings.

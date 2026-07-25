@@ -1,9 +1,0 @@
-Ticker: ARM
-Company: Arm Holdings ADR
-Source URL: https://www.benzinga.com/markets/tech/26/07/60497501/arm-stock-news-wall-street-sounds-alarm-on-stretched-valuation-ahead-of-july-earnings
-Title: ARM Stock News: Wall Street Sounds Alarm on Stretched Valuation Ahead of July Earnings
-Fetched At: 2026-07-25T09:34:39+02:00
-Fetch Method: WebSearch (query: "Arm Holdings ARM stock news earnings July 2026")
-Retrieved For: portfolio-daily-analysis (2026-07-25 run)
-
-Arm reports fiscal Q1 FY2027 results July 29 after market close; estimated EPS $0.36 (vs $0.35 a year ago) on revenue of $1.27B (vs $1.05B). The market has priced in an earnings-day move of +/-15.49%. ARM trades at a P/E of 340.9x, flagged as a stretched valuation. HSBC downgraded to Hold on July 14 while raising its price target to $315; Susquehanna reiterated Positive with a $320 target on July 21. Wall Street consensus remains Buy with an average target of $301.65. Data-center royalty revenue more than doubled YoY again, with Arm-based compute now holding roughly 50% share among top hyperscalers.

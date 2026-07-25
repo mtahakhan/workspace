@@ -1,9 +1,0 @@
-Ticker: AMZN
-Company: Amazon.com
-Period: 2025-11
-Compiled At: 2026-07-24T19:51:35.860372+02:00
-Method: WebSearch retrospective query (monthly recap)
-Sources:
-Retrieved For: monthly-recap historical backfill
-
-Amazon jumped ~9.6% on October 31 following blockbuster Q3 results, carrying momentum into a new record closing high near $254-258 in early November. The rally reversed hard through the rest of the month: shares fell ~12% from November 1, erasing 2025 gains, as investors questioned whether AI spending would generate returns fast enough to justify valuations amid broader risk-off sentiment on rate-cut uncertainty. AWS remained a bright spot, having re-accelerated to ~20% YoY revenue growth in Q3. Technically, AMZN slipped below its 50-day moving average toward the 200-day level.

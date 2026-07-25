@@ -1,9 +1,0 @@
-Ticker: SAN.PA
-Company: Sanofi
-Source URL: https://finance.yahoo.com/markets/stocks/articles/sanofi-enxtpa-san-stock-may-020733307.html
-Title: Sanofi (ENXTPA:SAN) Stock May Be Undervalued As Fresh Drug Approval News Emerges
-Fetched At: 2026-07-24T18:19:26+02:00
-Fetch Method: WebSearch (query: "Sanofi SAN stock news July 2026")
-Retrieved For: portfolio-daily-analysis (2026-07-24 run)
-
-Sanofi won FDA approval for its first anticancer therapy delivered via an on-body injector on July 13, 2026, and Nexviazyme delivered positive Phase 3 results in infantile-onset Pompe disease on July 7. The company announced a new executive committee to support its next strategic chapter on July 20. J.P. Morgan (July 22) and UBS (July 10) both maintained Hold ratings. Sanofi appears undervalued on a P/E basis versus peers and its modelled fair ratio. Full Q2 2026 results are due July 30, 2026.

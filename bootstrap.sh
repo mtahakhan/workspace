@@ -10,9 +10,12 @@
 #   3. Registers it with `claude mcp add --scope user` (HTTP transport) so
 #      it's available in every Claude Code session on this machine, in any
 #      project - not just this one
-#   4. Copies .claude/skills/portfolio/ (SKILL.md + references/) wholesale to
+#   4. Copies skills/portfolio/ (SKILL.md + references/) wholesale to
 #      ~/.claude/skills/portfolio/ - self-contained, no dependency on this
-#      repo's location surviving afterward
+#      repo's location surviving afterward. Deliberately NOT under .claude/
+#      in this repo, so Claude Code doesn't also auto-discover it as a
+#      project-scoped skill while developing here (see docs/ARCHITECTURE.md's
+#      "Deployment model").
 #
 # Safe to re-run: steps are skipped if already done, and the MCP
 # registration is replaced (not duplicated) each time.
@@ -79,7 +82,7 @@ claude mcp add --scope user --transport http portfolio "$SERVER_URL"
 echo "==> [4/4] Installing the portfolio skill globally"
 rm -rf "$HOME/.claude/skills/portfolio"
 mkdir -p "$HOME/.claude/skills/portfolio"
-cp -r "$REPO_DIR/.claude/skills/portfolio/." "$HOME/.claude/skills/portfolio/"
+cp -r "$REPO_DIR/skills/portfolio/." "$HOME/.claude/skills/portfolio/"
 
 echo ""
 echo "Done."

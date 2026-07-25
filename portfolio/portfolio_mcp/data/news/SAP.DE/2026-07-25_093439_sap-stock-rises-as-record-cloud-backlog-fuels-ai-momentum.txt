@@ -1,9 +1,0 @@
-Ticker: SAP.DE
-Company: SAP SE
-Source URL: https://timothysykes.com/news/sap-se-ads-sap-news-2026_07_24/
-Title: SAP Stock Rises As Record Cloud Backlog Fuels AI Momentum
-Fetched At: 2026-07-25T09:34:39+02:00
-Fetch Method: WebSearch (query: "SAP SE stock news July 2026")
-Retrieved For: portfolio-daily-analysis (2026-07-25 run)
-
-SAP published Q2/H1 2026 results on July 23: EPS EUR1.59 (vs EUR1.50 a year earlier), revenue EUR9.88B (vs EUR9.03B). Shares rose 7.18% initially and accelerated to +9.36% by July 24, driven by a record current cloud backlog of EUR22.9B (+27%) and cloud revenue growth of 22-24%, well ahead of large-cap software/European tech peers; management reaffirmed FY26 cloud revenue guidance of EUR25.8-26.2B with strong double-digit growth. This follows an internal memo on July 2 that froze nearly all non-AI recruitment, paused non-AI business travel and cut supplier spend - cost actions that had fueled margin/growth concerns and contributed to the stock being down ~32% YTD before this earnings-driven rebound.

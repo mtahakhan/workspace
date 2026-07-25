@@ -1,9 +1,0 @@
-Ticker: ARM
-Company: Arm Holdings ADR
-Source URL: https://www.sahmcapital.com/news/content/arm-stock-news-wall-street-sounds-alarm-on-stretched-valuation-ahead-of-july-earnings-2026-07-16
-Title: ARM Stock News: Wall Street Sounds Alarm on Stretched Valuation Ahead of July Earnings
-Fetched At: 2026-07-24T18:19:26+02:00
-Fetch Method: WebSearch (query: "Arm Holdings ARM stock news drop July 2026")
-Retrieved For: portfolio-daily-analysis (2026-07-24 run)
-
-Arm Holdings fell more than 7% on July 13 as investors sold high-valuation semiconductor/AI names in a broad risk-off session; shares had already dropped 6.58% on July 4 to $315.28. HSBC downgraded Arm to Hold from Buy (price forecast lifted to $315 from $255), citing the stock running well ahead of fundamentals and foundry capacity bottlenecks. At roughly 288x forward earnings, Arm trades far above Nvidia's multiple, leaving little room for error. Arm reports quarterly results July 29; Wall Street expects EPS of $0.36 vs $0.35 a year earlier, on revenue of $1.27B vs $1.05B.

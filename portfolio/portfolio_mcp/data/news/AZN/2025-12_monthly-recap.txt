@@ -1,8 +1,0 @@
-Ticker: AZN
-Company: AstraZeneca
-Period: 2025-12
-Compiled At: 2026-07-24T19:53:05.362122+02:00
-Method: WebSearch retrospective query (insufficient reliable results)
-Retrieved For: monthly-recap historical backfill
-
-No reliable, month-specific news found for this period - results explicitly stated limited December 2025-specific coverage, mostly 2026 content. Skipped per the monthly-recap backfill's reliability bar (see AGENT_NOTES.md).

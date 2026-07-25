@@ -1,9 +1,0 @@
-Ticker: AZN
-Company: AstraZeneca
-Source URL: https://www.timothysykes.com/news/astrazenecaplc-azn-news-2026_07_05/
-Title: AstraZeneca PLC Surges as EU Backs Key Cancer Drugs
-Fetched At: 2026-07-24T18:19:26+02:00
-Fetch Method: WebSearch (query: "AstraZeneca AZN stock news July 2026")
-Retrieved For: portfolio-daily-analysis (2026-07-24 run)
-
-The European Commission cleared Enhertu for previously treated HER2-positive metastatic solid tumors, expanding its use across multiple cancer types, and EU regulators issued a positive opinion for Datroway in first-line triple-negative breast cancer. Positive Phase III MULBERRY data for efzimfotase alfa in pediatric hypophosphatasia adds non-oncology pipeline depth. The stock has been volatile this month (+6.1% on July 2, then -5.7% on July 9). Morgan Stanley reaffirmed Buy; Deutsche Bank issued Sell; HSBC downgraded to Hold. Earnings due July 27, 2026.

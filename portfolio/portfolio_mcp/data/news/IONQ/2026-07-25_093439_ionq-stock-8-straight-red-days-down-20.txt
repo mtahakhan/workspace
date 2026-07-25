@@ -1,9 +1,0 @@
-Ticker: IONQ
-Company: IonQ
-Source URL: https://www.trefis.com/stock/ionq/articles/606818/ionq-stock-8-straight-red-days-down-20/2026-07-13
-Title: IonQ Stock: 8 Straight Red Days, Down 20%
-Fetched At: 2026-07-25T09:34:39+02:00
-Fetch Method: WebSearch (query: "IonQ stock news July 2026")
-Retrieved For: portfolio-daily-analysis (2026-07-25 run)
-
-IonQ fell 7.1% on July 7 and moved lower for 8 consecutive sessions, erasing ~$4.1B of market value (-20.5% cumulative) to roughly $16B, amid investor caution over stretched quantum-computing valuations and increased competition following IQM Quantum Computers' Nasdaq listing. Despite the share-price weakness, IonQ reported its 'biggest quarter in company history' with $64.7M revenue (+755% YoY) and raised full-year guidance, though it faces projected operating losses of $310-330M for FY26. Sector commentary describes quantum names' 'extreme price-to-sales multiples' as highly speculative.

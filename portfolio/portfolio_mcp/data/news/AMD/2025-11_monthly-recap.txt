@@ -1,9 +1,0 @@
-Ticker: AMD
-Company: Advanced Micro Devices
-Period: 2025-11
-Compiled At: 2026-07-24T19:51:35.860372+02:00
-Method: WebSearch retrospective query (monthly recap)
-Sources:
-Retrieved For: monthly-recap historical backfill
-
-AMD guided Q4 2025 revenue to ~$9.6B (+/-$300M), implying ~25% YoY growth. On November 3, 2025, Adeia Inc. filed patent infringement lawsuits against AMD in the U.S. District Court for the Western District of Texas. On November 14, EVP Mark Papermaster filed an Intent to Sell form for 17k shares (~$4.1M at recent prices). This followed the company's major AI infrastructure agreement with Anthropic (announced prior month) to deploy up to 2GW of Instinct MI450-series GPUs via Helios rack-scale systems.

@@ -1,8 +1,0 @@
-Ticker: SAN.PA
-Company: Sanofi
-Period: 2025-08
-Compiled At: 2026-07-24T19:47:34.352063+02:00
-Method: WebSearch retrospective query (insufficient reliable results)
-Retrieved For: monthly-recap historical backfill
-
-No reliable, month-specific news found for this period - results explicitly stated the specific August 2025 headlines weren't available in what was returned. Skipped per the monthly-recap backfill's reliability bar (see AGENT_NOTES.md).

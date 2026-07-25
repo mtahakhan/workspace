@@ -1,9 +1,0 @@
-Ticker: INTC
-Company: Intel Corp
-Source URL: https://www.tradingkey.com/analysis/stocks/us-stocks/262017058-intel-intc-stock-prediction-july-2026-hsbc-200-bubble-risk-tradingkey
-Title: Intel (INTC) Stock Price Prediction July 2026: Down 21% in 7 Days - HSBC Says $200, BofA Says Bubble
-Fetched At: 2026-07-25T09:34:39+02:00
-Fetch Method: WebSearch (query: "Intel INTC stock news July 2026")
-Retrieved For: portfolio-daily-analysis (2026-07-25 run)
-
-Intel stock dropped ~28% in July after strong earlier-year gains, falling 7.67% to $110.68 in one session and extending a 21% weekly slide, driven by reports the 18A foundry process may not reach profitable yields until 2026-2027, and by AMD taking the lead in quarterly data-center revenue for the first time. Q2 earnings (reported July 23) showed 25% revenue growth - the fastest in almost 15 years - with foundry sales of $5.8B (+31% YoY); guidance for the current quarter is $0.38 adjusted EPS on $15.8-16.8B revenue. Intel is boosting capex with a 'meaningful increase' planned for next year as it pushes into third-party foundry manufacturing, even as sector-wide valuation concerns (BofA AI-bubble commentary) weigh on the stock.

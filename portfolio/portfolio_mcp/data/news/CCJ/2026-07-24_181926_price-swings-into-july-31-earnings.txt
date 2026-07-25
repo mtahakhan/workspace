@@ -1,9 +1,0 @@
-Ticker: CCJ
-Company: Cameco
-Source URL: https://www.gurufocus.com/news/8970261/a-look-at-cameco-corp-ccj-after-45-gain-gf-value-6701-vs-price-8868
-Title: A Look at Cameco Corp (CCJ) After 4.5% Gain -- GF Value $67.01 vs Price $88.68
-Fetched At: 2026-07-24T18:19:26+02:00
-Fetch Method: WebSearch (query: "Cameco CCJ stock news July 2026")
-Retrieved For: portfolio-daily-analysis (2026-07-24 run)
-
-Cameco shares rose 4.5% on July 21 to $88.68, well above GuruFocus's $67.01 GF Value estimate, after a choppy month that included a -6.03% session on July 13. Barclays lowered its price target to $104 from $108 on July 15. Cameco reports Q2 results on July 31, 2026, with consensus expecting a roughly 49% y/y EPS decline; broader support may come from improving uranium market fundamentals ahead of that print.
