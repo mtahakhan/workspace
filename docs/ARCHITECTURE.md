@@ -70,7 +70,15 @@ mcp_servers/
       price_history/*.jsonl, analysis_history.jsonl, news/, daily-analysis/
     requirements.txt, .venv/     one venv for the whole package (needs Python >=3.10) -
                                 the ONLY interpreter ever used to run this code
-bootstrap.sh                 <- repo root - global registration
+bootstrap.sh                 <- repo root - full bootstrap orchestrator (delegates to scripts/)
+setup-env.sh                 <- interactive prompt to write the Finnhub API key to .env
+Makefile                     <- make bootstrap / make venv-setup / make server-start /
+                                make mcp-register / make skill-install / make setup-env
+scripts/
+  venv-setup.sh              <- step 1: create .venv + install deps
+  server-start.sh            <- step 2: start server in background
+  mcp-register.sh            <- step 3: claude mcp add --scope user
+  skill-install.sh           <- step 4: copy skills/portfolio/ to ~/.claude/skills/
 ```
 
 Named `portfolio_tools`, not `mcp`, specifically so it never collides with the

@@ -32,7 +32,10 @@ involved at all? See [`docs/QUICKSTART.md`](docs/QUICKSTART.md).
 | [`docs/AGENT_NOTES.md`](docs/AGENT_NOTES.md) | Rules and lessons learned, for anyone developing in this repo |
 | [`docs/SETUP.md`](docs/SETUP.md) | This README, expanded - full human setup walkthrough |
 | [`docs/QUICKSTART.md`](docs/QUICKSTART.md) | Running the pipeline manually, no Claude Code needed |
-| [`bootstrap.sh`](bootstrap.sh) | The one command that sets everything up, idempotently |
+| [`Makefile`](Makefile) | `make bootstrap` (all steps), plus individual targets per step and `make setup-env` |
+| [`bootstrap.sh`](bootstrap.sh) | Full bootstrap orchestrator - delegates to `scripts/` in order |
+| [`scripts/`](scripts/) | Individual bootstrap steps: `venv-setup.sh`, `server-start.sh`, `mcp-register.sh`, `skill-install.sh` |
+| [`setup-env.sh`](setup-env.sh) | Interactive prompt to write the Finnhub API key to `.env` |
 
 ## What it does
 

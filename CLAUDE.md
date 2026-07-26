@@ -40,20 +40,21 @@ won't auto-trigger in this repo.
 
 ## Commands
 
-**Setup / (re)deployment** - `bootstrap.sh` (repo root) does all of this,
-idempotently:
+**Setup / (re)deployment** - run the full bootstrap or individual steps via
+`make` (see [`Makefile`](Makefile)):
 ```bash
-./bootstrap.sh
+make bootstrap      # all four steps in order (idempotent, safe to re-run)
+make venv-setup     # step 1 only: create .venv + install deps
+make server-start   # step 2 only: start server in background
+make mcp-register   # step 3 only: register with claude (user scope, HTTP)
+make skill-install  # step 4 only: copy skills/portfolio/ to ~/.claude/skills/
+make setup-env      # interactive prompt to write the Finnhub API key to .env
 ```
-It creates `mcp_servers/portfolio_tools/.venv` (needs Python >=3.10 - it
-searches python3.10 through python3.13), starts the server in the
-background (`portfolio_tools/.server.pid`/`.server.log`), registers it with
-`claude mcp add --scope user --transport http`, and copies
-`skills/portfolio/` to `~/.claude/skills/portfolio/`. Re-run it any time
-(after a reboot, a `requirements.txt` change, or after editing anything
-under `skills/portfolio/`) - every step is skip-if-already-done except the
-MCP registration and the skill copy, which are always replaced cleanly. See
-[`docs/SETUP.md`](docs/SETUP.md) for the full human-facing walkthrough.
+`make bootstrap` orchestrates all four steps via `bootstrap.sh`, which
+delegates to the individual scripts in `scripts/`. Each step is
+skip-if-already-done except MCP registration and skill copy, which always
+replace cleanly. See [`docs/SETUP.md`](docs/SETUP.md) for the full
+human-facing walkthrough.
 
 **Day to day**: everything goes through the `portfolio` MCP tools
 (`upload_transactions`, `compute_lots`, `resolve_tickers`, `fetch_prices`,
@@ -63,7 +64,7 @@ tools table for what each wraps.
 
 **Direct module invocation** (debugging only, not the primary interface):
 ```bash
-cd portfolio
+cd mcp_servers
 portfolio_tools/.venv/bin/python3 -m portfolio_tools.pipeline.lots
 portfolio_tools/.venv/bin/python3 -m portfolio_tools.pipeline.analysis | portfolio_tools/.venv/bin/python3 -m portfolio_tools.pipeline.report
 ```

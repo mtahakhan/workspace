@@ -37,27 +37,23 @@ adapt it for a different broker.
   python3.10 through python3.13)
 - The `claude` CLI installed and on `PATH`
 
-## 1. Run `bootstrap.sh`
+## 1. Run `bootstrap.sh` (or `make bootstrap`)
 
 From the repo root:
 ```bash
-./bootstrap.sh
+make bootstrap
 ```
 This is the only setup command you need to run by hand, and it's safe to
 re-run any time (after a reboot, a `requirements.txt` change, or just to
-confirm everything's still wired up). It:
+confirm everything's still wired up). It runs four steps in order (each in
+its own script under `scripts/`) - you can also run any step individually:
 
-1. Creates `mcp_servers/portfolio_tools/.venv` and installs dependencies
-2. Starts the HTTP server in the background (`nohup` + PID file) if it's not
-   already running - this is **not** a login/boot service, so re-run this
-   script after a reboot or crash to bring it back up
-3. Registers the server with `claude mcp add --scope user --transport http`,
-   so it's available in every Claude Code session on the machine, in any
-   project
-4. Copies `skills/portfolio/` (the whole directory - `SKILL.md` +
-   `references/`) to `~/.claude/skills/portfolio/`, replacing whatever was
-   there - self-contained, no dependency on this repo's location surviving
-   afterward
+| Make target | What it does |
+|---|---|
+| `make venv-setup` | Creates `mcp_servers/portfolio_tools/.venv` (Python >=3.10) and installs dependencies |
+| `make server-start` | Starts the HTTP server in the background (`nohup` + PID file) - **not** a login/boot service, re-run after a reboot or crash |
+| `make mcp-register` | Registers with `claude mcp add --scope user --transport http`, available in every Claude Code session on the machine |
+| `make skill-install` | Copies `skills/portfolio/` to `~/.claude/skills/portfolio/`, replacing whatever was there - self-contained, no dependency on this repo's location surviving afterward |
 
 ## 2. Start a new Claude Code session
 
@@ -74,10 +70,11 @@ transaction export, and resolves any new tickers by calling the real
 
 1. Go to https://finnhub.io/register and sign up (free, no card required)
 2. Copy the API key from your dashboard
-3. Copy `mcp_servers/portfolio_tools/.env.example` to
-   `mcp_servers/portfolio_tools/.env` and replace the placeholder with your real
-   key yourself, in your editor - don't paste it into a Claude Code
-   conversation, since it would end up in the transcript
+3. Run `make setup-env` - it will prompt you for the key and write it to
+   `mcp_servers/portfolio_tools/.env` without echoing the full value to the
+   terminal. Or copy `.env.example` to `.env` and edit it yourself - just
+   don't paste the key into a Claude Code conversation (it would end up in
+   the transcript)
 
 The pipeline works fully without one - `yfinance` alone covers everything.
 Finnhub is just a faster/more-reliable primary source for plain US tickers
