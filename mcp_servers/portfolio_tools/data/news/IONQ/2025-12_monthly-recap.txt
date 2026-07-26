@@ -1,0 +1,10 @@
+Ticker: IONQ
+Company: IonQ
+Period: 2025-12
+Compiled At: 2026-07-24T19:53:05.362122+02:00
+Method: WebSearch retrospective query (monthly recap)
+Sources:
+- https://stockstotrade.com/news/ionq-inc-ionq-news-2025_12_26/
+Retrieved For: monthly-recap historical backfill
+
+IonQ shares fell 7.25% on December 26, 2025, part of a broader >35% pullback from October highs as investors digested dilution from the October equity offering and rotated out of high-risk tech names. Zacks Equity Research featured the stock on December 2 for its rapid price moves and heavy trading volume. IonQ and Einride announced a collaboration integrating quantum algorithms into fleet orchestration during the month. (Note: Q4/full-year 2025 revenue figures appearing in some search results are omitted here - IonQ's fiscal Q4 doesn't close until December 31, so those results couldn't actually have been reported within December; they belong to a later announcement.)

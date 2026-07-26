@@ -2,7 +2,7 @@
 
 This file is instructions for Claude, not the human user - follow it
 whenever `upload_transactions` hasn't been called yet (no
-`portfolio_mcp/data/manual/transactions.csv` present). Unlike a
+`portfolio_tools/data/manual/transactions.csv` present). Unlike a
 typical onboarding doc, this one stays around permanently - it's generic
 setup instructions, not personalized content, so future re-clones (by this
 user or anyone else) need it too. Each step below checks its own precondition
@@ -31,14 +31,14 @@ history, then a few quick questions about any new holdings.
 
 ## Step 2: API key
 
-Check if `portfolio_mcp/.env` exists. **Never ask the user to paste their API
+Check if `portfolio_tools/.env` exists. **Never ask the user to paste their API
 key into chat** - it would end up in the session transcript. Instead:
 
-1. If `portfolio_mcp/.env` doesn't exist, copy `portfolio_mcp/.env.example`
-   to `portfolio_mcp/.env` (the example file just has a placeholder, safe to
+1. If `portfolio_tools/.env` doesn't exist, copy `portfolio_tools/.env.example`
+   to `portfolio_tools/.env` (the example file just has a placeholder, safe to
    copy)
 2. Point the user at https://finnhub.io/register (free, no card required)
-   and ask them to open `portfolio_mcp/.env` themselves and replace the
+   and ask them to open `portfolio_tools/.env` themselves and replace the
    placeholder with their real key - wherever the server is actually running
    (a specific fixed location on this machine, not necessarily the current
    project - see "Reading vs. editing" in `../SKILL.md` if that's not obvious
@@ -47,7 +47,7 @@ key into chat** - it would end up in the session transcript. Instead:
    they'd rather skip this entirely - Finnhub is a fallback/speed improvement
    for US tickers, not a requirement
 4. To check whether they've filled it in, only check for the *absence* of the
-   placeholder text (e.g. `grep -q your_key_here portfolio_mcp/.env`) - don't
+   placeholder text (e.g. `grep -q your_key_here portfolio_tools/.env`) - don't
    read/print/echo the actual file contents back, so the real key never
    appears in your own output either
 
@@ -62,7 +62,7 @@ format** (semicolon-delimited, German decimal commas, columns:
 date;time;status;reference;description;assetType;type;isin;shares;price;amount;fee;tax;currency).
 `upload_transactions` checks the header and rejects anything that doesn't
 match this shape - if it does, and they're on a different broker, say so
-clearly and offer to look at `portfolio_mcp/pipeline/lots.py`'s
+clearly and offer to look at `portfolio_tools/pipeline/lots.py`'s
 `load_transactions()` together to adapt it, rather than silently guessing at
 their format.
 
@@ -99,8 +99,10 @@ For every line in that table:
    wrong listing - that's the point of showing you the price.)
 2. If a line has a `⚠` warning, it needs a manual fix in `data/ticker_map.csv`:
    open the file, replace that ticker with a better one, and verify the new
-   one with `python3 -c "import yfinance as yf; print(yf.Ticker('TICKER').fast_info)"`
-   before trusting it - check `currency` is one of EUR/USD/GBP/GBp.
+   one with the source repo's venv - never a system interpreter - e.g.
+   `mcp_servers/portfolio_tools/.venv/bin/python3 -c "import yfinance as yf; print(yf.Ticker('TICKER').fast_info)"`
+   run from the source repo root - before trusting it, check `currency` is
+   one of EUR/USD/GBP/GBp.
 3. If you are not fully sure a pick is right, ask the user to confirm before
    moving on - don't silently accept an uncertain pick.
 

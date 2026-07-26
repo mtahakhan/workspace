@@ -10,11 +10,11 @@ This is **not** a project-scoped tool. `bootstrap.sh` (repo root) registers
 the `portfolio` MCP server and the Claude Skill **globally**
 (`claude mcp add --scope user`, plus copying `skills/portfolio/` to
 `~/.claude/skills/portfolio/`) - the server is a single long-running HTTP
-process (`portfolio_mcp/server.py`, `mcp.run(transport="streamable-http")`,
+process (`portfolio_tools/server.py`, `mcp.run(transport="streamable-http")`,
 bound to `127.0.0.1` only) that every Claude Code session on the machine
 talks to, in every project, not just this repo. There is no
 `${CLAUDE_PROJECT_DIR}`-relative anything in this codebase - every path is
-computed from `portfolio_mcp/paths.py`'s `PACKAGE_ROOT =
+computed from `portfolio_tools/paths.py`'s `PACKAGE_ROOT =
 Path(__file__).resolve().parent`, i.e. relative to wherever this package's
 own source happens to live on disk, never from cwd or "the current project."
 **Concretely: if you're working in some unrelated project and the `portfolio`
@@ -22,8 +22,8 @@ MCP tools are available, they still operate on this one repo's data** - that
 is by design, not a bug.
 
 Because it's one shared server reachable from potentially-concurrent
-sessions/projects, `portfolio_mcp/server.py` wraps **every** tool call in a
-single `fcntl.flock`-based lock (`portfolio_mcp/lock.py`, `data/.pipeline.lock`)
+sessions/projects, `portfolio_tools/server.py` wraps **every** tool call in a
+single `fcntl.flock`-based lock (`portfolio_tools/lock.py`, `data/.pipeline.lock`)
 before it touches anything under `data/` - a single global lock beats
 per-file locks here because several tools (e.g. `compute_lots`) touch more
 than one file, and per-file locking would leave a gap between them.
@@ -32,7 +32,7 @@ There's no file-upload path assumed between whoever's talking to the server
 and wherever the server is running (could be a different machine entirely,
 in principle) - `transactions.csv` arrives via the `upload_transactions` tool
 (raw CSV text as a string argument), not by the user placing a file at a
-path. `portfolio_mcp/pipeline/uploads.py` validates the header against the
+path. `portfolio_tools/pipeline/uploads.py` validates the header against the
 expected Scalable Capital column set before saving (rejects garbage rather
 than silently accepting a wrong-format paste), and keeps one `.bak` of
 whatever was there before.
@@ -48,7 +48,7 @@ the global one.
 
 ## Code layout
 
-One package, no code outside it - `portfolio/portfolio_mcp/`. The pipeline
+One package, no code outside it - `mcp_servers/portfolio_tools/`. The pipeline
 is a subpackage of the server, not a sibling project:
 
 ```
@@ -57,8 +57,8 @@ skills/portfolio/           <- the Claude Skill source (see docs/AGENT_NOTES.md
                                 copies it to ~/.claude/skills/portfolio/
 docs/                        <- this directory: architecture, agent-dev rules,
                                 human setup/quickstart guides
-portfolio/
-  portfolio_mcp/             <- the whole distributable unit
+mcp_servers/
+  portfolio_tools/             <- the whole distributable unit
     server.py                    FastMCP server, HTTP-only, the locking wrapper
     lock.py                      fcntl.flock-based cross-request/cross-process lock
     paths.py                     PACKAGE_ROOT/DATA_DIR/CONFIG_FILE/ENV_FILE - single source of truth
@@ -68,20 +68,22 @@ portfolio/
     data/                        internal default location - see "Deployment model" above
       manual/transactions.csv, ticker_map.csv, transaction_lots.csv,
       price_history/*.jsonl, analysis_history.jsonl, news/, daily-analysis/
-    requirements.txt, .venv/     one venv for the whole package (needs Python >=3.10)
+    requirements.txt, .venv/     one venv for the whole package (needs Python >=3.10) -
+                                the ONLY interpreter ever used to run this code
 bootstrap.sh                 <- repo root - global registration
 ```
 
-Named `portfolio_mcp`, not `mcp`, specifically so it never collides with the
+Named `portfolio_tools`, not `mcp`, specifically so it never collides with the
 third-party `mcp` SDK package this server imports
 (`from mcp.server.fastmcp import FastMCP`) - a same-named local package would
 shadow or be shadowed by that import depending on `sys.path` order. Don't
 rename it back to `mcp`.
 
 Every pipeline module still has its own `if __name__ == "__main__":` and can
-be run directly (`portfolio_mcp/.venv/bin/python3 -m
-portfolio_mcp.pipeline.<name>`, from inside `portfolio/`) for local
-debugging - see [`QUICKSTART.md`](QUICKSTART.md). The sanctioned interface is
+be run directly (`portfolio_tools/.venv/bin/python3 -m
+portfolio_tools.pipeline.<name>`, from inside `mcp_servers/` - always through
+that venv's own interpreter, never a system Python) for local debugging - see
+[`QUICKSTART.md`](QUICKSTART.md). The sanctioned interface is
 the MCP tools over HTTP; don't design any new feature around direct module
 invocation being the primary path.
 

@@ -1,0 +1,9 @@
+Ticker: HIGH.DE
+Company: Cantourage Group
+Period: 2025-12
+Compiled At: 2026-07-24T19:53:05.362122+02:00
+Method: WebSearch retrospective query (monthly recap)
+Sources:
+Retrieved For: monthly-recap historical backfill
+
+On December 19, 2025, Cantourage signaled a stronger year ahead, with preliminary 2025 EBITDA already outpacing analyst expectations. From the first week of December, Cantourage, Cannabis House, and Together Pharma partnered to bring Ugandan medical cannabis (via Together Pharma's Glueberry OG cultivar) to Polish patients for the first time.

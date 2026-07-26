@@ -1,0 +1,9 @@
+Ticker: EWG2.SG
+Company: Boerse Stuttgart EUWAX Gold II
+Source URL: https://goldsilver.com/industry-news/article/gold-price-outlook-july-2026/
+Title: Gold Price Outlook July 2026: The Price Fell. Case Intact.
+Fetched At: 2026-07-25T09:34:39+02:00
+Fetch Method: WebSearch (query: "gold price news July 2026")
+Retrieved For: portfolio-daily-analysis (2026-07-25 run)
+
+Gold traded near $4,038-4,052/oz in the week of July 20-24, roughly 28% below January's all-time high of $5,595. The outlook rests on a tension between the 28% pullback (driven by hawkish Fed expectations) and unreversed structural drivers (central bank buying, fiscal expansion, reserve diversification). Markets await the next Fed meeting, widely expected to hold rates, though pricing still implies a meaningful chance of a September move. Gold discounts in India widened to a seven-week high on demand pullback while Chinese buying interest improved; prices dipped toward $4,030 on surging oil prices tied to Middle East tensions strengthening the case for tighter policy. JPMorgan still targets $6,300 by year-end 2026, while some other forecasters see prices drifting lower toward Q4.

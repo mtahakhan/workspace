@@ -1,0 +1,10 @@
+Ticker: DTE.DE
+Company: Deutsche Telekom
+Period: 2026-01
+Compiled At: 2026-07-24T19:54:23.035870+02:00
+Method: WebSearch retrospective query (monthly recap)
+Sources:
+- https://capital.com/en-int/market-updates/deutsche-telekom-stock-forecast-02-04-2026
+Retrieved For: monthly-recap historical backfill
+
+Deutsche Telekom commenced share repurchases on January 5, 2026 under the program mandated by the April 2025 AGM. Shares dipped to a late-January low near EUR26.57 before recovering on full-year 2025 results that beat core-profit forecasts, alongside 2026 adjusted-EBITDA guidance.

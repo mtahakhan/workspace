@@ -13,9 +13,10 @@ targeted-WebSearch list), and appends them around this output.
 
 Primary interface is the render_report MCP tool, which calls render(data,
 config) directly (it already has the dict, not stdin JSON) - main() below is
-only for direct debugging: `python3 -m portfolio_mcp.pipeline.analysis |
-python3 -m portfolio_mcp.pipeline.report` (from inside portfolio/, using
-portfolio_mcp/.venv's interpreter).
+only for direct debugging: `.venv/bin/python3 -m portfolio_tools.pipeline.analysis |
+.venv/bin/python3 -m portfolio_tools.pipeline.report` (from inside
+mcp_servers/portfolio_tools/, using this package's own venv - never a system
+interpreter).
 """
 
 import json

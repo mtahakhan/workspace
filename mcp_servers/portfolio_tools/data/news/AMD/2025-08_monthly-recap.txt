@@ -1,0 +1,11 @@
+Ticker: AMD
+Company: Advanced Micro Devices
+Period: 2025-08
+Compiled At: 2026-07-24T19:47:34.352063+02:00
+Method: WebSearch retrospective query (monthly recap)
+Sources:
+- https://finance.yahoo.com/quote/AMD/news/
+- https://www.marketbeat.com/instant-alerts/advanced-micro-devices-amd-expected-to-announce-earnings-on-tuesday-2025-01-28
+Retrieved For: monthly-recap historical backfill
+
+AMD reported Q2 2025 earnings on August 5, 2025: EPS of $0.48 missed the $0.54 consensus estimate, but quarterly revenue rose 31.7% YoY to $7.69B, beating the $7.41B consensus. The company guided Q3 2025 revenue to $8.4B. Despite the revenue beat, the stock fell on the EPS miss - closing August 5 at $174.31 (-1.40%), with extended-hours trading down a further -6.26% to $163.40.

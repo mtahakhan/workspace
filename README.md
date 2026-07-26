@@ -26,7 +26,7 @@ involved at all? See [`docs/QUICKSTART.md`](docs/QUICKSTART.md).
 
 | Path | What |
 |---|---|
-| [`portfolio/portfolio_mcp/`](portfolio/portfolio_mcp/) | The MCP server + deterministic pipeline (FIFO cost basis, prices, XIRR, drawdown, etc.) |
+| [`mcp_servers/portfolio_tools/`](mcp_servers/portfolio_tools/) | The MCP server + deterministic pipeline (FIFO cost basis, prices, XIRR, drawdown, etc.) |
 | [`skills/portfolio/`](skills/portfolio/SKILL.md) | The Claude Skill - self-contained, deployed globally by `bootstrap.sh` |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | How the system works - data flow, file map, MCP tools, methodology |
 | [`docs/AGENT_NOTES.md`](docs/AGENT_NOTES.md) | Rules and lessons learned, for anyone developing in this repo |

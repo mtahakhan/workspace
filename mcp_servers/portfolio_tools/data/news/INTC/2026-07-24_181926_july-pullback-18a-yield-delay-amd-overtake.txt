@@ -1,0 +1,9 @@
+Ticker: INTC
+Company: Intel Corp
+Source URL: https://www.fool.com/investing/2026/07/19/intel-stock-soared-about-278-in-the-first-half-of/
+Title: Intel Stock Soared About 278% in the First Half of 2026, Then Fell 10% in a Single Day. Buy the Dip or Run for the Hills?
+Fetched At: 2026-07-24T18:19:26+02:00
+Fetch Method: WebSearch (query: "Intel INTC stock news drop July 2026")
+Retrieved For: portfolio-daily-analysis (2026-07-24 run)
+
+After surging ~170-278% in H1 2026, Intel stock dropped roughly 28% in July, including a 21% drawdown over seven days (from ~$140.05 on June 30 to $110.32 on July 7) and further two-session losses. The selloff was driven by reports that the 18A foundry process won't reach profitable yields until late 2026 or 2027, AMD overtaking Intel in quarterly data-center revenue for the first time, and a sector-wide chip selloff triggered by a Bank of America AI-bubble note plus weak Samsung earnings. Q2 revenue growth of 25% was still the fastest in almost 15 years, but Intel has not revealed a major foundry customer.

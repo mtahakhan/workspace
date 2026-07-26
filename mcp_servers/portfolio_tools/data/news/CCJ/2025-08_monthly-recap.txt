@@ -1,0 +1,11 @@
+Ticker: CCJ
+Company: Cameco
+Period: 2025-08
+Compiled At: 2026-07-24T19:47:34.352063+02:00
+Method: WebSearch retrospective query (monthly recap)
+Sources:
+- https://stockinvest.us/news/CCJ
+- https://marketbeat.com/stocks/NYSE/CCJ/news
+Retrieved For: monthly-recap historical backfill
+
+Cameco closed August 22, 2025 at $74.83 (+4.76% that day). Multiple analyst actions followed: Canaccord Genuity raised its price target citing confidence in the earnings outlook, and National Bank raised its target to C$115 from C$110 on August 23. Institutional activity included Hartree Partners LP acquiring 52,413 shares and Credit Agricole reporting a $3.30M stake - overall a month of positive analyst sentiment and institutional interest in the uranium name.

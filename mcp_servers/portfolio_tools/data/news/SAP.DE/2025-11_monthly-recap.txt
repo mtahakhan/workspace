@@ -1,0 +1,10 @@
+Ticker: SAP.DE
+Company: SAP SE
+Period: 2025-11
+Compiled At: 2026-07-24T19:51:35.860372+02:00
+Method: WebSearch retrospective query (monthly recap)
+Sources:
+- https://ts2.tech/en/sap-se-stock-today-27-november-2025-eu-ai-cloud-launch-lawsuit-headlines-and-analyst-calls-under-the-spotlight/
+Retrieved For: monthly-recap historical backfill
+
+SAP unveiled its EU AI Cloud on November 27, 2025, framed as advancing European digital sovereignty. The stock was in a roughly 30% drawdown for the period, with some warning of year-end tax-loss-harvesting pressure, even as UBS and others maintained Buy ratings with high-EUR200s targets. On November 14, CFO Dominik Asam presented at the Morgan Stanley 25th European TMT Conference. The month also included an o9 Solutions trade-secret lawsuit and new customer wins (TCS, Toyota South Africa, UNESCO).

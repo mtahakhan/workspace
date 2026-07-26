@@ -1,0 +1,9 @@
+Ticker: QBTS
+Company: D-Wave Quantum
+Period: 2026-01
+Compiled At: 2026-07-24T19:54:23.035870+02:00
+Method: WebSearch retrospective query (monthly recap)
+Sources:
+Retrieved For: monthly-recap historical backfill
+
+D-Wave agreed to acquire Quantum Circuits, Inc. for $550M on January 6, 2026 ($300M in D-Wave stock plus $250M cash, subject to net-debt adjustment; expected to close late January) - positioning D-Wave as the only company with all three core technologies needed for scaled, error-corrected superconducting gate-model systems, targeting an initial gate-model system in 2026. January bookings alone exceeded all of fiscal 2025's bookings, boosted by a $20M system sale to Florida Atlantic University and a two-year $10M Fortune 100 QCaaS agreement.

@@ -92,9 +92,9 @@ research news and write the Executive Summary yourself - see
    to report (see rule 3), not something to override by reasoning over raw
    data.
 3. **Never modify a deterministic pipeline module**
-   (`portfolio_mcp/pipeline/lots.py`, `prices.py`, `backfill.py`,
+   (`portfolio_tools/pipeline/lots.py`, `prices.py`, `backfill.py`,
    `analysis.py`, `tickers.py`, `report.py`, `config.py`, `uploads.py`, or
-   `portfolio_mcp/server.py`/`lock.py`/`paths.py`, all in the source repo -
+   `portfolio_tools/server.py`/`lock.py`/`paths.py`, all in the source repo -
    see "Reading vs. editing" above) **without confirming intent with the
    user first.** Default action on an error: report what happened and 2-3
    concrete options, then stop - especially during an unattended

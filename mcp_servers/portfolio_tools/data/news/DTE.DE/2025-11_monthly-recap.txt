@@ -1,0 +1,9 @@
+Ticker: DTE.DE
+Company: Deutsche Telekom
+Period: 2025-11
+Compiled At: 2026-07-24T19:51:35.860372+02:00
+Method: WebSearch retrospective query (monthly recap)
+Sources:
+Retrieved For: monthly-recap historical backfill
+
+On November 13, 2025, Deutsche Telekom announced a EUR2,000M share repurchase program. The same day, coverage characterized the company as "so strong in the US, so weak elsewhere" - highlighting uneven performance across its geographic segments.

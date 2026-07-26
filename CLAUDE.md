@@ -7,9 +7,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## What this is
 
 One project: a portfolio price-tracking and analysis pipeline, packaged as a
-single MCP server (`portfolio/portfolio_mcp/`) registered **globally** via
+single MCP server (`mcp_servers/portfolio_tools/`) registered **globally** via
 `bootstrap.sh` - not project-scoped. All computation is deterministic Python
-(`portfolio_mcp/pipeline/`, a subpackage of the server itself); Claude's role
+(`portfolio_tools/pipeline/`, a subpackage of the server itself); Claude's role
 is orchestration, news research, and prose - it never computes a number
 itself. The server is reached over HTTP (`streamable-http`, localhost-only)
 and is the only sanctioned way to invoke this pipeline day to day.
@@ -25,7 +25,7 @@ editing:
 | Human setup | [`README.md`](README.md) / [`docs/SETUP.md`](docs/SETUP.md) / [`docs/QUICKSTART.md`](docs/QUICKSTART.md) | Cloning, running `bootstrap.sh`, getting a Finnhub key, or running the pipeline with no LLM at all. |
 
 **First run?** If `upload_transactions` hasn't been called yet (no
-`portfolio_mcp/data/manual/transactions.csv`), this is a fresh setup with no
+`portfolio_tools/data/manual/transactions.csv`), this is a fresh setup with no
 personal data yet - follow `skills/portfolio/references/BOOTSTRAP.md` (the
 same flow the skill uses when triggered fresh in any project). Don't assume
 default/example data; there is none by design (see `.gitignore`).
@@ -45,9 +45,9 @@ idempotently:
 ```bash
 ./bootstrap.sh
 ```
-It creates `portfolio/portfolio_mcp/.venv` (needs Python >=3.10 - it
+It creates `mcp_servers/portfolio_tools/.venv` (needs Python >=3.10 - it
 searches python3.10 through python3.13), starts the server in the
-background (`portfolio_mcp/.server.pid`/`.server.log`), registers it with
+background (`portfolio_tools/.server.pid`/`.server.log`), registers it with
 `claude mcp add --scope user --transport http`, and copies
 `skills/portfolio/` to `~/.claude/skills/portfolio/`. Re-run it any time
 (after a reboot, a `requirements.txt` change, or after editing anything
@@ -64,8 +64,8 @@ tools table for what each wraps.
 **Direct module invocation** (debugging only, not the primary interface):
 ```bash
 cd portfolio
-portfolio_mcp/.venv/bin/python3 -m portfolio_mcp.pipeline.lots
-portfolio_mcp/.venv/bin/python3 -m portfolio_mcp.pipeline.analysis | portfolio_mcp/.venv/bin/python3 -m portfolio_mcp.pipeline.report
+portfolio_tools/.venv/bin/python3 -m portfolio_tools.pipeline.lots
+portfolio_tools/.venv/bin/python3 -m portfolio_tools.pipeline.analysis | portfolio_tools/.venv/bin/python3 -m portfolio_tools.pipeline.report
 ```
 See [`docs/QUICKSTART.md`](docs/QUICKSTART.md) for the full manual workflow.
 
@@ -76,7 +76,7 @@ a known-good run rather than eyeballing it.
 
 ## Where things live
 
-**One package, no code outside it - `portfolio/portfolio_mcp/`:**
+**One package, no code outside it - `mcp_servers/portfolio_tools/`:**
 `server.py` (FastMCP, HTTP-only, wraps every tool in a lock), `pipeline/`
 (the deterministic computation - `lots.py`, `tickers.py`, `prices.py`,
 `backfill.py`, `analysis.py`, `report.py`, `config.py`, `uploads.py`),

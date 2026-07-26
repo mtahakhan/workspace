@@ -1,0 +1,9 @@
+Ticker: QBTS
+Company: D-Wave Quantum
+Source URL: https://www.foreignpolicyjournal.com/2026/07/17/d-wave-quantum-nyse-qbts-stock-price-drops-29-in-july-as-macro-headwinds-batter-quantum-sector/
+Title: D-Wave Quantum (NYSE: QBTS) Stock Price Drops 29% In July As Macro Headwinds Batter Quantum Sector
+Fetched At: 2026-07-24T18:19:26+02:00
+Fetch Method: WebSearch (query: "D-Wave Quantum QBTS stock news drop July 2026")
+Retrieved For: portfolio-daily-analysis (2026-07-24 run)
+
+D-Wave Quantum shares are down about 29-32% in July, attributed to profit-taking after earlier outsized gains, quantum-sector valuation concerns, and elevated Treasury yields/a higher-for-longer Fed stance pressuring speculative tech. On July 14, the company notified NYSE it will voluntarily withdraw its listing and transfer to Nasdaq, with NYSE trading ending after July 24 and Nasdaq trading starting July 27 (same ticker, QBTS). Analysts remain constructive on a rebound given upward earnings revisions and strong customer demand; consensus expects a Q2 loss of $0.08/share, an 85.5% y/y improvement.

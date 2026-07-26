@@ -6,10 +6,8 @@ mcp_servers/portfolio_tools/.env
 mcp_servers/portfolio_tools/data/manual/transactions.csv
 mcp_servers/portfolio_tools/data/manual/transactions.csv.bak
 mcp_servers/portfolio_tools/data/transaction_lots.csv
-mcp_servers/portfolio_tools/data/price_history/*.jsonl
 mcp_servers/portfolio_tools/data/daily-analysis/*.md
 mcp_servers/portfolio_tools/data/analysis_history.jsonl
-mcp_servers/portfolio_tools/data/news/**/*.txt
 
 # NOTE: data/ticker_map.csv (ISIN, Ticker, Company, Sector) is deliberately NOT
 # listed here - it's a shared, committed, ever-growing lookup table, not

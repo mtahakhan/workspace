@@ -1,0 +1,9 @@
+Ticker: ISLN.L
+Company: iShares Physical Silver ETC (Acc)
+Source URL: https://goldsilver.com/industry-news/article/silver-price-outlook-july-2026/
+Title: Silver Price Outlook July 2026: Two Catalysts, One Setup
+Fetched At: 2026-07-24T18:19:26+02:00
+Fetch Method: WebSearch (query: "silver price news July 2026")
+Retrieved For: portfolio-daily-analysis (2026-07-24 run)
+
+Silver rose to $58.54/oz on July 24, 2026 (+1.57% on the day), up about 53% y/y, though it fell toward $57 the prior Friday after escalating Middle East conflict and surging oil prices strengthened the case for tighter US monetary policy. High prices earlier in 2026 contributed to double-digit declines in some industrial-demand sectors. The Silver Institute's World Silver Survey 2026 confirmed a sixth consecutive annual supply deficit, at 46.3 million ounces, adding a structural bid beneath the metal.

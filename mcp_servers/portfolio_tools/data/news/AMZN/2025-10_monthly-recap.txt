@@ -1,0 +1,10 @@
+Ticker: AMZN
+Company: Amazon.com
+Period: 2025-10
+Compiled At: 2026-07-24T19:50:16.056603+02:00
+Method: WebSearch retrospective query (monthly recap)
+Sources:
+- https://finance.yahoo.com/news/amazon-com-amzn-announces-financial-150621934.html
+Retrieved For: monthly-recap historical backfill
+
+Amazon traded at $227.93 on October 27, 2025 (~21% above October 2024's close). The company announced a EUR1.4B ($1.6B) investment in its Dutch logistics operations during the month, and highlighted its robotics rollout as a potential $4B/year fulfilment-cost saver. On October 30, Amazon reported Q3 2025 results (quarter ended September 30): net sales +13% YoY to $180.2B, AWS revenue $33B (+20.2% YoY, a 270bps acceleration). The analyst consensus price target rose from $263.74 to $266.56 on the results.

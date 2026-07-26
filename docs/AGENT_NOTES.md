@@ -1,7 +1,7 @@
 # Agent notes - read this before touching any code in this repo
 
 This file is for an agent (or human) **developing in this repository** -
-modifying `portfolio_mcp/pipeline/*`, `server.py`, `config.json`, the skill
+modifying `portfolio_tools/pipeline/*`, `server.py`, `config.json`, the skill
 bundle, or the docs themselves. It is not the portfolio skill, and it does
 not get deployed anywhere - it stays in the source repo. If you're here to
 *use* the deployed pipeline (calling the MCP tools day to day, for this
@@ -25,9 +25,9 @@ workflow, and lessons already learned the hard way.
 ## Rules for developing in this repo
 
 1. **Never modify a deterministic pipeline module**
-   (`portfolio_mcp/pipeline/lots.py`, `prices.py`, `backfill.py`,
+   (`portfolio_tools/pipeline/lots.py`, `prices.py`, `backfill.py`,
    `analysis.py`, `tickers.py`, `report.py`, `config.py`, `uploads.py`, or
-   `portfolio_mcp/server.py`/`lock.py`/`paths.py`) **without first confirming
+   `portfolio_tools/server.py`/`lock.py`/`paths.py`) **without first confirming
    intent with the user.** If something looks wrong or errors, the default
    action is to **report it** - what happened, why it might be happening, and
    2-3 concrete options for how to debug or fix it - and stop there. Only

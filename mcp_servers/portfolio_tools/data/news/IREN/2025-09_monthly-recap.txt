@@ -1,0 +1,11 @@
+Ticker: IREN
+Company: Iren
+Period: 2025-09
+Compiled At: 2026-07-24T19:48:59.352226+02:00
+Method: WebSearch retrospective query (monthly recap)
+Sources:
+- https://www.stocktitan.net/overview/IREN/
+- https://www.sec.gov/Archives/edgar/data/1878848/000187884825000013/irenpressreleasesweetwat.htm
+Retrieved For: monthly-recap historical backfill
+
+By September 2025, IREN's AI Cloud fleet had grown to 23,000 Nvidia GPUs, with the company projecting over $500M in AI Cloud annualized revenue run-rate by Q1 2026. Bitcoin-mining capacity reached its mid-2025 target of 50 EH/s. Wall Street reaction was mixed: Bernstein's Gautam Chhugani raised his target to $75 and Roth Capital/MKM's Darren Aftahi to $82 (citing potential $2.7B revenue/$1.2B EBITDA by FY28 from the GPU buildout), while J.P. Morgan's Reggie Smith downgraded to underweight with a $24 target - reflecting the market's split view on IREN's pivot from mining to AI infrastructure.

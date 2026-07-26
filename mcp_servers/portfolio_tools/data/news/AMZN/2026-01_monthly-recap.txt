@@ -1,0 +1,8 @@
+Ticker: AMZN
+Company: Amazon.com
+Period: 2026-01
+Compiled At: 2026-07-24T19:54:23.035870+02:00
+Method: WebSearch retrospective query (insufficient reliable results)
+Retrieved For: monthly-recap historical backfill
+
+No reliable, month-specific news found for this period - results were generic valuation commentary with no specific dated events, and included at least one apparent wrong-year reference in the source data. Skipped per the monthly-recap backfill's reliability bar (see AGENT_NOTES.md).

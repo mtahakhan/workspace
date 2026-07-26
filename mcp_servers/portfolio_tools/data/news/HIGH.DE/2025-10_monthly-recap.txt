@@ -1,0 +1,10 @@
+Ticker: HIGH.DE
+Company: Cantourage Group
+Period: 2025-10
+Compiled At: 2026-07-24T19:50:16.056603+02:00
+Method: WebSearch retrospective query (monthly recap)
+Sources:
+- https://www.tradingview.com/news/eqs:520903317094b:0-q3-2025-cantourage-delivers-strong-operating-performance-in-a-challenging-regulatory-market-environment/
+Retrieved For: monthly-recap historical backfill
+
+Q3 2025 results (reported in October): quarterly revenue of ~EUR20.1M (vs. EUR13.2M in Q3 2024), bringing nine-month group revenue to ~EUR74.9M. CEO Philip Schetter described strong operating performance despite a challenging regulatory environment, with continued expansion in the UK and Poland and preparation to enter Spain and Italy. Preliminary full-year 2025 EBITDA was already tracking ahead of analyst expectations.

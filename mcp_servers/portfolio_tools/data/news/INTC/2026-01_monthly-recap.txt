@@ -1,0 +1,9 @@
+Ticker: INTC
+Company: Intel Corp
+Period: 2026-01
+Compiled At: 2026-07-24T19:54:23.035870+02:00
+Method: WebSearch retrospective query (monthly recap)
+Sources:
+Retrieved For: monthly-recap historical backfill
+
+Intel jumped to $43 on January 7, 2026, on enthusiasm around its CES 2026 presence, where it touted the Core Ultra Series 3 processors as the first compute platform built on Intel 18A ("the most advanced semiconductor process ever developed and manufactured in the US"). Analysts cautioned the rally reflected recovery optimism rather than a guaranteed sustained trend.

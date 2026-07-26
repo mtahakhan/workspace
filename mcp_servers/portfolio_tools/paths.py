@@ -11,7 +11,7 @@ is talking to it. See AGENT_NOTES.md rule 8 on keeping one copy of anything
 
 from pathlib import Path
 
-PACKAGE_ROOT = Path(__file__).resolve().parent   # portfolio_mcp/
+PACKAGE_ROOT = Path(__file__).resolve().parent   # portfolio_tools/
 DATA_DIR = PACKAGE_ROOT / "data"
 MANUAL_DIR = DATA_DIR / "manual"
 CONFIG_FILE = PACKAGE_ROOT / "config.json"

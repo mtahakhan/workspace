@@ -1,0 +1,9 @@
+Ticker: CCJ
+Company: Cameco
+Source URL: https://www.quiverquant.com/news/Why+Cameco+(CCJ)+Stock+Is+Up+Today
+Title: Why Cameco (CCJ) Stock Is Up Today
+Fetched At: 2026-07-25T09:34:39+02:00
+Fetch Method: WebSearch (query: "Cameco CCJ stock news July 2026")
+Retrieved For: portfolio-daily-analysis (2026-07-25 run)
+
+Cameco shares rose 4.5% on July 21 to $88.68, and are up further (+3.2%) on a rebound in sentiment after the company said its Cigar Lake uranium mine resumed production. Cameco announced July 14 that Cigar Lake restarted after a temporary suspension tied to processing issues at the McClean Lake mill; stockpiled-ore shipments resumed and the 2026 production outlook (17.5-18.0M lbs at 100%) was kept unchanged. Cameco reports earnings July 31; consensus expects EPS of $0.26, a 49% YoY decline. Forward P/E of 66.83 vs an industry average of 18.13 (premium valuation).

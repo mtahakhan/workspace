@@ -1,0 +1,9 @@
+Ticker: ARM
+Company: Arm Holdings ADR
+Period: 2025-12
+Compiled At: 2026-07-24T19:53:05.362122+02:00
+Method: WebSearch retrospective query (monthly recap)
+Sources:
+Retrieved For: monthly-recap historical backfill
+
+On December 5, 2025, Arm (majority-owned by SoftBank) signed an MOU with South Korea's Ministry of Trade, Industry, and Resources to establish a chip-design educational facility. Despite continued AI/data-center demand momentum, ARM shares were down 13% over the trailing year (vs. +36% for the semiconductor industry) as of mid-December, weighed down partly by an HSBC downgrade to Hold on foundry capacity-constraint concerns.

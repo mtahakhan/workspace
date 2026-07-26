@@ -1,0 +1,9 @@
+Ticker: IREN
+Company: Iren
+Source URL: https://www.fxleaders.com/news/2026/07/21/iren-stock-jumps-20-on-2-8-billion-ai-contract-haul-as-bulls-target-48/
+Title: IREN Stock Jumps 20% on $2.8 Billion AI Contract Haul as Bulls Target $48
+Fetched At: 2026-07-25T09:34:39+02:00
+Fetch Method: WebSearch (query: "Iren IREN stock news July 2026")
+Retrieved For: portfolio-daily-analysis (2026-07-25 run)
+
+IREN shares jumped as much as 20% after the AI-cloud firm raised its year-end annualized run-rate revenue (ARR) target to over $4B (from $3.7B), backed by $2.8B in new multi-year AI-developer cloud-service contracts (about 85% of the new ARR target already under contract). This follows an earlier two-part $5.5B Nvidia deal in May ($3.4B cloud services + up to $2.1B equity stake). IREN plans to deliver 480 MW of AI cloud capacity in 2026, rising to 1.2 GW in 2027, continuing its shift away from its Iris Energy Bitcoin-mining roots. Consensus price target raised to $29.55-77.20 range across sources, implying substantial upside from current levels.

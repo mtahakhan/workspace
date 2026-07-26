@@ -1,0 +1,10 @@
+Ticker: MSFT
+Company: Microsoft
+Period: 2025-10
+Compiled At: 2026-07-24T19:50:16.056603+02:00
+Method: WebSearch retrospective query (monthly recap)
+Sources:
+- https://stockstory.org/us/stocks/nasdaq/msft/news/why-up-down/microsoft-msft-stock-trades-up-here-is-why-2
+Retrieved For: monthly-recap historical backfill
+
+Microsoft closed at an all-time high of $538.66 on October 28, 2025. During the month, the company was in advanced talks to acquire Inception (a Stanford AI spin-off) and unveiled a new AI-powered cyber defense system. TD Cowen reiterated a Buy rating, citing expected Azure growth acceleration.

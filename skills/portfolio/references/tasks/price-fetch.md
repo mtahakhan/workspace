@@ -2,7 +2,7 @@
 
 Call the `portfolio` MCP server's `fetch_prices` tool (no arguments). It's
 registered globally (see `../../SKILL.md`'s intro) - it runs the exact same
-code as `portfolio_mcp/pipeline/prices.py`, see that module for what it does.
+code as `portfolio_tools/pipeline/prices.py`, see that module for what it does.
 
 This gets the ticker list from `data/transaction_lots.csv` (derived from real broker transactions - there is no separate holdings file), fetches live prices (Finnhub primary, yfinance backup), and appends one fully-sourced line per ticker to its own history file at `data/price_history/{TICKER}.jsonl` (one file per stock, e.g. `data/price_history/AMD.jsonl`, `data/price_history/BAYN.DE.jsonl`). There is no separate prices.json snapshot - each file's last line IS the current price, read directly by `analyze_portfolio`. No further action needed - this task is fetch-only. Report a one-line summary (how many tickers resolved, any missing) and stop. Do not write the daily analysis report - that's a separate task (`portfolio-daily-analysis`).
 

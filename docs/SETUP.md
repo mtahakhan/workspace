@@ -28,7 +28,7 @@ it will:
 
 **Currently supports Scalable Capital's transaction export format.** Other
 brokers' CSV exports have different columns/formats and aren't parsed yet -
-see `portfolio_mcp/pipeline/lots.py`'s `load_transactions()` if you need to
+see `portfolio_tools/pipeline/lots.py`'s `load_transactions()` if you need to
 adapt it for a different broker.
 
 ## Prerequisites
@@ -47,7 +47,7 @@ This is the only setup command you need to run by hand, and it's safe to
 re-run any time (after a reboot, a `requirements.txt` change, or just to
 confirm everything's still wired up). It:
 
-1. Creates `portfolio/portfolio_mcp/.venv` and installs dependencies
+1. Creates `mcp_servers/portfolio_tools/.venv` and installs dependencies
 2. Starts the HTTP server in the background (`nohup` + PID file) if it's not
    already running - this is **not** a login/boot service, so re-run this
    script after a reboot or crash to bring it back up
@@ -74,8 +74,8 @@ transaction export, and resolves any new tickers by calling the real
 
 1. Go to https://finnhub.io/register and sign up (free, no card required)
 2. Copy the API key from your dashboard
-3. Copy `portfolio/portfolio_mcp/.env.example` to
-   `portfolio/portfolio_mcp/.env` and replace the placeholder with your real
+3. Copy `mcp_servers/portfolio_tools/.env.example` to
+   `mcp_servers/portfolio_tools/.env` and replace the placeholder with your real
    key yourself, in your editor - don't paste it into a Claude Code
    conversation, since it would end up in the transcript
 
@@ -104,8 +104,8 @@ itself resolves that path once loaded; see
 
 ```bash
 claude mcp get portfolio          # should say "Connected"
-cat portfolio/portfolio_mcp/.server.log
-kill -0 $(cat portfolio/portfolio_mcp/.server.pid)   # exits 0 if the process is alive
+cat mcp_servers/portfolio_tools/.server.log
+kill -0 $(cat mcp_servers/portfolio_tools/.server.pid)   # exits 0 if the process is alive
 ```
 If the server died (common after a machine sleep/reboot, since it's a
 background process, not a login service), just re-run `./bootstrap.sh` - it
