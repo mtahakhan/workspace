@@ -1,0 +1,15 @@
+Ticker: AMZN
+Company: Amazon.com
+Source URL: https://www.tradingkey.com/analysis/stocks/us-stocks/262026432-amazon-amzn-stock-forecast-july-2026-aws-28-percent-capex-q2-earnings-tradingkey
+Title: Amazon (AMZN) Stock Price Forecast: AWS Hit Its Fastest Growth in 15 Quarters - Does $200B Capex Matter?
+Fetched At: 2026-07-27T13:44:25+02:00
+Fetch Method: WebSearch (query: "Amazon AMZN stock news July 2026")
+Retrieved For: portfolio-daily-analysis (2026-07-27 run)
+
+On July 26, 2026, Amazon stock traded between $231.35 and $234.95. Shares have climbed 9% year to date (as of July 20).
+
+Amazon delivered its fastest AWS growth in 15 quarters during Q1 2026, with AWS revenue reaching $37.6 billion, up 28% year over year. The company is committing to $200 billion in AI capital expenditure for the full year. Total Q1 revenue was $181.52 billion, up 16.6%; EPS of $2.78 beat consensus of $1.73.
+
+Capex concern: free cash flow collapsed to $1.2B on $200B capex, with trailing-12-month free cash flow down to $1.2 billion from $25.9 billion a year earlier. Management argues the situation mirrors early AWS investment, where high capital spending produced one of its most profitable businesses.
+
+Q2 guidance is $194-199 billion; next earnings July 30, 2026. Analysts expect revenue and EPS to rise 17% and 8% year over year.

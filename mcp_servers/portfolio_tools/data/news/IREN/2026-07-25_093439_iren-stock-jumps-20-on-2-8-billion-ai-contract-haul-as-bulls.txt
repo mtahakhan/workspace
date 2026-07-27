@@ -1,5 +1,5 @@
 Ticker: IREN
-Company: Iren
+Company: IREN Limited
 Source URL: https://www.fxleaders.com/news/2026/07/21/iren-stock-jumps-20-on-2-8-billion-ai-contract-haul-as-bulls-target-48/
 Title: IREN Stock Jumps 20% on $2.8 Billion AI Contract Haul as Bulls Target $48
 Fetched At: 2026-07-25T09:34:39+02:00

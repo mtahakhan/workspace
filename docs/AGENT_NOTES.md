@@ -132,6 +132,33 @@ suspicious even though a portfolio doubling in hours is implausible. Fix:
 `data/analysis_history.jsonl` and adds a `caveats` entry
 (`check_value_divergence`) if it moved >20% since the previous run.
 
+**2026-07-27: the displayed company name does not come from `ticker_map.csv`.**
+The holding `IREN` was showing as "Iren", which reads as the unrelated Italian
+utility Iren SpA; it is IREN Limited (Nasdaq, formerly Iris Energy), an AI
+cloud / data-center operator. Editing `ticker_map.csv`'s `Company` column
+changed nothing, because `lots.py` sources `Company` from the broker's own
+`description` field in `transactions.csv` - `ticker_map.csv`'s `Company` is
+only ever written and read by `resolve_tickers`, and never reaches a report.
+Fix: `data/company_overrides.csv` (ISIN, Company, Note), applied by
+`lots.py`'s `load_company_overrides()`. Deliberately an opt-in table rather
+than "prefer ticker_map everywhere": the broker's description stays the
+default, only listed ISINs are overridden, each entry carries a Note, and
+`compute_lots` prints every override it applied so a silent rename is
+impossible. A missing file or blank `Company` means no override, so a fresh
+clone is unaffected. Same run also recategorized IREN Energy → Technology in
+`ticker_map.csv` (Technology 53.8% → 54.6%, Energy 2.6% → 1.8%; totals and
+XIRR unchanged). Reports dated before 2026-07-27 keep the old name and sector
+on purpose - they are records of what was reported at the time.
+
+**The MCP server caches pipeline modules at startup.** It is one long-running
+process, so editing a `pipeline/*.py` module has *no effect* on tool calls
+until it is restarted - and the tool will keep succeeding with the old code,
+which looks exactly like a change that "didn't work". There is no
+`server-stop` target and `scripts/server-start.sh` skips when the PID in
+`.server.pid` is live, so: `kill $(cat mcp_servers/portfolio_tools/.server.pid)`
+then `make server-start`. Caught while adding `company_overrides.csv` above -
+`compute_lots` ran clean and silently produced the pre-change output.
+
 **A phantom-lot FIFO bug** came from sorting transactions by date only. The
 broker export lists transactions newest-first, so same-day trades tied on
 the sort key and fell back to file order (backwards - latest-time-first). A

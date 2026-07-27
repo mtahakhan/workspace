@@ -1,0 +1,17 @@
+Ticker: MSFT
+Company: Microsoft
+Source URL: https://www.forbes.com/sites/investor-hub/article/microsoft-msft-stock-outlook-2026/
+Title: Microsoft (MSFT) Stock Outlook for 2026 | July Edition
+Fetched At: 2026-07-27T13:44:25+02:00
+Fetch Method: WebSearch (query: "Microsoft MSFT stock news July 2026")
+Retrieved For: portfolio-daily-analysis (2026-07-27 run)
+
+Microsoft stock has struggled through 2026, down 18% as of July 20. As of July 26 the stock fluctuated between $380.65 and $389.03, with a price of $381.40.
+
+Q4 FY26 results are due after the close on Wednesday, July 29, in a critical week for tech stocks, with focus on AI investments and potential capex increases and how spending translates into revenue growth.
+
+In fiscal Q2 2026, Microsoft beat expectations with $81.3 billion in revenue (+17% year over year) and adjusted EPS of $4.14.
+
+Analyst consensus remains overwhelmingly bullish - mostly "Strong Buy" or "Buy" - with an average price target in the $589-592 range.
+
+Key concern: management has accelerated spending on AI data centers, with 2026 capex guidance projected at $190 billion. Investor skepticism around that AI infrastructure spending has weighed on sentiment despite underlying business momentum.

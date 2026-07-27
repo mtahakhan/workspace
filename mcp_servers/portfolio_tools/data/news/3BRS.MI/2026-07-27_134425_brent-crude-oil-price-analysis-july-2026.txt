@@ -1,0 +1,17 @@
+Ticker: 3BRS.MI
+Company: WisdomTree Brent Crude Oil 3x Daily Short
+Source URL: https://tradingeconomics.com/commodity/brent-crude-oil
+Title: Brent crude oil - Price - Chart - Historical Data - News
+Fetched At: 2026-07-27T13:44:25+02:00
+Fetch Method: WebSearch (query: "Brent crude oil price surge July 2026")
+Retrieved For: portfolio-daily-analysis (2026-07-27 run)
+
+Brent crude fell to $90.28/barrel on July 27, 2026, down 8.23% from the previous day. Over the past month, Brent's price has risen 22.15%, reflecting significant volatility.
+
+Brent crude oil prices surged to approximately $86 per barrel earlier in July 2026, driven by renewed geopolitical tensions in the Middle East and attacks on shipping in the Strait of Hormuz. Supply disruptions expanded from the Strait of Hormuz to the Red Sea, an increasingly important alternative route for Saudi Arabian crude exports.
+
+Brent crude prices surged to $120 per barrel in April 2026, the highest valuation for global oil since mid-2022, as Washington maintained a naval blockade on Iran effectively sealing the Strait of Hormuz. Prices have fluctuated significantly since based on escalating military tensions and supply disruptions.
+
+Goldman Sachs recently cut its Brent crude forecast to $80 per barrel for Q4 2026, down from a previous estimate of $90, expecting Persian Gulf exports to return to pre-war levels by the end of July.
+
+Note for this holding: 3BRS.MI is a 3x DAILY SHORT Brent instrument - it gains when oil falls. The -8.23% single-day drop in Brent on 2026-07-27 is the direct mechanical driver of this position's +12.9% move.

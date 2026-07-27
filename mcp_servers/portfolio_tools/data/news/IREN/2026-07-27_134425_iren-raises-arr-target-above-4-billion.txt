@@ -1,0 +1,17 @@
+Ticker: IREN
+Company: IREN Limited
+Source URL: https://www.tipranks.com/news/why-is-iren-stock-soaring-in-pre-market-today-july-20-2026
+Title: Why Is IREN Stock Soaring Today - July 20, 2026?
+Fetched At: 2026-07-27T13:44:25+02:00
+Fetch Method: WebSearch (query: "IREN Limited stock news July 2026")
+Retrieved For: portfolio-daily-analysis (2026-07-27 run)
+
+On July 20, 2026, IREN Limited raised its annualized run-rate revenue (ARR) target to more than $4 billion at year-end, up from an earlier target of $3.7 billion. The announcement sent IREN stock up 20.66% that day. About 85% of the new ARR target is already under contract.
+
+Customer base now includes Perplexity, Figure AI, Together AI, Fluidstack, Fireworks AI, Fal AI, and Hume AI. In May, IREN announced a two-part $5.5 billion deal with Nvidia, comprising $3.4 billion for cloud services and a potential $2.1 billion equity stake.
+
+Leadership: IREN appointed Eric Hammersley as Chief Information Security Officer on July 15, 2026.
+
+Stock: as of July 26, 2026, IREN fluctuated between $36.72 and $40.80. Average price target is $77.20, implying about 130% upside.
+
+NOTE - labeling only, not a mapping bug: ticker_map.csv maps ISIN AU0000185993 -> IREN, name "Iren", sector "Energy". The ISIN is correct for IREN Limited (Australian-incorporated, Nasdaq-listed, formerly Iris Energy), so the price fetched is the right security. The display name and the "Energy" sector label are imprecise - the business today is AI cloud / data centers, closer to Technology than Energy.

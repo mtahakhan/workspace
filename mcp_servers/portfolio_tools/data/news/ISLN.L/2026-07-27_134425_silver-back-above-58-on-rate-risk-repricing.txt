@@ -1,0 +1,17 @@
+Ticker: ISLN.L
+Company: iShares Physical Silver ETC (Acc)
+Source URL: https://finance.yahoo.com/personal-finance/investing/article/silver-prices-today-friday-july-24-2026-silver-returns-above-58-as-markets-price-in-higher-rate-risks-152408436.html
+Title: Silver prices today, Friday, July 24, 2026: Silver returns above $58 as markets price in higher rate risks
+Fetched At: 2026-07-27T13:44:25+02:00
+Fetch Method: WebSearch (query: "silver price news July 2026")
+Retrieved For: portfolio-daily-analysis (2026-07-27 run)
+
+Silver September futures opened at $57.92 per ounce on Friday, July 24, 2026, and moved higher in the morning, reaching $58.87. Spot silver rose to $57.98/t.oz on July 24, up 0.60% from the previous day.
+
+Silver rose 1% to around $58 an ounce on Friday, recovering some ground after tumbling more than 3% in the previous session, as investors assessed Middle East developments for clues on energy-driven inflation risks and the outlook for US interest rates.
+
+Strength in the U.S. dollar contributed to Thursday's decline, and inflation risk continues to limit any recovery. Concerns over Gulf oil supply disruptions have lifted crude prices, reinforcing expectations that rates could remain higher for longer and weighing on precious metals.
+
+Investors are focused on next week's Federal Reserve meeting, where policymakers are widely expected to leave rates unchanged, although markets price roughly an 80% chance of a hike in September.
+
+Over the past month silver is up 0.23%, and up 51.86% year over year.

@@ -1,0 +1,15 @@
+Ticker: BAYN.DE
+Company: Bayer
+Source URL: https://www.ad-hoc-news.de/boerse/news/ueberblick/bayer-stock-trades-on-earnings-and-pipeline-milestones/69798195
+Title: Bayer stock trades on earnings and pipeline milestones
+Fetched At: 2026-07-27T13:44:25+02:00
+Fetch Method: WebSearch (query: "Bayer AG stock news July 2026")
+Retrieved For: portfolio-daily-analysis (2026-07-27 run)
+
+On July 2, 2026, Bayer rose 9% in European markets, reaching its highest level in almost three years. Bayer was upgraded to Buy from Hold at Deutsche Bank on July 2, 2026; Goldman Sachs maintained a Buy rating on July 6, 2026.
+
+Per estimates from 18 analysts, Bayer AG's average price target rose to EUR 54.75, with forecasts ranging from EUR 46 to EUR 65 per share (roughly 10% implied upside from current levels).
+
+Corporate actions: on July 15, 2026 Bayer placed new U.S. dollar bonds with a volume of $5 billion, and signed a licensing agreement with RAGT for broad hybrid wheat commercialization by the early 2030s. On July 10, 2026 Bayer secured EUR 3.0 billion to improve its capital structure.
+
+Bayer scheduled its Q2 2026 reporting for late July, with analyst consensus focused on progress in debt reduction and key pharmaceutical pipeline milestones. Recent commentary highlights asundexian, the investigational anticoagulant, as a potential mid-term value driver for the pharma division.

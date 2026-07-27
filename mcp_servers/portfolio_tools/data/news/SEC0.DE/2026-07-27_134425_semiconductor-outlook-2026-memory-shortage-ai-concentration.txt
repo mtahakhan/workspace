@@ -1,0 +1,15 @@
+Ticker: SEC0.DE
+Company: iShares MSCI Global Semiconductors (Acc)
+Source URL: https://www.deloitte.com/us/en/insights/industry/technology/technology-media-telecom-outlooks/semiconductor-industry-outlook.html
+Title: 2026 Semiconductor Industry Outlook | Deloitte Insights
+Fetched At: 2026-07-27T13:44:25+02:00
+Fetch Method: WebSearch (query: "semiconductor sector outlook July 2026")
+Retrieved For: portfolio-daily-analysis (2026-07-27 run)
+
+The semiconductor industry is navigating a high-stakes paradox in 2026, with soaring AI-driven demand pushing revenues to unprecedented levels. However, the industry has largely placed its eggs in the AI basket, presenting concentration risk.
+
+Memory shortage: severe shortages in essential components such as memory are projected to drive 50% price spikes by mid-year. AI-driven demand is creating the biggest memory shortage in history, with DRAM and NAND prices expected to remain elevated through the rest of the decade.
+
+Structural shifts: semiconductor growth in 2026 is being reshaped by memory constraints, faster product cycles, new security requirements, and robotics. Chipmakers that improve memory efficiency and align with high-value AI and data center demand will be in a stronger position than those tied too closely to volume consumer markets.
+
+Market growth: projected to exceed US$1 trillion in 2030, from the current US$627 billion, driven by exploding demand for AI chips and related products.

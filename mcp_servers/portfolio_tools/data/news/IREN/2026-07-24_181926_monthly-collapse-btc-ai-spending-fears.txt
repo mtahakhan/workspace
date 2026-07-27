@@ -1,5 +1,5 @@
 Ticker: IREN
-Company: Iren
+Company: IREN Limited
 Source URL: https://finance.yahoo.com/markets/stocks/articles/iren-just-collapsed-41-month-180536020.html
 Title: IREN Just Collapsed 41% in a Month: Is This Dead Money or an Abandoned Gem?
 Fetched At: 2026-07-24T18:19:26+02:00

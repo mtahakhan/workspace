@@ -1,0 +1,17 @@
+Ticker: IBM
+Company: IBM
+Source URL: https://www.cnbc.com/2026/07/14/ibm-warns-second-quarter-earnings-fell-short-of-expectations.html
+Title: IBM stock craters 25%, the worst day on record, after company issues second-quarter earnings warning
+Fetched At: 2026-07-27T13:44:25+02:00
+Fetch Method: WebSearch (query: "IBM stock news July 2026 earnings")
+Retrieved For: portfolio-daily-analysis (2026-07-27 run)
+
+IBM pre-reported its Q2 2026 earnings on July 14, and the stock fell over 25% in a single session - the worst one-day decline in the company's history, exceeding its previous worst day of Oct. 19, 1987 (-23.7%).
+
+Financial results: adjusted earnings of $2.93 a share on revenue of $17.2 billion, below analyst expectations of $3.01 EPS and $17.86 billion revenue. CEO Arvind Krishna blamed the shortfall on weakness in the software and infrastructure business, as clients shifted spending toward hardware purchases such as memory chips.
+
+The official Q2 release on July 22, 2026 confirmed revenue and adjusted EPS in line with the July 14 pre-announcement.
+
+Guidance: for fiscal 2026 IBM expects free cash flow to increase by about $1 billion and constant-currency revenue growth of 4-5%. IBM reduced its full-year growth forecast.
+
+Additional concern: IBM is facing a securities-fraud inquiry into whether it exaggerated its sales pipeline ahead of the July 14 pre-announcement. The stock is down 28% year to date.

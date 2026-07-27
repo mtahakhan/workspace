@@ -8,6 +8,9 @@ Quick reference: uses ticker_map.csv (ISIN,Ticker,Company,Sector - shared,
 committed) for the two things transactions.csv can't provide. FIFO consumes
 oldest lots first on a Sell. "Security transfer" rows are excluded (broker
 migration artifact). "Corporate action" rows carry cost basis to the new ISIN.
+The displayed Company name comes from the broker's own description in
+transactions.csv, except for ISINs listed in company_overrides.csv - see
+load_company_overrides().
 """
 
 import csv
@@ -18,6 +21,7 @@ from ..paths import DATA_DIR
 
 TRANSACTIONS_FILE = DATA_DIR / "manual" / "transactions.csv"
 TICKER_MAP_FILE = DATA_DIR / "ticker_map.csv"  # shared, committed - ISIN,Ticker,Company,Sector
+COMPANY_OVERRIDES_FILE = DATA_DIR / "company_overrides.csv"  # shared, committed - ISIN,Company,Note
 OUTPUT_FILE = DATA_DIR / "transaction_lots.csv"
 
 def load_ticker_metadata():
@@ -27,6 +31,23 @@ def load_ticker_metadata():
     with open(TICKER_MAP_FILE) as f:
         return {row["ISIN"]: {"ticker": row["Ticker"], "sector": row.get("Sector", "")}
                 for row in csv.DictReader(f) if row["Ticker"]}
+
+def load_company_overrides():
+    """ISIN -> corrected display name, for the handful of securities the broker
+    export labels misleadingly (e.g. "Iren" for IREN Limited, which reads as the
+    unrelated Italian utility Iren SpA).
+
+    Deliberately a separate, short, hand-maintained table rather than reusing
+    ticker_map.csv's Company column: the broker's own description stays the
+    default for everything, so only ISINs explicitly listed here are overridden,
+    and each entry carries a Note saying why it exists. Missing file or blank
+    Company = no override, so this is safe on a fresh clone.
+    """
+    if not COMPANY_OVERRIDES_FILE.exists():
+        return {}
+    with open(COMPANY_OVERRIDES_FILE) as f:
+        return {row["ISIN"]: row["Company"].strip()
+                for row in csv.DictReader(f) if row.get("Company", "").strip()}
 
 def parse_number(s):
     """German decimal format: '1.074,00' -> 1074.00"""
@@ -143,13 +164,18 @@ def main():
     lots, descriptions = build_lots(rows)
     lots = {isin: ls for isin, ls in lots.items() if not isin.startswith("__pending_from_")}
     metadata = load_ticker_metadata()
+    overrides = load_company_overrides()
+    applied_overrides = []
 
     output_rows = []
     for isin, ls in lots.items():
         meta = metadata.get(isin, {})
         ticker = meta.get("ticker", "")
         sector = meta.get("sector", "")
-        company = descriptions.get(isin, isin)
+        broker_name = descriptions.get(isin, isin)
+        company = overrides.get(isin, broker_name)
+        if company != broker_name:
+            applied_overrides.append((ticker or isin, broker_name, company))
         for l in sorted(ls, key=lambda x: x["date"]):
             if l["shares"] > 1e-6:
                 output_rows.append({
@@ -167,6 +193,11 @@ def main():
         writer.writerows(output_rows)
 
     print(f"\nWrote {len(output_rows)} open lots to {OUTPUT_FILE}")
+
+    if applied_overrides:
+        print(f"\nApplied {len(applied_overrides)} company-name override(s) from {COMPANY_OVERRIDES_FILE.name}:")
+        for ticker, broker_name, company in sorted(applied_overrides):
+            print(f"  {ticker}: '{broker_name}' (broker) -> '{company}'")
 
     print("\nCurrent positions (derived from transactions.csv):")
     lot_totals = defaultdict(float)

@@ -1,0 +1,17 @@
+Ticker: INTC
+Company: Intel Corp
+Source URL: https://www.cnbc.com/2026/07/23/intel-intc-earnings-report-q2-2026.html
+Title: Intel (INTC) earnings report Q2 2026
+Fetched At: 2026-07-27T13:44:25+02:00
+Fetch Method: WebSearch (query: "Intel INTC stock news July 2026")
+Retrieved For: portfolio-daily-analysis (2026-07-27 run)
+
+Q2 earnings (July 23): Intel's 25% revenue growth was the fastest for any period in almost 15 years. Foundry reported $5.8 billion in sales, up 31% year over year. Despite this, the stock has dropped 28% in July.
+
+Early July decline: Intel stock dropped 7.67% on July 8, 2026 to $110.68, extending a 21% weekly slide, after Intel's 18A yield delay and AMD's first-ever data-center revenue lead. The pullback followed a week of semiconductor selling that started July 1 after a Bank of America report that the AI chip space was becoming overvalued.
+
+Mid-July recovery: Intel rebounded 4.50% to $107.76, driven by increased AI chip demand and a tech sector recovery.
+
+Current status: as of July 26, 2026, Intel stock has fluctuated between $91.22 and $104.48, with the price at $91.52.
+
+Note for this holding: the position's weighted average holding period is only 14 days, so its -94% XIRR is an extrapolation of a two-week drawdown, not a measured annual return.

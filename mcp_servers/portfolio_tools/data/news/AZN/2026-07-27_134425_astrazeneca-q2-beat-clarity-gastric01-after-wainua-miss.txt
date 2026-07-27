@@ -1,0 +1,15 @@
+Ticker: AZN
+Company: AstraZeneca
+Source URL: https://www.investing.com/news/stock-market-news/why-is-astrazeneca-stock-climbing-today-93CH-4813091
+Title: Why is AstraZeneca stock climbing today?
+Fetched At: 2026-07-27T13:44:25+02:00
+Fetch Method: WebSearch (query: "AstraZeneca stock news July 2026")
+Retrieved For: portfolio-daily-analysis (2026-07-27 run)
+
+On July 9, 2026, AstraZeneca stock fell more than 8% premarket after the Phase III CARDIO-TTransform trial of Wainua missed its primary endpoint. The stock closed down 6%, its worst day in over two years.
+
+Q2 2026 earnings beat: core EPS climbed to $2.63 versus consensus of $2.48, revenue approximately $15.4 billion. Growth was powered by the oncology franchise, particularly breast cancer drug Enhertu, and the rare disease portfolio. Shares rose 1.6% on the print.
+
+Pipeline: on July 26, AstraZeneca announced that antibody-drug conjugate sonesitatug vedotin showed a statistically significant improvement in overall survival in the CLARITY-Gastric01 Phase III trial, restoring some pipeline confidence after the Ultomiris Phase III failure and the earlier Wainua miss.
+
+Analyst view: average rating "Strong Buy" across 10 analysts, 12-month target $221.09 (~31% above the latest price). Full-year 2026 guidance maintained; CEO Pascal Soriot says the group remains on track for its $80 billion total revenue ambition.

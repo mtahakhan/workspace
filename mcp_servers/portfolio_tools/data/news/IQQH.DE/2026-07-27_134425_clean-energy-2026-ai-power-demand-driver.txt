@@ -1,0 +1,15 @@
+Ticker: IQQH.DE
+Company: iShares Global Clean Energy Transition (Dist)
+Source URL: https://global.morningstar.com/en-nd/sustainable-investing/are-renewable-energy-stocks-buy-2026
+Title: Are Renewable Energy Stocks a Buy in 2026?
+Fetched At: 2026-07-27T13:44:25+02:00
+Fetch Method: WebSearch (query: "clean energy stocks outlook July 2026")
+Retrieved For: portfolio-daily-analysis (2026-07-27 run)
+
+The clean energy sector enters the second half of 2026 with favorable long-term growth prospects, with artificial intelligence as the primary catalyst. Global electricity demand from data centers could more than double by 2030, with data centers potentially accounting for nearly half of US electricity demand growth through the end of the decade.
+
+The U.S. Energy Information Administration's Annual Energy Outlook 2026 projects total electricity generation grows between 25% and 50% through 2050, with natural gas, solar and wind together climbing from about 60% of the mix in 2025 to roughly 80% in most scenarios by 2050.
+
+Sector sentiment: flows rebounded in the final quarter, supported by greater policy clarity and renewed confidence. The energy transition narrative has evolved beyond the early-2020s focus on decarbonization alone toward a more pragmatic emphasis on energy security, affordability, and industrial competitiveness.
+
+The growth story is no longer driven only by climate goals or government policy - AI is reshaping the global electricity market.

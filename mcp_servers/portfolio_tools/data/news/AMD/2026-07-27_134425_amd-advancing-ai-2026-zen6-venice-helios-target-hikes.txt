@@ -1,0 +1,15 @@
+Ticker: AMD
+Company: Advanced Micro Devices
+Source URL: https://www.thestreet.com/investing/stocks/bank-of-america-raises-amd-stock-price-target-for-2026
+Title: Bank of America revamps AMD stock price target for 2026
+Fetched At: 2026-07-27T13:44:25+02:00
+Fetch Method: WebSearch (query: "AMD stock news July 2026")
+Retrieved For: portfolio-daily-analysis (2026-07-27 run)
+
+AMD stock rallied roughly 7% ahead of the chipmaker's AI event. Bank of America raised its price objective on AMD to $620 from $560 on July 24, reiterating a buy rating, with AMD shares trading at $554.23.
+
+AMD held Advancing AI 2026 in San Francisco on July 22-23. The event featured the launch of 2nm Zen 6 "Venice" server CPUs and updates on the Helios rack-scale platform.
+
+Business updates: AMD is booking multi-billion-dollar deals. The Helios server platform has been adopted by Meta Platforms, which will begin deploying Helios servers in the second half of 2026.
+
+Analyst upgrades: Goldman Sachs analyst James Schneider raised the firm's 12-month price target on AMD to $640 from $450 on July 5, maintaining Buy. Firms including Goldman Sachs and Stifel maintain price targets between $600 and $640, citing strong data center growth prospects.

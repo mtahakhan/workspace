@@ -1,0 +1,17 @@
+Ticker: DTE.DE
+Company: Deutsche Telekom
+Source URL: https://www.ad-hoc-news.de/boerse/news/ueberblick/deutsche-telekom-s-buyback-machine-grinds-on-as-two-forces-pull-the/69868362
+Title: Deutsche Telekom's Buyback Machine Grinds On as Two Forces Pull the Stock in Opposite Directions
+Fetched At: 2026-07-27T13:44:25+02:00
+Fetch Method: WebSearch (query: "Deutsche Telekom stock news July 2026")
+Retrieved For: portfolio-daily-analysis (2026-07-27 run)
+
+Since launching the third tranche of its buyback program on July 1, Deutsche Telekom has repurchased 3.67 million shares. In the week of July 13-17 alone it bought roughly 1.35 million shares on Xetra, paying between EUR 26.42 and EUR 27.26 apiece. The tranche plans up to EUR 560 million, around 23.5 million shares, executed exclusively on Xetra.
+
+The EUR 2B buyback supports the stock as US cash flow offsets a German regulatory blow on fiber access. Investors are weighing a regulatory clampdown in Germany against a US growth engine that keeps generating cash.
+
+Despite the AI-driven fiber push, the share price has come under pressure, down 17.36% on a 30-day basis. As of July 24, 2026, DTEGn traded at 26.390 EUR.
+
+JPMorgan and UBS remain upbeat, anchored on stable cash generation; T-Mobile US continues to deliver robust earnings. A price target cut reflects a more measured view of the growth trajectory.
+
+Next earnings report: August 6, 2026.

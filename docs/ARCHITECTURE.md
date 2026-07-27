@@ -117,6 +117,9 @@ exposed as an MCP tool - that's the sanctioned way to invoke it.
    re-solve it. `resolve_tickers` deterministically resolves any new ISIN via
    a real yfinance lookup (never a guess) whenever `compute_lots` reports one
    as unmapped; Sector still needs a quick human judgment call afterward.
+   Note the `Company` column here is *not* what reports display - that comes
+   from the broker's own description in `transactions.csv` (see
+   `data/company_overrides.csv` below to correct a wrong one).
 4. **`fetch_prices`** → **`data/price_history/{TICKER}.jsonl`** - fetches the
    ticker list from `transaction_lots.csv`, gets live prices (Finnhub
    primary, yfinance fallback), and appends one fully-sourced record per
@@ -232,6 +235,7 @@ diagram.
 |---|---|---|
 | `data/manual/transactions.csv` | Raw broker export - the only external input | `upload_transactions` tool (keeps one `.bak`) |
 | `data/ticker_map.csv` | ISIN, Ticker, Company, Sector - shared, committed | `resolve_tickers` (Ticker/Company) + you (Sector) |
+| `data/company_overrides.csv` | ISIN, Company, Note - shared, committed. Corrects the handful of broker descriptions that name the wrong company; everything unlisted keeps the broker's own label | You (hand-edited); `pipeline/lots.py` applies it |
 | `config.json` | All tunable thresholds and every caveat/notify-reason message template - shared, committed, not personal data | You (hand-edited); `pipeline/config.py` just loads it |
 | `data/transaction_lots.csv` | Current open positions - FIFO lots, real dates/prices | `compute_lots` |
 | `data/price_history/{TICKER}.jsonl` | Full sourced price history, one file per ticker | `fetch_prices` (daily) / `backfill_history` (one-off) |

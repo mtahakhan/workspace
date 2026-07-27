@@ -1,0 +1,15 @@
+Ticker: QBTS
+Company: D-Wave Quantum
+Source URL: https://www.businesswire.com/news/home/20260714481869/en/D-Wave-Announces-Transfer-of-Stock-Exchange-Listing-to-Nasdaq
+Title: D-Wave Announces Transfer of Stock Exchange Listing to Nasdaq
+Fetched At: 2026-07-27T13:44:25+02:00
+Fetch Method: WebSearch (query: "D-Wave Quantum QBTS stock news July 2026")
+Retrieved For: portfolio-daily-analysis (2026-07-27 run)
+
+On July 14, 2026, D-Wave Quantum Inc. announced it would voluntarily transfer the listing of its common stock from the New York Stock Exchange to the Nasdaq Stock Market, ending NYSE trading after market close on July 24, 2026. Shares began trading on Nasdaq on July 27, 2026 under the unchanged ticker symbol QBTS. The company stated it has satisfied all Nasdaq listing requirements.
+
+Stock performance: down 29.4% month to date in July, with QBTS trading at $18.66, down 11% over the past week and nearly 40% below the 52-week high of $46.75.
+
+Insider activity: CEO Alan E. Baratz reported a sale of 52,320 shares on July 14, 2026 - a non-discretionary sale-to-cover executed by the company to satisfy tax withholding on vesting RSUs, not a discretionary sale.
+
+Upcoming: Q2 earnings on August 6, 2026, amid a volatile market for quantum stocks.

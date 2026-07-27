@@ -1,0 +1,15 @@
+Ticker: SAP.DE
+Company: SAP SE
+Source URL: https://www.investing.com/news/earnings/german-software-giant-sap-beats-quarterly-revenue-expectations-4809852
+Title: SAP shares jump after beating revenue forecasts, profit guidance hike
+Fetched At: 2026-07-27T13:44:25+02:00
+Fetch Method: WebSearch (query: "SAP SE stock jump news July 2026 earnings")
+Retrieved For: portfolio-daily-analysis (2026-07-27 run)
+
+On Friday, July 24, 2026, SAP SE ADS stock rose by 9.36% following the company's Q2 2026 earnings announcement. SAP shares swung from the mid-$150s to around $160.16, jumping sharply from $146.38 right after earnings.
+
+Q2 EPS came in at EUR 1.59, up from EUR 1.50 a year earlier, while revenue climbed to EUR 9.88B from EUR 9.03B. Analysts had expected revenue of EUR 9.85 billion.
+
+Key driver: record current cloud backlog of EUR 22.9B, up 27% year over year, with broad-based strength across overall cloud and Cloud ERP Suite. Overall cloud and Cloud ERP Suite revenue logged low-to-mid-20% growth.
+
+Management reaffirmed FY26 cloud revenue targets of EUR 25.8-26.2B and guided to strong double-digit growth.

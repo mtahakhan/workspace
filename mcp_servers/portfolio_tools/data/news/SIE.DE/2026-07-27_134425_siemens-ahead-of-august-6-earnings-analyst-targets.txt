@@ -1,0 +1,19 @@
+Ticker: SIE.DE
+Company: Siemens
+Source URL: https://www.investing.com/equities/siemens
+Title: Siemens AG Stock Price Today | ETR: SIEGn Live
+Fetched At: 2026-07-27T13:44:25+02:00
+Fetch Method: WebSearch (query: "Siemens AG stock news July 2026")
+Retrieved For: portfolio-daily-analysis (2026-07-27 run)
+
+As of July 23, 2026, Siemens AG (SIEGn) traded at 268.38 EUR, with a previous close of 271.25 EUR. Day range 266.85-271.10 EUR; 52-week range 198.00-284.65 EUR.
+
+Analyst outlook: average 12-month price target 295.15 EUR (high 355 EUR, low 235 EUR). 17 analysts recommend buying, 2 suggest selling - overall rating Buy.
+
+Deutsche Bank Research raised its price target for Siemens from 255 to 260 EUR but left the rating at "Hold".
+
+Siemens AG will release its next earnings report on August 6, 2026.
+
+Separately (different entity, not this holding): Siemens Energy AG fell 4.3% to 146.02 after Barclays downgraded it from "Equal Weight" to "Underweight".
+
+No single company-specific catalyst identified for the +1.7% move on 2026-07-27; consistent with a broad European industrial bid into the Aug 6 print.

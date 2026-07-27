@@ -1,5 +1,5 @@
 Ticker: IREN
-Company: Iren
+Company: IREN Limited
 Period: 2025-12
 Compiled At: 2026-07-24T19:53:05.362122+02:00
 Method: WebSearch retrospective query (insufficient reliable results)
