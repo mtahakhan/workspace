@@ -377,12 +377,20 @@ def generate(analysis: dict) -> dict:
         f'{r["date"]} {r["time"]}', "%Y-%m-%d %H:%M:%S"
     ))
 
-    # --- export staleness check (before cash balance) ---
+    # --- last executed transaction date (informational only) ---
+    # NOT a proxy for export freshness: a long gap here just means no trades
+    # happened, not that the export is missing rows. An earlier version of this
+    # function treated "days since last executed row" as "days since the export
+    # was downloaded" and auto-flagged the cash balance as incomplete whenever a
+    # user simply hadn't traded in >1 day — a false positive confirmed on
+    # 2026-07-28 (the export actually contained Pending/Cancelled rows dated
+    # days after the last execution, proving it was current). Report the date
+    # plainly and let the reader judge; don't infer staleness from it.
     last_tx_date = None
     if rows:
         last_tx_date = datetime.strptime(rows[-1]["date"], "%Y-%m-%d").date()
     today = datetime.now().date()
-    export_stale_days = (today - last_tx_date).days if last_tx_date else None
+    days_since_last_tx = (today - last_tx_date).days if last_tx_date else None
 
     flows = _capital_flows(rows)
     realized = _realized_gain(rows)
@@ -396,16 +404,9 @@ def generate(analysis: dict) -> dict:
     open_unrealized_gain = totals.get("gain_eur", 0.0) or 0.0
 
     cash_balance_eur = (cash.get("balance_eur") or 0.0)
-    # Treat a stale export as incomplete regardless of what cash.py's own check says;
-    # a negative balance may simply be because transactions after last_tx_date are missing.
+    # `complete`/`note` here are cash.py's own diagnosis only (implausible-negative
+    # check) - no longer overridden by trade-date recency.
     cash_complete = cash.get("complete", False)
-    if export_stale_days and export_stale_days > 1:
-        cash_complete = False
-        stale_note = (
-            f"Transaction export is {export_stale_days} days old (last entry: {last_tx_date}). "
-            f"Re-download the full export from Scalable Capital to get an accurate cash balance."
-        )
-        cash["note"] = stale_note
 
     # --- hypothetical exit ---
     # What you'd hold if you sold everything at the latest prices right now:
@@ -485,6 +486,8 @@ def generate(analysis: dict) -> dict:
             "balance_eur": round(cash_balance_eur, 2),
             "complete": cash_complete,
             "note": cash.get("note", ""),
+            "last_executed_transaction_date": last_tx_date.isoformat() if last_tx_date else None,
+            "days_since_last_executed_transaction": days_since_last_tx,
         },
         # --- summary ---
         "summary": {
@@ -599,7 +602,12 @@ def render(report: dict) -> str:
         "| Item | Amount |",
         "|------|--------|",
         row("Current cash balance", money(ca["balance_eur"])),
-        row("Export complete?", "Yes" if ca["complete"] else f"No — {ca['note']}"),
+        row(
+            "Last executed transaction",
+            f"{ca['last_executed_transaction_date']} ({ca['days_since_last_executed_transaction']} days ago)"
+            if ca.get("last_executed_transaction_date") else "n/a",
+        ),
+        row("Cash balance plausible?", "Yes" if ca["complete"] else f"No — {ca['note']}"),
         "",
         "### Hypothetical Exit Summary",
         "",

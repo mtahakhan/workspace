@@ -304,3 +304,36 @@ number of executed trades from after 2026-07-16 (confirmed by comparing against
 the broker's displayed balance of €0.73). **The rule: any time `cash.py` reports
 a negative balance on a supposedly complete export, the first suspect is either
 missing rows or a new type of non-cash Security row that must be excluded.**
+
+**2026-07-28: correction to the note above, and a real bug in
+`exit_report.py`'s staleness check.** The "export was also missing executed
+trades from after 2026-07-16" claim two paragraphs up was itself wrong. A full
+audit (independently re-deriving every capital-flow, cash-balance, and FIFO
+realized-gain figure by hand from the raw CSV, in a session with no memory of
+writing the original fix) matched `exit_report.py`'s output to the cent, and
+the user confirmed no transactions occurred after 2026-07-16. The export was
+never incomplete - the code's own staleness check was the bug:
+
+```python
+last_tx_date = ...  # date of the last EXECUTED row
+export_stale_days = (today - last_tx_date).days
+if export_stale_days > 1:
+    cash_complete = False
+    stale_note = "Transaction export is N days old... Re-download..."
+```
+
+This conflates "days since the last **executed** trade" with "days since the
+**export was downloaded**." They are independent: a user can go quiet for
+weeks on a perfectly fresh, complete export. Proof it was a false positive
+here: the raw file contained `Pending`/`Cancelled` order rows dated through
+2026-07-24 - eight days *after* the flagged "stale" cutoff - which only exist
+if the export was pulled recently. **Fix:** the auto-warning is removed;
+`generate_exit_report` now surfaces `last_executed_transaction_date` and
+`days_since_last_executed_transaction` as plain facts in the `cash` section,
+with no inference about export completeness attached. `cash.py`'s own
+implausible-negative check (the -€1.00 threshold, unrelated code path) is
+untouched and still flags -€4.28 independently - whether *that* threshold or
+diagnosis is actually correct remains an open question, not resolved by this
+fix. **The rule: a "quiet period, then a stale-data warning" pattern is worth
+checking for this exact conflation before trusting the warning - lack of
+recent activity is not evidence of missing data.**
