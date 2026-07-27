@@ -27,25 +27,41 @@ SUPPORTED_CURRENCIES = set(CURRENCY_RANK)  # anything else can't be priced by th
 
 def load_positions():
     """(total_open_count, {isin: (net_shares, company_name)} for positions with
-    NO ticker yet) - read straight from transaction_lots.csv, which already
-    has ISIN + a blank Ticker for anything compute_lots.py couldn't resolve.
-    Deliberately does NOT re-run compute_lots' FIFO engine - that would just
-    recompute exactly what's already sitting in transaction_lots.csv."""
+    NO ticker_map row yet) — reads transaction_lots.csv for open ISINs and
+    checks each against ticker_map.csv to find unmapped ones.
+
+    transaction_lots.csv is ISIN-keyed only (no Ticker column since the
+    enrich_lots refactor), so we can no longer use a blank Ticker field as
+    the "needs resolving" signal. Instead we load the ticker_map once and
+    check ISIN membership directly — same semantic, different source.
+
+    Deliberately does NOT re-run compute_lots' FIFO engine — that would just
+    recompute exactly what's already in transaction_lots.csv."""
     if not TRANSACTION_LOTS_FILE.exists():
         print("transaction_lots.csv not found - call the compute_lots tool first.", file=sys.stderr)
         return 0, {}
+
+    # Load the set of already-mapped ISINs from ticker_map.csv once.
+    mapped_isins = set()
+    if TICKER_MAP_FILE.exists():
+        with open(TICKER_MAP_FILE) as f:
+            for row in csv.DictReader(f):
+                if row.get("Ticker", "").strip():
+                    mapped_isins.add(row["ISIN"].strip())
+
     all_isins = set()
     unmapped = {}
     with open(TRANSACTION_LOTS_FILE) as f:
         for row in csv.DictReader(f):
-            isin = row.get("ISIN", "")
+            isin = row.get("ISIN", "").strip()
             if not isin:
-                continue  # old-schema file without ISIN column - re-run compute_lots.py
+                continue  # missing ISIN column — re-run compute_lots
             all_isins.add(isin)
-            if row["Ticker"]:
+            if isin in mapped_isins:
                 continue
-            shares, company = unmapped.get(isin, (0.0, row["Company"]))
+            shares, company = unmapped.get(isin, (0.0, row.get("Company", isin)))
             unmapped[isin] = (shares + float(row["Shares"]), company)
+
     unmapped = {isin: (round(shares, 6), company) for isin, (shares, company) in unmapped.items()}
     return len(all_isins), unmapped
 
@@ -108,7 +124,10 @@ def main():
 
     if not new_isins:
         if total_open:
-            print("Nothing new to resolve. Call the compute_lots tool to confirm everything maps cleanly.")
+            print("Nothing new to resolve.")
+        # Always re-enrich so enriched_lots.csv is fresh even when there was
+        # nothing to resolve (e.g. after a set_ticker_mapping Sector fill).
+        _run_enrich()
         return
 
     new_rows = []
@@ -147,9 +166,22 @@ def main():
                 print(f"      other listings: {alts}")
         for fl in flags:
             print(f"      ⚠ {fl}")
-    print("\nNext: eyeball the prices above (a wrong ticker usually shows an absurd price or "
-          "wrong currency), fix any flagged rows, fill in the blank Sector column for each new "
-          "row in ticker_map.csv, then call the compute_lots tool again to confirm everything maps cleanly.")
+    print("\nReview the picks above, fix any flagged rows with set_ticker_mapping, "
+          "and fill in the blank Sector for each new row.")
+    print("enriched_lots.csv has been updated — fetch_prices and analyze_portfolio "
+          "will pick up the new tickers on their next run.")
+
+    # Enrich immediately so enriched_lots.csv is never stale after a resolve.
+    # Any ISINs whose Ticker is still blank (NO CANDIDATE / flagged) will appear
+    # with an empty Ticker in enriched_lots.csv until fixed with set_ticker_mapping.
+    _run_enrich()
+
+
+def _run_enrich():
+    """Run enrich_lots and print its output inline."""
+    from .enrich import main as enrich_main
+    print()
+    enrich_main()
 
 if __name__ == "__main__":
     main()

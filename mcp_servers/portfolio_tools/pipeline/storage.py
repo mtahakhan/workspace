@@ -14,7 +14,9 @@ Callers pass content and facts, never paths. Filenames, timestamps, slugs and th
 directory layout are decided here.
 """
 
+import contextlib
 import csv
+import io
 import re
 import unicodedata
 from datetime import datetime
@@ -173,7 +175,6 @@ def read_lots(ticker=None):
     wanted = ticker.strip().upper()
     # Use csv parsing rather than positional split so quoted fields with commas
     # don't shift the Ticker column index.
-    import io
     matched = []
     for row_line in rows:
         parsed = next(csv.reader(io.StringIO(row_line)))
@@ -195,9 +196,10 @@ def set_ticker_mapping(isin, ticker=None, company=None, sector=None):
     Sector can be filled in without restating the ticker.
 
     This exists because resolve_tickers deliberately leaves Sector blank for a
-    human judgment call, and a mis-resolved listing sometimes needs correcting -
-    both of which used to mean hand-editing the CSV. Rewrites the file in place,
-    preserving row order and every column not being set.
+    human judgment call, and a mis-resolved listing sometimes needs correcting.
+    Rewrites ticker_map.csv in place, then immediately re-runs enrich_lots so
+    enriched_lots.csv is never stale after a mapping change — the caller does
+    not need to call enrich_lots separately.
     """
     isin = (isin or "").strip()
     if not isin:
@@ -227,8 +229,17 @@ def set_ticker_mapping(isin, ticker=None, company=None, sector=None):
 
     changed = ", ".join(f"{k}={v!r}" for k, v in
                         (("Ticker", ticker), ("Company", company), ("Sector", sector)) if v is not None)
-    return (f"{'Updated' if found else 'Added'} {isin}: {changed}. "
-            f"Run compute_lots to apply it to positions.")
+    msg = f"{'Updated' if found else 'Added'} {isin}: {changed}."
+
+    # Re-enrich immediately — ticker_map.csv changed, so enriched_lots.csv is
+    # stale until this runs. Doing it here means the caller never has to
+    # remember the extra step.
+    from .enrich import main as _enrich
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        _enrich()
+    enrich_out = buf.getvalue().strip()
+    return f"{msg}\n{enrich_out}"
 
 
 def read_roles():

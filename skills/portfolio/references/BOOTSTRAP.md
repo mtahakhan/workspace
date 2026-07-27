@@ -77,14 +77,15 @@ Cameco/`CCJ` at $87) and picking London listings priced in GBp (pence, not
 pounds) that then required inventing currency-conversion code that didn't
 exist. None of that is hypothetical - it already happened once.
 
-Call these two MCP tools, in order:
+Call these MCP tools, strictly in this order:
 
-1. **`compute_lots`** - reports which ISINs have an open position but no
+1. **`compute_lots`** — detects which ISINs have an open position but no
    `ticker_map` row yet.
-2. **`resolve_tickers`** - looks each one up via a real `yfinance` search
-   (not a guess), checks its actual currency and price, and APPENDS a
-   proposed row to the ticker map (a shared table - it never overwrites
-   existing rows). Returns a review table like this:
+2. **`resolve_tickers`** — looks each unmapped ISIN up via a real `yfinance`
+   search (not a guess), checks its actual currency and price, and APPENDS a
+   proposed row to the ticker map (a shared table — it never overwrites
+   existing rows). **Automatically runs `enrich_lots` at the end**, so
+   `enriched_lots.csv` is immediately up to date. Returns a review table:
 
 ```
   Deutsche Telekom                   DE0005557508  ->  DTE.DE     26.26 EUR
@@ -93,32 +94,25 @@ Call these two MCP tools, in order:
 ```
 
 For every line in that table:
-1. Read the company name and the picked ticker together - do they look like
+1. Read the company name and the picked ticker together — do they look like
    the same company? (A price that's wildly different from what you'd expect,
    or a currency you didn't expect, usually means it's the wrong company or
-   wrong listing - that's the point of showing you the price.)
+   wrong listing — that's the point of showing you the price.)
 2. If a line has a `⚠` warning, fix that row with **`set_ticker_mapping`**
-   (`isin` plus the corrected `ticker`) - never by editing a file. Confirm the
-   replacement first: `resolve_tickers` is the only sanctioned way to determine
-   a ticker, and its output shows the actual currency and price, which is how
-   you tell a wrong company or wrong listing from a right one. Currency must be
-   one of EUR/USD/GBP/GBp.
+   (`isin` plus the corrected `ticker`). Confirm the replacement first:
+   `resolve_tickers` is the only sanctioned way to determine a ticker.
+   Currency must be one of EUR/USD/GBP/GBp. `set_ticker_mapping` also
+   **automatically re-runs `enrich_lots`**, so no extra step is needed.
 3. If you are not fully sure a pick is right, ask the user to confirm before
-   moving on - don't silently accept an uncertain pick.
+   moving on — don't silently accept an uncertain pick.
 
 Once every row looks right, fill in each new row's blank Sector with
-**`set_ticker_mapping`** (`isin` + `sector`; the other fields stay as they are).
+**`set_ticker_mapping`** (`isin` + `sector`; other fields stay as they are).
 Use **`read_ticker_map`** to see the current state. Ask the user what taxonomy
 they want (Technology, Healthcare, Commodities, etc; there's no fixed list,
-this one's just their preference).
-
-Call **`enrich_lots`** after all of this. It joins `transaction_lots.csv`
-with `ticker_map.csv` and `company_overrides.csv` to produce
-`enriched_lots.csv` — the file every downstream tool reads. It will report
-any ISINs still missing a Ticker (call `resolve_tickers` again, or fix
-with `set_ticker_mapping`) or a blank Sector (fill with `set_ticker_mapping`).
-Repeat `enrich_lots` until neither list has entries, and the reported
-position share counts look sane to the user.
+this one's just their preference). Each `set_ticker_mapping` call re-enriches
+automatically — repeat until no ISINs are missing a Ticker or Sector, and the
+reported position share counts look sane to the user.
 
 ## Step 5: Fetch prices and seed history
 

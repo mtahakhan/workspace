@@ -63,7 +63,7 @@ here in the skill bundle (in the source repo at
 | Record a new/updated transaction history | `upload_transactions` | `pipeline/uploads.py` |
 | Rebuild FIFO lots after a new trade | `compute_lots` | `pipeline/lots.py` |
 | Resolve a new ISIN to a real ticker | `resolve_tickers` | `pipeline/tickers.py` |
-| Join lots + ticker map → enriched_lots.csv (run after compute_lots, resolve_tickers, or set_ticker_mapping) | `enrich_lots` | `pipeline/enrich.py` |
+| Join lots + ticker map → enriched_lots.csv (run explicitly after compute_lots; called automatically by resolve_tickers and set_ticker_mapping) | `enrich_lots` | `pipeline/enrich.py` |
 | Fetch today's live prices | `fetch_prices` | `pipeline/prices.py` |
 | Backfill full price history (rare/one-off) | `backfill_history` | `pipeline/backfill.py` |
 | Compute portfolio value/gain/XIRR/movers/etc. | `analyze_portfolio` | `pipeline/analysis.py` |

@@ -152,21 +152,27 @@ exposed as an MCP tool - that's the sanctioned way to invoke it.
 2. **`compute_lots`** → **`data/personal/transaction_lots.csv`** - FIFO cost-basis
    engine. Reconstructs exactly which shares are still held, when, and at
    what price, from the real transaction history (handles partial sells,
-   ISIN-swap corporate actions, and broker-migration transfer rows). This is
-   the sole source of current open positions (ticker, company, shares,
-   weighted-average cost) - there is no separate positions file.
+   ISIN-swap corporate actions, and broker-migration transfer rows). Output
+   is ISIN-keyed only — no Ticker, Company or Sector yet; those come from
+   the next steps.
 3. **`data/impersonal/ticker_map.csv`** (ISIN, Ticker, Company, Sector) - the resolved
    ticker symbol and sector, the two things broker exports can't provide.
    Shared and committed - an ever-growing lookup table, because resolving a
    ticker correctly once means nobody using this project ever has to
    re-solve it. `resolve_tickers` deterministically resolves any new ISIN via
-   a real yfinance lookup (never a guess) whenever `compute_lots` reports one
+   a real yfinance lookup (never a guess) whenever `enrich_lots` reports one
    as unmapped; Sector still needs a quick human judgment call afterward.
    Note the `Company` column here is *not* what reports display - that comes
    from the broker's own description in `transactions.csv` (see
    `data/impersonal/company_overrides.csv` below to correct a wrong one).
+3a. **`enrich_lots`** → **`data/personal/enriched_lots.csv`** - joins
+    `transaction_lots.csv` with `ticker_map.csv` and `company_overrides.csv`.
+    This is the file every downstream tool reads (prices, backfill, analysis,
+    fees, storage). Run it after `compute_lots`, after `resolve_tickers`, or
+    after `set_ticker_mapping`. Replaces the old pattern of running
+    `compute_lots` a second time.
 4. **`fetch_prices`** → **`data/impersonal/price_history/{TICKER}.jsonl`** - fetches the
-   ticker list from `transaction_lots.csv`, gets live prices (Finnhub
+   ticker list from `enriched_lots.csv`, gets live prices (Finnhub
    primary, yfinance fallback), and appends one fully-sourced record per
    ticker (original currency, source name/URL, FX rate + source) to its own
    history file. There is no separate latest-price snapshot file - each
@@ -185,10 +191,10 @@ exposed as an MCP tool - that's the sanctioned way to invoke it.
    multi-fetch day will silently discard that day's extra records.
 5. **`analyze_portfolio`** - deterministic numeric layer: value, gain/loss,
    sector breakdown, high-water-mark/drawdown, movers, trend, and a real
-   money-weighted XIRR (annualized return) from `transaction_lots.csv`'s
-   actual purchase dates. Flags stale prices and a run-over-run value
-   divergence (see "Notable incidents" in `AGENT_NOTES.md`). Every threshold
-   lives in `config.json` (see "Configurable thresholds" below).
+   money-weighted XIRR (annualized return) from `enriched_lots.csv`'s actual
+   purchase dates. Flags stale prices and a run-over-run value divergence
+   (see "Notable incidents" in `AGENT_NOTES.md`). Every threshold lives in
+   `config.json` (see "Configurable thresholds" below).
 6. **`check_compliance`** - takes the same `analyze_portfolio` dict and
    evaluates it against every hard limit in the investment framework (sleeve
    split, single-position and hedge caps, top-3 and per-sector concentration,
@@ -202,12 +208,16 @@ exposed as an MCP tool - that's the sanctioned way to invoke it.
    so the LLM writing the report never hand-transcribes a number out of the
    JSON - it only writes the Executive Summary and Movers research prose.
 
-Run order matters: `compute_lots` runs FIRST (works fine even with an
-empty/missing `ticker_map.csv` - just leaves `Ticker`/`Sector` blank), THEN
-`resolve_tickers` (reads `transaction_lots.csv`'s blank-`Ticker` rows to
-resolve and append to `ticker_map.csv`), THEN re-run `compute_lots` to pick
-up the resolved tickers. `resolve_tickers` deliberately does NOT re-run the
-FIFO engine itself.
+Run order: `compute_lots` FIRST (ISIN-only lots; works with no `ticker_map.csv`),
+THEN `resolve_tickers` if any ISINs are new (appends to `ticker_map.csv`, then
+**automatically calls `enrich_lots`** so `enriched_lots.csv` is immediately
+current). `set_ticker_mapping` also calls `enrich_lots` automatically after
+every write — so after correcting a flagged ticker or filling in a blank Sector,
+`enriched_lots.csv` is updated without an extra step.
+
+The only time `enrich_lots` needs to be called explicitly is immediately after
+`compute_lots` on a steady-state day (no new ISINs, no mapping changes), to
+ensure `enriched_lots.csv` reflects the current lot file.
 
 ### Diagram
 
@@ -227,21 +237,23 @@ flowchart TD
         UPLOAD["upload_transactions tool<br/>raw CSV text argument<br/>(only external input)"]:::script
         TXN[("data/personal/transactions.csv")]:::data
         TMAP[("data/impersonal/ticker_map.csv<br/>ISIN, Ticker, Company, Sector<br/>shared / committed")]:::data
-        LOTS[("data/personal/transaction_lots.csv<br/>FIFO open lots<br/>ISIN, Ticker, Shares, dates,<br/>execution price, fee,<br/>corporate-action provenance")]:::data
+        COMAP[("data/impersonal/company_overrides.csv<br/>ISIN, Company, Note<br/>shared / committed")]:::data
+        LOTS[("data/personal/transaction_lots.csv<br/>FIFO open lots, ISIN-keyed<br/>no Ticker/Sector/Company yet")]:::data
+        ENRICHED[("data/personal/enriched_lots.csv<br/>LOTS joined with TMAP + COMAP<br/>Ticker, Company, Sector filled in<br/>read by all downstream tools")]:::data
 
         CL1["pipeline.lots<br/>FIFO engine"]:::script
         SCAFF["pipeline.tickers<br/>yfinance resolve<br/>(only if new ISIN)"]:::script
-        CL2["pipeline.lots<br/>(re-run)"]:::script
+        ENRICH["pipeline.enrich<br/>join lots + ticker_map<br/>+ company_overrides"]:::script
 
         UPLOAD --> TXN
         TXN --> CL1
-        TMAP --> CL1
         CL1 --> LOTS
-        LOTS -- "blank-Ticker rows" --> SCAFF
+        LOTS -- "blank-Ticker ISINs" --> SCAFF
         SCAFF -- "appends new rows" --> TMAP
-        TMAP --> CL2
-        TXN --> CL2
-        CL2 --> LOTS
+        LOTS --> ENRICH
+        TMAP --> ENRICH
+        COMAP --> ENRICH
+        ENRICH --> ENRICHED
     end
 
     subgraph DAILY["② SCHEDULED - Claude Code tasks, daily"]
@@ -267,10 +279,10 @@ flowchart TD
         TASKANALYSIS{{"portfolio-daily-analysis<br/>~07:25 Berlin<br/>LLM web-searches ALL holdings in parallel<br/>(day-over-day movers: today's headlines;<br/>trend movers: cause query + stored-news continuity;<br/>all others: one-line digest),<br/>writes Signals &amp; Actions + Executive Summary<br/>+ News Digest, never hand-transcribes a number<br/>nor re-applies a framework limit itself"}}:::task
 
         TASKFETCH -.triggers.-> FETCH
-        LOTS --> FETCH
+        ENRICHED --> FETCH
         FETCH --> PRICES
 
-        LOTS --> ANALYZE
+        ENRICHED --> ANALYZE
         PRICES --> ANALYZE
         HIST -- "prior run's total_value" --> ANALYZE
         CONFIG -- "thresholds/caveat templates" --> ANALYZE
@@ -291,7 +303,7 @@ flowchart TD
     end
 
     BACKFILL["pipeline.backfill<br/>one-off / rare, full history"]:::script
-    LOTS -. seeds .-> BACKFILL
+    ENRICHED -. seeds .-> BACKFILL
     BACKFILL -. rewrites .-> PRICES
 
     classDef data fill:#eef1fb,stroke:#4b5fa8,stroke-width:1.5px,color:#262c52
@@ -310,9 +322,10 @@ diagram.
 |---|---|---|
 | `data/personal/transactions.csv` | Raw broker export - the only external input | `upload_transactions` tool (keeps one `.bak`) |
 | `data/impersonal/ticker_map.csv` | ISIN, Ticker, Company, Sector - shared, committed | `resolve_tickers` (Ticker/Company) + `set_ticker_mapping` (Sector, corrections) |
-| `data/impersonal/company_overrides.csv` | ISIN, Company, Note - shared, committed. Corrects the handful of broker descriptions that name the wrong company; everything unlisted keeps the broker's own label | You (hand-edited in the repo); `pipeline/lots.py` applies it |
+| `data/impersonal/company_overrides.csv` | ISIN, Company, Note - shared, committed. Corrects the handful of broker descriptions that name the wrong company; everything unlisted keeps the broker's own label | You (hand-edited in the repo); `pipeline/enrich.py` applies it |
 | `config.json` | All tunable thresholds and every caveat/notify-reason message template - shared, committed, not personal data | You (hand-edited); `pipeline/config.py` just loads it |
-| `data/personal/transaction_lots.csv` | Current open positions - FIFO lots, real dates/prices, per-lot order fee, corporate-action provenance (`CA From ISIN`/`CA Ratio`/`CA Date`) | `compute_lots` |
+| `data/personal/transaction_lots.csv` | FIFO open lots, ISIN-keyed — no Ticker/Company/Sector. Only `pipeline/tickers.py` (to find blank-Ticker ISINs) and `pipeline/enrich.py` read this directly; everything else reads `enriched_lots.csv` | `compute_lots` |
+| `data/personal/enriched_lots.csv` | FIFO lots joined with `ticker_map.csv` and `company_overrides.csv` — Ticker, Company, Sector filled in. This is the file every downstream tool reads (prices, backfill, analysis, fees, storage) | `enrich_lots` |
 | `data/impersonal/price_history/{TICKER}.jsonl` | Full sourced price history, one file per ticker. May hold several records for one day (one per `fetch_prices` run); readers collapse to one per day, last wins | `fetch_prices` (appends, no same-day check) / `backfill_history` (one-off, rewrites at one record per day) |
 | `data/personal/analysis_history.jsonl` | One line per `analyze_portfolio` run: `generated_at`, `total_value`, `xirr_pct` - append-only, powers the value-divergence caveat | `analyze_portfolio` |
 | `data/personal/roles.csv` | Portfolio role per holding (Core Compounder / Growth / Opportunistic / Defensive) + when last confirmed. Personal, not impersonal: a role describes how a position functions in *this* portfolio, so the same ETF is Growth for one holder and Defensive for another | `set_position_role` (read via `read_roles`) |
@@ -328,18 +341,18 @@ serialized through the global lock:
 | Tool | Wraps | Uses | Produces | Run order |
 |---|---|---|---|---|
 | `upload_transactions` | `pipeline/uploads.py` | Raw CSV text (tool argument) | `data/personal/transactions.csv` (+ `.bak` of previous) | whenever the user has a new export |
-| `compute_lots` | `pipeline/lots.py` | `data/personal/transactions.csv` + `data/impersonal/ticker_map.csv` | `data/personal/transaction_lots.csv` (incl. per-lot `Fee`) | 1st (works even if ticker_map.csv is empty/missing) |
-| `resolve_tickers` | `pipeline/tickers.py` | `data/personal/transaction_lots.csv` (blank-Ticker rows, by ISIN) + `yfinance` search/currency/history checks | Appends rows to `data/impersonal/ticker_map.csv` (Sector blank) | 2nd, only when needed |
-| `compute_lots` (re-run) | same | same | fresh `data/personal/transaction_lots.csv` with resolved tickers | 3rd, after resolve_tickers |
-| `fetch_prices` | `pipeline/prices.py` | `data/personal/transaction_lots.csv` + Finnhub/yfinance | Appends to `data/impersonal/price_history/*.jsonl` | daily |
-| `backfill_history` | `pipeline/backfill.py` | `data/personal/transaction_lots.csv` + yfinance historical | Rewrites `data/impersonal/price_history/*.jsonl` (full history) | one-off/rare |
-| `analyze_portfolio` | `pipeline/analysis.py` (+ `pipeline/config.py`) | `data/personal/transaction_lots.csv` + `data/impersonal/price_history/*.jsonl` + last line of `data/personal/analysis_history.jsonl` + `config.json` | JSON: value, fee-inclusive cost/gain/loss, `total_fees_eur`, per-position `fees_eur`/`fee_drag_pct`/`trend_30d_pct`/`trend_56d_pct`/`drawdown_from_high_pct`, drawdown, XIRR, movers, `trend_movers`, trend, `corporate_actions`, `stale_prices`, `caveats`, `notable`/`notify_reasons`; appends a new line to `data/personal/analysis_history.jsonl` | after fetch_prices |
+| `compute_lots` | `pipeline/lots.py` | `data/personal/transactions.csv` | `data/personal/transaction_lots.csv` (ISIN-keyed, no Ticker/Sector/Company, incl. per-lot `Fee`) | 1st |
+| `resolve_tickers` | `pipeline/tickers.py` | `data/personal/transaction_lots.csv` (checks unmapped ISINs against `ticker_map.csv`) + `yfinance` search/currency/history checks | Appends rows to `data/impersonal/ticker_map.csv` (Sector blank); **automatically calls `enrich_lots`** at the end | 2nd, only when a new ISIN appears |
+| `enrich_lots` | `pipeline/enrich.py` | `data/personal/transaction_lots.csv` + `data/impersonal/ticker_map.csv` + `data/impersonal/company_overrides.csv` | `data/personal/enriched_lots.csv` (full join; Ticker, Company, Sector filled in) | after `compute_lots` (explicit); called automatically by `resolve_tickers` and `set_ticker_mapping` |
+| `fetch_prices` | `pipeline/prices.py` | `data/personal/enriched_lots.csv` + Finnhub/yfinance | Appends to `data/impersonal/price_history/*.jsonl` | daily |
+| `backfill_history` | `pipeline/backfill.py` | `data/personal/enriched_lots.csv` + yfinance historical | Rewrites `data/impersonal/price_history/*.jsonl` (full history) | one-off/rare |
+| `analyze_portfolio` | `pipeline/analysis.py` (+ `pipeline/config.py`) | `data/personal/enriched_lots.csv` + `data/impersonal/price_history/*.jsonl` + last line of `data/personal/analysis_history.jsonl` + `config.json` | JSON: value, fee-inclusive cost/gain/loss, `total_fees_eur`, per-position `fees_eur`/`fee_drag_pct`/`trend_30d_pct`/`trend_56d_pct`/`drawdown_from_high_pct`, drawdown, XIRR, movers, `trend_movers`, trend, `corporate_actions`, `stale_prices`, `caveats`, `notable`/`notify_reasons`; appends a new line to `data/personal/analysis_history.jsonl` | after fetch_prices |
 | `render_report` | `pipeline/report.py` | `analyze_portfolio`'s JSON + `config.json` (`short_hold_days_threshold`, `fee_drag_notable_pct`, `trend_medium_days`, `trend_high_window_days`, `trend_notable_pct`) | Markdown: Portfolio Overview, Trend, Sector Breakdown, Largest Positions, Movers, Trend Movers (gated on `trend_notable_pct`), Complete Holdings Table (incl. 30d/56d/Δ-vs-high columns), Corporate Actions, Fee Drag, XIRR Context, Data Notes | after analyze_portfolio, before the report is written |
 | `save_news_source` | `pipeline/storage.py` | Ticker + source facts + fetched text (tool arguments) | One file under `data/impersonal/news/{TICKER}/`; server generates timestamp, slug, metadata header | during news research |
 | `save_report` / `get_report` / `list_reports` | `pipeline/storage.py` | Report markdown (tool argument) / a date | `data/personal/daily-analysis/YYYY-MM-DD.md` (re-saving replaces) | end of the daily task |
 | `list_news` / `get_news_source` | `pipeline/storage.py` | Ticker (+ filename) | Filenames / full stored text | when checking what's already captured |
-| `read_ticker_map` / `set_ticker_mapping` | `pipeline/storage.py` | ISIN + any of Ticker/Company/Sector | Rewrites `data/impersonal/ticker_map.csv` in place, preserving unset fields | filling in a blank Sector, or correcting a mis-resolved listing |
-| `list_lots` | `pipeline/storage.py` | optional ticker | `data/personal/transaction_lots.csv` as text (all lots, or one ticker's) - read-only | auditing what a cost basis or holding period is built from |
+| `read_ticker_map` / `set_ticker_mapping` | `pipeline/storage.py` | ISIN + any of Ticker/Company/Sector | Rewrites `data/impersonal/ticker_map.csv` in place; **`set_ticker_mapping` automatically calls `enrich_lots`** so `enriched_lots.csv` is immediately current | filling in a blank Sector, or correcting a mis-resolved listing |
+| `list_lots` | `pipeline/storage.py` | optional ticker | `data/personal/enriched_lots.csv` as text (all lots, or one ticker's) - read-only | auditing what a cost basis or holding period is built from |
 | `read_roles` / `set_position_role` | `pipeline/storage.py` | Ticker + role (+ note) | Rewrites `data/personal/roles.csv`; roles drive the sleeve split, so a stale label quietly invalidates that check | when a position's thesis changes sleeve |
 | `check_compliance` | `pipeline/compliance.py` (+ `pipeline/fees.py`, `pipeline/cash.py`, `data/personal/roles.csv`, `data/impersonal/fee_rules.json`) | `analyze_portfolio`'s output dict | `breaches` list + per-check detail, `prime_status`, `fee_history`, `fee_drag_by_ticker`, `missing_roles` | daily, after analyze_portfolio |
 

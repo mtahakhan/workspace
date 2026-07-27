@@ -288,8 +288,8 @@ def set_ticker_mapping(isin: str, ticker: str = "", company: str = "", sector: s
     Needed because resolve_tickers deliberately leaves Sector blank for a human
     judgment call, and a mis-resolved listing occasionally needs correcting. Never
     guess a ticker here - resolve_tickers is the only sanctioned way to determine one
-    (see the skill's rule 1). Run enrich_lots afterward to apply the change to
-    enriched_lots.csv — that is what fetch_prices, analyze_portfolio, etc. read."""
+    (see the skill's rule 1). enriched_lots.csv is updated automatically — no
+    separate enrich_lots call needed."""
     return _locked(_storage.set_ticker_mapping, isin,
                    ticker or None, company or None, sector or None)
 
