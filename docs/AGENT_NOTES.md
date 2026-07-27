@@ -34,7 +34,7 @@ workflow, and lessons already learned the hard way.
    2-3 concrete options for how to debug or fix it - and stop there. Only
    edit the code once the user has confirmed they want a change made and
    roughly how. This applies doubly during an unattended scheduled-task run
-   (`portfolio-price-fetch`, `portfolio-daily-analysis`): there's no one
+   (`portfolio-daily-refresh`, `portfolio-daily-analysis`): there's no one
    present to confirm intent, so an error there gets reported (in the report
    / via notification) and left alone, never silently patched. `config.json`
    is the deliberate exception - tuning a threshold or caveat wording there
@@ -345,7 +345,7 @@ independent files.** The original four each took no arguments *except* that
 three of them required the caller to pass `analyze_portfolio`'s dict back in
 as an `analysis` argument - fine within one task's own conversation, but it
 meant `portfolio-daily-analysis` (which has no memory of
-`portfolio-price-fetch`'s conversation - they're separate scheduled
+`portfolio-daily-refresh`'s conversation - they're separate scheduled
 invocations) had to call all four itself just to get numbers it could have
 read off disk. An intermediate design (this same day, superseded before
 ship) tried fixing that by giving each of the four its own timestamped file
@@ -353,7 +353,7 @@ under `pipeline-runs/{tool}/*.json` and a matching `get_*` tool - stateless,
 but eight tools for four computations, and four directories to keep in sync
 by convention rather than by construction.
 
-The shipped design: `portfolio-price-fetch` now calls exactly two tools -
+The shipped design: `portfolio-daily-refresh` now calls exactly two tools -
 `fetch_prices`, then `create_refresh` - and `create_refresh` runs all four
 steps in one call, each reading the previous step's result in memory (never
 from a file, never as a passed argument) and writing its own file into one

@@ -256,9 +256,9 @@ only that directory's id. Two more tools read it back:
   exactly the same way `fetch_prices` writing 9 records for one day doesn't
   break "the current price" (last valid one wins).
 
-This exists because `portfolio-price-fetch` and `portfolio-daily-analysis`
+This exists because `portfolio-daily-refresh` and `portfolio-daily-analysis`
 (see "Scheduled tasks" below) are separate scheduled invocations with no
-shared conversation: `portfolio-price-fetch` calls `fetch_prices` then
+shared conversation: `portfolio-daily-refresh` calls `fetch_prices` then
 `create_refresh` - the entire deterministic pass, two tool calls - and
 `portfolio-daily-analysis` only reads that refresh back via `get_refresh`
 before doing news research and writing the report. Nothing computed by one
@@ -338,7 +338,7 @@ flowchart TD
         COMPLY["pipeline.compliance<br/>framework limits<br/>(+ pipeline.fees, pipeline.cash)"]:::script
         EXIT["pipeline.exit_report<br/>(+ pipeline.cash)<br/>FIFO realized-gain pass<br/>over full transaction history"]:::script
 
-        TASKFETCH{{"portfolio-price-fetch<br/>~07:11 Berlin<br/>two calls: fetch_prices, then create_refresh<br/>(analysis → compliance → render → exit_report,<br/>stopping at the first step that fails).<br/>Neither call takes arguments or returns a<br/>payload - create_refresh returns only the new<br/>refresh's id; reports 1 line"}}:::task
+        TASKFETCH{{"portfolio-daily-refresh<br/>~07:11 Berlin<br/>two calls: fetch_prices, then create_refresh<br/>(analysis → compliance → render → exit_report,<br/>stopping at the first step that fails).<br/>Neither call takes arguments or returns a<br/>payload - create_refresh returns only the new<br/>refresh's id; reports 1 line"}}:::task
         TASKANALYSIS{{"portfolio-daily-analysis<br/>~07:25 Berlin<br/>separate invocation, no memory of the run<br/>above - reads the REFRESH directory back via<br/>get_refresh(kind=...), then web-searches ALL<br/>holdings in parallel (day-over-day movers:<br/>today's headlines; trend movers: cause query<br/>+ stored-news continuity; all others: one-line<br/>digest), writes Signals &amp; Actions + Executive<br/>Summary + News Digest, never hand-transcribes a<br/>number nor re-applies a framework limit itself"}}:::task
 
         TASKFETCH -.triggers.-> FETCH
@@ -386,7 +386,7 @@ There's a third, on-demand-only task alongside the two above:
 invoked from a chat request rather than the schedule, for a mid-day "rerun
 the numbers" / "refresh the news" / "redo the whole report" without waiting
 for the next scheduled cycle. It has two operations: a full refresh (same
-two calls `portfolio-price-fetch` makes - always atomic, never partial) and
+two calls `portfolio-daily-refresh` makes - always atomic, never partial) and
 a news/report regeneration that reuses an existing valid refresh for the
 day via `list_refreshes` + `get_refresh`, falling back to a full refresh
 first only if nothing valid exists yet for today.
@@ -451,15 +451,15 @@ Thin LLM wrappers around the deterministic core:
 
 | Task | Does | Deterministic or LLM? |
 |---|---|---|
-| `portfolio-price-fetch` (~07:11 Berlin) | Two calls: `fetch_prices`, then `create_refresh` (analysis → compliance → render → exit_report, stopping at the first step that fails). Neither takes arguments or returns a payload - `create_refresh` returns only the new refresh's id. Reports one summary line | Entirely deterministic - LLM just calls the two tools in order and reports |
-| `portfolio-daily-analysis` (~07:25 Berlin) | Separate invocation with no memory of the run above - reads that refresh back with `get_refresh(kind=...)`, WebSearches all holdings in one parallel batch — day-over-day movers (today's headlines), trend movers (cause-oriented query + stored-news continuity via `list_news`/`get_news_source`), all others (one-line digest) — writes Signals & Actions + Executive Summary + News Digest | Hybrid - every number/table comes untouched from what `portfolio-price-fetch` already wrote; LLM only adds the Executive Summary and news-research prose, never hand-transcribes a figure |
+| `portfolio-daily-refresh` (~07:11 Berlin) | Two calls: `fetch_prices`, then `create_refresh` (analysis → compliance → render → exit_report, stopping at the first step that fails). Neither takes arguments or returns a payload - `create_refresh` returns only the new refresh's id. Reports one summary line | Entirely deterministic - LLM just calls the two tools in order and reports |
+| `portfolio-daily-analysis` (~07:25 Berlin) | Separate invocation with no memory of the run above - reads that refresh back with `get_refresh(kind=...)`, WebSearches all holdings in one parallel batch — day-over-day movers (today's headlines), trend movers (cause-oriented query + stored-news continuity via `list_news`/`get_news_source`), all others (one-line digest) — writes Signals & Actions + Executive Summary + News Digest | Hybrid - every number/table comes untouched from what `portfolio-daily-refresh` already wrote; LLM only adds the Executive Summary and news-research prose, never hand-transcribes a figure |
 
 There's a third, on-demand-only task alongside the two schedule-triggered
 ones above: **`portfolio-refresh`** (`skills/portfolio/references/tasks/refresh.md`),
 invoked from a chat request rather than a cron schedule, for a mid-day
 "rerun the numbers" / "refresh the news" / "redo the whole report" without
 waiting for the next scheduled cycle. Two operations: a full refresh (the
-same two calls `portfolio-price-fetch` makes - always atomic, never
+same two calls `portfolio-daily-refresh` makes - always atomic, never
 partial) and a news/report regeneration that reuses an existing valid
 refresh for the day (`list_refreshes` + `get_refresh`), falling back to a
 full refresh first only if nothing valid exists yet for today.

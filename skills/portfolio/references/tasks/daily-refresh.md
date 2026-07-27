@@ -1,4 +1,4 @@
-# portfolio-price-fetch task instructions
+# portfolio-daily-refresh task instructions
 
 Run the full deterministic pipeline - two tool calls, in order:
 

@@ -1,9 +1,9 @@
 # portfolio-daily-analysis task instructions
 
 Generate today's portfolio analysis report. This is a separate scheduled
-invocation from `portfolio-price-fetch` with no memory of it - it never
+invocation from `portfolio-daily-refresh` with no memory of it - it never
 calls `fetch_prices` or `create_refresh` itself. Both already ran earlier
-today as part of `portfolio-price-fetch` (see `price-fetch.md`), producing
+today as part of `portfolio-daily-refresh` (see `daily-refresh.md`), producing
 one refresh directory with four files (analysis, compliance, render,
 exit-report) and returning only its id. This task's only job is to read
 that refresh back - always through the `get_refresh` MCP tool, never a file
@@ -14,10 +14,10 @@ need a model: news research and the Executive Summary.
 `get_refresh` with no `refresh_id` always resolves to the latest **valid**
 refresh (one with all four files) - an incomplete refresh from a failed run
 is skipped automatically. If it comes back "No valid refresh..."
-(everything today is missing or incomplete), `portfolio-price-fetch` hasn't
+(everything today is missing or incomplete), `portfolio-daily-refresh` hasn't
 successfully run yet today - report that plainly and stop. Don't work
 around it by calling `fetch_prices` or any deterministic tool yourself;
-that's `portfolio-price-fetch`'s job (or `portfolio-refresh` if the user
+that's `portfolio-daily-refresh`'s job (or `portfolio-refresh` if the user
 explicitly asks for an on-demand refresh - see `refresh.md`), and running it
 from here would defeat the point of keeping the two tasks independent.
 
@@ -58,7 +58,7 @@ Steps:
    etc.) before writing the report, not something to report as a genuine
    market move without checking. If `annualized_returns.tickers_without_lot_data`
    is non-empty, note it as a data gap in the report - fixing it (running
-   `compute_lots`/`enrich_lots`/`resolve_tickers`) is `portfolio-price-fetch`'s
+   `compute_lots`/`enrich_lots`/`resolve_tickers`) is `portfolio-daily-refresh`'s
    job on its next run, not something to trigger from here.
 4. Call `get_refresh` with `kind="compliance"` (no `refresh_id`). It encodes
    every hard limit in `../INVESTMENT_FRAMEWORK.md` (sleeve split, max
@@ -145,7 +145,7 @@ Steps:
    corrected re-run is safe. Use `get_report` if you need to compare
    against a previous day. This is the only step that should involve you
    writing prose/tables by hand - everything else comes from data already
-   computed and rendered by `portfolio-price-fetch`. For the Executive
+   computed and rendered by `portfolio-daily-refresh`. For the Executive
    Summary's framing and vocabulary (signals, portfolio roles, sell
    discipline), follow `../INVESTMENT_FRAMEWORK.md` - but keep rule 8 below
    in mind: it doesn't mean forcing a BUY/HOLD/TRIM/EXIT signal onto every

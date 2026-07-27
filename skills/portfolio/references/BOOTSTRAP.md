@@ -140,14 +140,14 @@ returned without an error.
 ## Step 7: Set up daily automation
 
 Check `mcp__scheduled-tasks__list_scheduled_tasks` for tasks named
-`portfolio-price-fetch` and `portfolio-daily-analysis`. If either is missing,
+`portfolio-daily-refresh` and `portfolio-daily-analysis`. If either is missing,
 create it: the schedule's `prompt` should be a one-line pointer - "Invoke the
-`portfolio` skill, then follow `references/tasks/price-fetch.md` (or
+`portfolio` skill, then follow `references/tasks/daily-refresh.md` (or
 `daily-analysis.md`), resolved relative to wherever that skill's `SKILL.md` was
 loaded from" - not the actual instructions inlined into the schedule prompt
 (see rule 7 in `../SKILL.md` for why: the real instructions belong in exactly
 one place, this bundle's `references/tasks/*.md`). Suggested timing:
-price-fetch a few minutes before daily-analysis, both once daily; ask the user
+daily-refresh a few minutes before daily-analysis, both once daily; ask the user
 if they'd prefer a different time or frequency.
 
 ## Done

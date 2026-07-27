@@ -103,10 +103,10 @@ mispriced - see [`ARCHITECTURE.md`](ARCHITECTURE.md)'s "Currency handling".
 ## Setting up daily automation
 
 Two Claude Code scheduled tasks drive the daily workflow -
-`portfolio-price-fetch` and `portfolio-daily-analysis`. The first-run flow
+`portfolio-daily-refresh` and `portfolio-daily-analysis`. The first-run flow
 above creates these for you if they don't exist yet; if you want to set them
 up yourself, or check they're still there, use
-`claude` and ask it to list/create scheduled tasks named `portfolio-price-fetch`
+`claude` and ask it to list/create scheduled tasks named `portfolio-daily-refresh`
 and `portfolio-daily-analysis` - each one's prompt should just say to invoke
 the `portfolio` skill and follow its `references/tasks/{name}.md` (the skill
 itself resolves that path once loaded; see

@@ -3,7 +3,7 @@
 Trigger: a chat request to refresh or re-run something mid-day - "refresh
 the news", "rerun the analysis", "get me updated numbers", "redo today's
 report", "pull fresh prices and redo the report". This is **not** one of
-the two scheduled tasks (`portfolio-price-fetch` / `portfolio-daily-analysis`,
+the two scheduled tasks (`portfolio-daily-refresh` / `portfolio-daily-analysis`,
 which still run automatically once a day each on their own schedule) - it's
 the ad hoc equivalent, invoked directly from a chat session whenever the
 user wants an update without waiting for the next scheduled cycle.
@@ -13,9 +13,9 @@ ambiguous, ask.
 
 - **Full refresh** ("rerun the analysis", "get fresh prices/numbers", "pull
   fresh prices and redo the report") - always the complete deterministic
-  pass, never a partial one: follow `price-fetch.md` exactly (`fetch_prices`
+  pass, never a partial one: follow `daily-refresh.md` exactly (`fetch_prices`
   then `create_refresh`). There is no "just the numbers, skip a step" mode -
-  a refresh is atomic. Report the same one-line summary `price-fetch.md`
+  a refresh is atomic. Report the same one-line summary `daily-refresh.md`
   calls for.
 - **News/report regeneration** ("refresh the news", "redo the Executive
   Summary", "regenerate today's report") - reuses an existing refresh
@@ -40,7 +40,7 @@ Call `list_refreshes` with today's date. Look at the results:
 - **If every entry is `[INCOMPLETE]`, or `list_refreshes` reports nothing
   for today**, there is no valid data to build a report from yet - say so
   plainly (a report can't be refreshed if a valid refresh doesn't exist),
-  then do a full refresh first (`price-fetch.md`'s two calls), and continue
+  then do a full refresh first (`daily-refresh.md`'s two calls), and continue
   into `daily-analysis.md` using that new refresh.
 
 `save_report` always replaces today's file rather than duplicating it (see

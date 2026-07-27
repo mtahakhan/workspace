@@ -29,7 +29,7 @@ regardless of which project triggered this skill:
 - `references/INVESTMENT_FRAMEWORK.md` - **read before giving analysis/advice** (chat questions, Executive Summary, scoring, rebalancing) - modes, signals, portfolio/risk rules
 - `references/BOOTSTRAP.md` - **follow this instead of everything else** if `upload_transactions` hasn't been called yet (fresh setup - no transaction data at all)
 - `references/TROUBLESHOOTING.md` - missing/stale/wrong prices, wrong currency, server not responding
-- `references/tasks/price-fetch.md` / `daily-analysis.md` - what the two
+- `references/tasks/daily-refresh.md` / `daily-analysis.md` - what the two
   daily scheduled tasks do - **this is the actual operational file the
   schedule follows**, not a read-only copy (see "Reading vs. editing" below)
 - `references/tasks/refresh.md` - **follow this for an on-demand mid-day
@@ -95,17 +95,17 @@ from the file the previous step just wrote); call `get_refresh` when you
 actually need the content. A refresh with fewer than four files is
 incomplete - `get_refresh`/`list_refreshes` treat it as unusable and skip
 it when resolving "the latest". This is deliberate: the
-`portfolio-price-fetch` and `portfolio-daily-analysis` tasks are separate
+`portfolio-daily-refresh` and `portfolio-daily-analysis` tasks are separate
 scheduled invocations with no shared conversation, so nothing computed by
 one can be an argument to a tool called by the other - see
 `references/tasks/*.md`.
 
-Standard daily flow: `portfolio-price-fetch` calls `fetch_prices` then
+Standard daily flow: `portfolio-daily-refresh` calls `fetch_prices` then
 `create_refresh` - two tool calls, fully deterministic. Then
 `portfolio-daily-analysis` reads that refresh back with `get_refresh`
 (`kind="analysis"` / `"compliance"` / `"render"` / `"exit_report"`),
 researches news, and writes the Executive Summary - see
-`references/tasks/price-fetch.md` and `references/tasks/daily-analysis.md`
+`references/tasks/daily-refresh.md` and `references/tasks/daily-analysis.md`
 for the full, current step-by-step. `references/tasks/refresh.md` covers the
 on-demand mid-day equivalent, including reusing an existing refresh instead
 of creating a new one.
