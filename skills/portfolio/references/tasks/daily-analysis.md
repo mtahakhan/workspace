@@ -80,23 +80,53 @@ Steps:
    my net gain/loss?" - capital flows, realized FIFO gain on closed
    positions, income, taxes, fees, and a hypothetical-exit summary. Condense
    it into a **small** `## Exit Summary` section for the report - a handful
-   of lines, not the full multi-table breakdown: net capital in, realized
-   gain (all-time), unrealized gain (open positions), hypothetical exit
-   value, net P&L, total fees paid, net tax cost. Do not hand-transcribe or
+   of lines, not the full multi-table breakdown. Do not hand-transcribe or
    recompute any of these figures - take them directly from this JSON, same
-   rule as step 2. Include the `cash` section's
+   rule as step 2.
+
+   **Always use this exact table format** (established 2026-07-27; do not
+   revert to a prose paragraph - a table is what every other numeric
+   section in this report uses, and the Exit Summary should read the same
+   way day to day):
+
+   ```
+   *Hypothetical: if every open position were sold today and the account
+   closed out, net of all-time fees, taxes and capital flows.*
+
+   | Item | Amount |
+   |------|--------|
+   | Net capital in (deposits − withdrawals, ex-PRIME credits) | ... |
+   | Realized gain, all-time (closed positions, FIFO) | ... |
+   | Unrealized gain/loss (current open positions) | ... |
+   | Income earned, net of tax (dividends + interest) | ... |
+   | Hypothetical exit value (open positions + cash) | ... |
+   | **Net P&L if fully exited today** | **...** |
+   | Total fees paid, all-time (entry + exit, incl. PRIME) | ... |
+   | Net tax cost (withheld − refunded) | ... |
+   ```
+
+   Map the row values from `capital_flows.net_capital_in_eur`,
+   `realized.gain_eur`, `open_positions.unrealized_gain_eur`,
+   `income.total_net_eur`, `summary.hypothetical_exit_value_eur`,
+   `summary.net_pnl_eur`, `summary.total_fees_all_time_eur`, and
+   `summary.total_tax_net_eur` respectively.
+
+   Below the table, include the `cash` section's
    `last_executed_transaction_date` / `days_since_last_executed_transaction`
-   as a plain fact (e.g. "last trade: 2026-07-16, 12 days ago") - it is
-   informational only, **not** a data-completeness signal on its own; a
-   long gap just means no trades happened. Separately, check the `cash`
-   section's `complete`/`note` fields (from `cash.py`'s own
-   implausible-negative check, independent of trade recency) - if
-   `complete` is `false`, say so plainly and treat the cash balance /
-   hypothetical exit value as unreliable for that reason, the same way
-   `stale_prices` is treated elsewhere in this task. Do not infer
-   staleness from the transaction-date gap yourself - an earlier version of
-   this tool did exactly that and produced a false "export is stale"
-   warning on 2026-07-27 that had to be corrected (see
+   as a plain fact on its own line (e.g. "**Last executed transaction:**
+   2026-07-16 (12 days before this report) — informational only, not a
+   data-completeness signal.") - a long gap just means no trades happened.
+   Separately, check the `cash` section's `complete`/`note` fields (from
+   `cash.py`'s own implausible-negative check, independent of trade
+   recency) - if `complete` is `false`, add one more line stating that
+   plainly and noting the hypothetical exit value / cash balance is
+   unreliable for that reason (the same way `stale_prices` is treated
+   elsewhere in this task), and that it's a pre-existing caveat rather than
+   something new about today's numbers specifically, unless the underlying
+   `-4.28`-style figure has actually changed since the last report. Do not
+   infer staleness from the transaction-date gap yourself - an earlier
+   version of this tool did exactly that and produced a false "export is
+   stale" warning on 2026-07-27 that had to be corrected (see
    `docs/AGENT_NOTES.md`, 2026-07-28 entry, in the source repo).
 6. Research news for every holding, not just movers - but dispatch it as
    ONE parallel batch of WebSearch calls (all tickers in a single
