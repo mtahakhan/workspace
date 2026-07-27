@@ -112,12 +112,13 @@ Use **`read_ticker_map`** to see the current state. Ask the user what taxonomy
 they want (Technology, Healthcare, Commodities, etc; there's no fixed list,
 this one's just their preference).
 
-Call **`compute_lots`** again after all of this. It will now report two
-separate things if anything is still missing: ISINs with no
-`ticker_map` row at all (call `resolve_tickers` again, or fix it with
-`set_ticker_mapping`), and rows that have a Ticker but a blank Sector (fill it in).
-Repeat until neither list has entries, and the reported position share
-counts look sane to the user.
+Call **`enrich_lots`** after all of this. It joins `transaction_lots.csv`
+with `ticker_map.csv` and `company_overrides.csv` to produce
+`enriched_lots.csv` — the file every downstream tool reads. It will report
+any ISINs still missing a Ticker (call `resolve_tickers` again, or fix
+with `set_ticker_mapping`) or a blank Sector (fill with `set_ticker_mapping`).
+Repeat `enrich_lots` until neither list has entries, and the reported
+position share counts look sane to the user.
 
 ## Step 5: Fetch prices and seed history
 

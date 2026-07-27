@@ -61,8 +61,9 @@ here in the skill bundle (in the source repo at
 | Need to... | Call this MCP tool | Wraps |
 |---|---|---|
 | Record a new/updated transaction history | `upload_transactions` | `pipeline/uploads.py` |
-| Rebuild positions after a new trade | `compute_lots` | `pipeline/lots.py` |
+| Rebuild FIFO lots after a new trade | `compute_lots` | `pipeline/lots.py` |
 | Resolve a new ISIN to a real ticker | `resolve_tickers` | `pipeline/tickers.py` |
+| Join lots + ticker map → enriched_lots.csv (run after compute_lots, resolve_tickers, or set_ticker_mapping) | `enrich_lots` | `pipeline/enrich.py` |
 | Fetch today's live prices | `fetch_prices` | `pipeline/prices.py` |
 | Backfill full price history (rare/one-off) | `backfill_history` | `pipeline/backfill.py` |
 | Compute portfolio value/gain/XIRR/movers/etc. | `analyze_portfolio` | `pipeline/analysis.py` |
@@ -114,7 +115,7 @@ skill files, not portfolio data.
    to report (see rule 3), not something to override by reasoning over raw
    data.
 3. **Never modify a deterministic pipeline module**
-   (`portfolio_tools/pipeline/lots.py`, `prices.py`, `backfill.py`,
+   (`portfolio_tools/pipeline/lots.py`, `enrich.py`, `prices.py`, `backfill.py`,
    `analysis.py`, `tickers.py`, `report.py`, `config.py`, `uploads.py`,
    `compliance.py`, `fees.py`, `cash.py`, `storage.py`, or
    `portfolio_tools/server.py`/`lock.py`/`paths.py`, all in the source repo -
