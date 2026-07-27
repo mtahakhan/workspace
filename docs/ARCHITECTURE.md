@@ -126,6 +126,18 @@ exposed as an MCP tool - that's the sanctioned way to invoke it.
    ticker (original currency, source name/URL, FX rate + source) to its own
    history file. There is no separate latest-price snapshot file - each
    file's last line IS the current price.
+
+   **Running it N times in a day appends N records for that day** - it is a
+   plain append, with no same-day check. That is allowed and non-destructive
+   (each record carries its own timestamp, source URL and FX rate), but it
+   means the raw file is *not* a daily series. `analyze_portfolio` collapses
+   each ticker to one record per calendar day on read (last write wins - see
+   `_collapse_to_daily` in `pipeline/analysis.py`), so every downstream figure
+   is day-over-day regardless of how many times prices were fetched. Note
+   `backfill_history` writes exactly one record per day (`open(..., "w")`, it
+   rewrites the file), so one-per-day is the file's intended grain and
+   `fetch_prices` is the writer that departs from it - a backfill after a
+   multi-fetch day will silently discard that day's extra records.
 5. **`analyze_portfolio`** - deterministic numeric layer: value, gain/loss,
    sector breakdown, high-water-mark/drawdown, movers, trend, and a real
    money-weighted XIRR (annualized return) from `transaction_lots.csv`'s
@@ -238,7 +250,7 @@ diagram.
 | `data/company_overrides.csv` | ISIN, Company, Note - shared, committed. Corrects the handful of broker descriptions that name the wrong company; everything unlisted keeps the broker's own label | You (hand-edited); `pipeline/lots.py` applies it |
 | `config.json` | All tunable thresholds and every caveat/notify-reason message template - shared, committed, not personal data | You (hand-edited); `pipeline/config.py` just loads it |
 | `data/transaction_lots.csv` | Current open positions - FIFO lots, real dates/prices | `compute_lots` |
-| `data/price_history/{TICKER}.jsonl` | Full sourced price history, one file per ticker | `fetch_prices` (daily) / `backfill_history` (one-off) |
+| `data/price_history/{TICKER}.jsonl` | Full sourced price history, one file per ticker. May hold several records for one day (one per `fetch_prices` run); readers collapse to one per day, last wins | `fetch_prices` (appends, no same-day check) / `backfill_history` (one-off, rewrites at one record per day) |
 | `data/analysis_history.jsonl` | One line per `analyze_portfolio` run: `generated_at`, `total_value`, `xirr_pct` - append-only, powers the value-divergence caveat | `analyze_portfolio` |
 | `data/daily-analysis/*.md` | Generated reports | `portfolio-daily-analysis` task |
 | `data/news/{TICKER}/*.txt` | One file per fetched news source deemed meaningful (metadata header + fetched text) | `portfolio-daily-analysis` task + any ad-hoc analysis that fetches news |

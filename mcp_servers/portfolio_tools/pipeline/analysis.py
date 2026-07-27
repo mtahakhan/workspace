@@ -175,8 +175,40 @@ def _filter_unadjusted_splits(records, ticker, sanity_ratio):
               f"(likely unadjusted split) - retained {len(kept)}/{len(records)}", file=sys.stderr)
     return kept
 
+def _collapse_to_daily(records):
+    """Collapse to one record per calendar day - the last fetch of that day wins.
+
+    `fetch_prices` appends unconditionally (prices.py's append_price_history opens
+    the file in "a" mode), so running it N times in a day leaves N records for that
+    day - 2026-07-24 has 9 per ticker, 2026-07-25 has 7. But everything downstream
+    assumes a daily series: compute_movers' "day-over-day" is literally the last two
+    entries, and build_value_series turns each distinct timestamp into its own point.
+
+    Without this collapse a second same-day fetch silently redefines "daily change"
+    as "change since the last fetch". Replaying 2026-07-24 (a Friday, 9 records per
+    ticker) with the raw history gives 0.00% for all 23 tickers - the day's last two
+    fetches returned identical prices - against true day-over-day moves of up to
+    +9.26% (SAP.DE) and -8.55% (IREN). Note backfill.py writes exactly one record per
+    day (open(..., "w")), so one-per-day is the file's intended grain and fetch_prices
+    is the writer that departs from it.
+
+    Do NOT read flat movers as proof of this bug: on a weekend or market holiday the
+    quote APIs return the previous close, so genuinely identical consecutive days are
+    correct output (2026-07-25 and 07-26 were Sat/Sun). Check the weekday first.
+
+    Keeping the *last* record of each day matches get_current_prices (latest record =
+    current price) and preserves that record's real timestamp, so the staleness check
+    is unaffected. Duplicates stay on disk untouched - each carries its own source URL
+    and FX rate, and that audit trail is worth keeping.
+    """
+    by_day = {}
+    for r in records:  # ascending, so the day's last record overwrites earlier ones
+        by_day[r["timestamp"].date()] = r
+    return [by_day[day] for day in sorted(by_day)]
+
 def load_ticker_history(ticker, split_adjustment_sanity_ratio):
-    """Return [{timestamp: datetime, price: float}, ...] sorted ascending. Empty if no file."""
+    """Return [{timestamp: datetime, price: float}, ...] sorted ascending, one record
+    per calendar day (see _collapse_to_daily). Empty if no file."""
     path = PRICE_HISTORY_DIR / f"{ticker}.jsonl"
     if not path.exists():
         return []
@@ -192,6 +224,7 @@ def load_ticker_history(ticker, split_adjustment_sanity_ratio):
             # explicitly reading that key here, not any of the original-currency ones.
             records.append({"timestamp": datetime.fromisoformat(obj["timestamp"]), "price": obj["price_eur"]})
     records.sort(key=lambda r: r["timestamp"])
+    records = _collapse_to_daily(records)
     return _filter_unadjusted_splits(records, ticker, split_adjustment_sanity_ratio)
 
 def price_at_or_before(history, when):
@@ -293,7 +326,13 @@ def compute_drawdown(full_value_series, current_value):
     return {"high_water_mark": round(hwm, 2), "high_water_mark_date": hwm_date, "drawdown_pct": round(drawdown_pct, 2)}
 
 def compute_movers(open_positions, all_history, top_n):
-    """Day-over-day % change per ticker, using the two most recent history entries."""
+    """Day-over-day % change per ticker, using the two most recent history entries.
+
+    That IS day-over-day only because load_ticker_history collapses each ticker's
+    history to one record per calendar day - see _collapse_to_daily. Don't feed this
+    a raw, uncollapsed history: multiple same-day fetches turn it into an intraday
+    change still labelled "daily".
+    """
     movers = []
     for pos in open_positions:
         hist = all_history.get(pos["Ticker"], [])

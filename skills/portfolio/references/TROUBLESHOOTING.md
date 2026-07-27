@@ -31,6 +31,32 @@ the skill - it doesn't assume access to the source repo.
 - Check the broker account for any splits/adjustments
 - Finnhub prices are ~5 min delayed (not real-time)
 
+## Several records for the same day in a price-history file
+
+Expected, not a bug. `fetch_prices` appends with no same-day check, so each run
+in a day adds a record per ticker (2026-07-24 has 9). `analyze_portfolio`
+collapses each ticker to the **last record per calendar day** when it reads
+(`_collapse_to_daily` in `pipeline/analysis.py`), so movers stay day-over-day
+and no reported figure is affected.
+
+- **Do not delete the extra records or hand-edit the `.jsonl` files.** Each
+  record carries its own timestamp, source URL and FX rate - that is an audit
+  trail, and the readers already ignore the duplicates.
+- **Do not skip a scheduled fetch** because someone already ran one manually.
+- Be aware `backfill_history` rewrites a file at one record per day, so running
+  it discards the extra intraday records for every day it covers.
+- If movers look like an intraday move rather than a day-over-day one, that
+  means the collapse isn't being applied - check that the MCP server was
+  restarted after any change to `analysis.py` (it caches modules at startup).
+
+## All movers show 0.0%, or every ticker is flat
+
+Check the day of week first. On a weekend or market holiday the quote APIs
+return the previous close, so consecutive days genuinely carry identical
+prices and 0.0% across the board is correct output, not a fault. 2026-07-25
+and 07-26 (Saturday/Sunday) look exactly like this. Only treat it as a bug if
+it happens on a trading day.
+
 ## A price looks off by ~100x, or in the wrong currency entirely
 
 - The pipeline supports EUR, USD, GBP, and GBp (British pence, converted

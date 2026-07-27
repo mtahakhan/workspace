@@ -1,6 +1,6 @@
 # portfolio-daily-analysis task instructions
 
-Generate today's portfolio analysis report. This runs after the `portfolio-price-fetch` task, which has already appended today's price to each ticker's `data/price_history/{TICKER}.jsonl` (there is no separate prices.json snapshot - each file's last line is the current price).
+Generate today's portfolio analysis report. This runs after the `portfolio-price-fetch` task, which has already appended today's price to each ticker's `data/price_history/{TICKER}.jsonl` (there is no separate prices.json snapshot - each file's last line is the current price). If `fetch_prices` ran more than once today there will be several records for today in each file; that is expected and harmless - `analyze_portfolio` collapses each ticker to the last record per calendar day, so its `movers` output is day-over-day either way.
 
 Working directory: `mcp_servers/portfolio_tools/` (this workspace's
 `mcp_servers/portfolio_tools` subdirectory, where the server's data actually

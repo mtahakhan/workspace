@@ -97,7 +97,12 @@ def resolve_tickers() -> str:
 def fetch_prices() -> str:
     """Fetch today's live price for every ticker in transaction_lots.csv (Finnhub primary,
     yfinance fallback) and append one fully-sourced record per ticker to
-    price_history/{TICKER}.jsonl. Run daily before analyze_portfolio."""
+    price_history/{TICKER}.jsonl. Run daily before analyze_portfolio.
+
+    Safe to run more than once a day: it appends unconditionally (no same-day check),
+    so N runs leave N records for that day, and analyze_portfolio collapses each ticker
+    to the last record per calendar day on read. Extra runs cost API calls and add
+    history lines, but cannot corrupt a reported figure."""
     return _locked(_capture_stdout, _fetch_prices)
 
 

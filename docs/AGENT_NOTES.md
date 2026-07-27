@@ -150,6 +150,35 @@ clone is unaffected. Same run also recategorized IREN Energy → Technology in
 XIRR unchanged). Reports dated before 2026-07-27 keep the old name and sector
 on purpose - they are records of what was reported at the time.
 
+**2026-07-27: `fetch_prices` appends without a same-day check, so "day-over-day"
+was really "since the last fetch".** `prices.py`'s `append_price_history` opens
+the file in `"a"` mode unconditionally, so N runs in a day leave N records for
+that day - 2026-07-24 has 9 per ticker, 07-25 has 7. `compute_movers` took
+`hist[-2]` vs `hist[-1]`, which is day-over-day *only* at one record per day;
+its docstring asserted "Day-over-day" while the code said "two most recent
+entries". Replaying 2026-07-24 with all 9 records shows all 23 tickers
+computing 0.00% (the day's last two fetches returned identical prices) against
+true day-over-day moves of up to 9.26pp (SAP.DE), -8.55% (IREN), -8.04% (ARM).
+The published 07-24 report escaped this by running mid-afternoon, when
+`hist[-2]` happened to be a 15:27 intraday record close to the prior close -
+its "-6.1%" for IREN was an 80-minute intraday delta labelled "Daily Change",
+numerically near the true -5.96% by luck. Fix: `_collapse_to_daily` in
+`analysis.py`, applied inside `load_ticker_history`, so every reader
+(`compute_movers`, `build_value_series`, drawdown, trend) sees one record per
+calendar day, last write wins. Chosen over a write-side guard because it also
+corrects the already-duplicated history and keeps every fetch on disk with its
+own source URL and FX rate. `get_current_prices` and the staleness check were
+always correct (latest record = latest price) and are unchanged; re-running
+`analyze_portfolio` after the fix reproduced every figure exactly.
+
+**Careful: flat movers are usually the calendar, not a bug.** While chasing the
+above I wrongly blamed the duplicate records for the 2026-07-25 report's five
+0.0% movers. 07-25 and 07-26 were a Saturday and Sunday - the quote APIs return
+the previous close, so identical prices across those days are correct. The
+replay disproved the hypothesis (0.00% before *and* after the fix); the real
+evidence was 07-24, a Friday. Check the weekday before treating flatness as a
+defect.
+
 **The MCP server caches pipeline modules at startup.** It is one long-running
 process, so editing a `pipeline/*.py` module has *no effect* on tool calls
 until it is restarted - and the tool will keep succeeding with the old code,
