@@ -18,6 +18,14 @@ it directly. This is the same venv `../bootstrap.sh` creates
 (`mcp_servers/portfolio_tools/.venv`) - if you've already run that, skip
 straight to step 1; there's no separate environment for "manual" use.
 
+**Already done steps 1-4 (transactions loaded, tickers resolved) and just
+want to re-run the numbers?** `make fetch-prices` (repo root) does step 5
+alone; `make refresh` does steps 5+7+8+9 in one command and prints the
+rendered report - see [`../Makefile`](../Makefile). The rest of this guide
+explains what each of those steps actually does and how to run them
+individually, which you'll still need for first-time setup (steps 1-4) or if
+one of them needs debugging.
+
 ## 0. Create the venv (skip if `../bootstrap.sh` already has)
 
 ```bash
@@ -125,6 +133,12 @@ Gets live prices for every ticker in `transaction_lots.csv` (Finnhub first if
 you set up a key, yfinance otherwise), and appends one line per ticker to its
 own history file at `data/impersonal/price_history/{TICKER}.jsonl`.
 
+**Exits non-zero (with a traceback) if any ticker fails on both sources** -
+tickers that DID resolve are still fetched and appended first, so a partial
+fetch isn't lost, but the command as a whole fails. That's intentional: a
+cron job chaining this into step 7 should stop rather than analyze an
+incomplete price set (see `make refresh` / `scripts/run-pipeline.sh` below).
+
 ## 6. (One-time) Backfill historical prices
 
 ```bash
@@ -214,15 +228,22 @@ between the two is what repeated round-trips actually cost.
 
 ## Automating this without Claude
 
-Set up your own cron job (macOS/Linux) or Task Scheduler (Windows) to run
-step 5 daily, then step 7+8 shortly after. Example crontab entry (adjust the
-path and time - note it still always calls the venv's own interpreter, never
-a bare `python3`):
+Simplest option: point cron (macOS/Linux) or Task Scheduler (Windows) at
+`make refresh` (repo root) - it chains steps 5/7/8/9 in one command, fails
+loudly if step 5 hits a bad ticker (see step 5 above), and writes its output
+under `data/personal/manual-runs/<timestamp>/` instead of stdout:
+```
+35 7 * * *  cd /path/to/repo && make refresh >> data/personal/manual-runs.log 2>&1
+```
+
+Or wire up the individual commands yourself for finer control over timing
+(e.g. prices earlier than analysis) - adjust the path/time, and note it
+still always calls the venv's own interpreter, never a bare `python3`:
 ```
 7 7 * * *  cd /path/to/mcp_servers && portfolio_tools/.venv/bin/python3 -m portfolio_tools.pipeline.prices
 25 7 * * *  cd /path/to/mcp_servers && portfolio_tools/.venv/bin/python3 -m portfolio_tools.pipeline.analysis | portfolio_tools/.venv/bin/python3 -m portfolio_tools.pipeline.report > data/personal/daily-analysis/$(date +\%Y-\%m-\%d).md
 ```
-This is a genuine alternative to running the MCP server for the
+Either way this is a genuine alternative to running the MCP server for the
 deterministic half of the pipeline - it just means you're maintaining your
 own scheduler instead of Claude Code's, and you lose everything in "What you
 lose without an LLM" below.
