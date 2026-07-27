@@ -622,6 +622,22 @@ def main():
         notify_reasons.append(nr["stale_prices"].format(tickers=", ".join(s["ticker"] for s in stale)))
     if divergence:
         notify_reasons.append(nr["value_divergence"])
+    # Notify when a position is deeply off its own high, regardless of what happened
+    # today. This fires at most once per position per run and is gated by a separate
+    # threshold so it can be tuned independently of the day-over-day mover threshold.
+    deep_drawdown = [
+        m for m in trend_movers
+        if m.get("drawdown_from_high_pct") is not None
+        and m["drawdown_from_high_pct"] <= -th["drawdown_notable_pct"]
+    ]
+    if deep_drawdown:
+        notify_reasons.append(nr["deep_drawdown"].format(
+            threshold_pct=th["drawdown_notable_pct"],
+            positions_desc=", ".join(
+                f"{m['ticker']} {m['drawdown_from_high_pct']:+.1f}% vs high"
+                for m in deep_drawdown
+            ),
+        ))
 
     generated_at = datetime.now().isoformat()
     result = {

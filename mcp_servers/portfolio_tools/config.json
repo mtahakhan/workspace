@@ -13,7 +13,8 @@
     "trend_medium_days": 56,
     "trend_high_window_days": 365,
     "trend_notable_pct": 15.0,
-    "trend_movers_top_n": 5
+    "trend_movers_top_n": 5,
+    "drawdown_notable_pct": 30.0
   },
   "compliance": {
     "max_single_position_pct": 20.0,
@@ -45,6 +46,7 @@
   "notify_reasons": {
     "large_movers": "Large daily move(s) (>={threshold_pct}%): {movers_desc}",
     "stale_prices": "Stale prices: {tickers}",
-    "value_divergence": "Run-over-run value divergence flagged - see caveats"
+    "value_divergence": "Run-over-run value divergence flagged - see caveats",
+    "deep_drawdown": "Deep drawdown (>={threshold_pct}% off high): {positions_desc}"
   }
 }
