@@ -19,7 +19,7 @@ import re
 import unicodedata
 from datetime import datetime
 
-from ..paths import NEWS_DIR, REPORTS_DIR, ROLES_FILE, TICKER_MAP_FILE, TRANSACTION_LOTS_FILE
+from ..paths import NEWS_DIR, REPORTS_DIR, ROLES_FILE, TICKER_MAP_FILE, ENRICHED_LOTS_FILE
 
 SLUG_MAX_LEN = 60
 TICKER_MAP_FIELDS = ["ISIN", "Ticker", "Company", "Sector"]
@@ -156,25 +156,36 @@ def read_ticker_map():
 
 
 def read_lots(ticker=None):
-    """Open FIFO lots as text - every lot, or just one ticker's.
+    """Enriched lots as text - every lot, or just one ticker's.
 
-    The lot-level view (date, shares, execution price, fee per lot) that
-    analyze_portfolio only ever reports in aggregate. Exists so a figure like
-    weighted_avg_holding_days can be traced back to the purchases behind it
-    without reading transaction_lots.csv off disk - which the skill forbids, and
-    which is machine-specific anyway since the data root is configurable.
+    Reads enriched_lots.csv (the join of FIFO lots + ticker_map + company_overrides),
+    which is the human-readable view that already has Ticker, Company and Sector filled
+    in. Exists so a figure like weighted_avg_holding_days can be traced back to the
+    purchases behind it without reading a data file directly.
     """
-    if not TRANSACTION_LOTS_FILE.exists():
-        return "No lots file yet - run compute_lots first."
-    text = TRANSACTION_LOTS_FILE.read_text(encoding="utf-8")
+    if not ENRICHED_LOTS_FILE.exists():
+        return "No enriched lots file yet - run compute_lots then enrich_lots first."
+    text = ENRICHED_LOTS_FILE.read_text(encoding="utf-8")
     if not ticker:
         return text
     lines = text.splitlines()
     header, rows = lines[0], lines[1:]
     wanted = ticker.strip().upper()
-    matched = [r for r in rows if r.split(",")[1:2] == [wanted]]
+    # Use csv parsing rather than positional split so quoted fields with commas
+    # don't shift the Ticker column index.
+    import io
+    matched = []
+    for row_line in rows:
+        parsed = next(csv.reader(io.StringIO(row_line)))
+        if len(parsed) > 1 and parsed[1].strip() == wanted:
+            matched.append(row_line)
     if not matched:
-        known = sorted({r.split(",")[1] for r in rows if len(r.split(",")) > 1 and r.split(",")[1]})
+        known = sorted({
+            cols[1].strip()
+            for r in rows
+            for cols in [next(csv.reader(io.StringIO(r)))]
+            if len(cols) > 1 and cols[1].strip()
+        })
         return f"No open lots for {wanted}. Tickers with open lots: {', '.join(known)}"
     return "\n".join([header] + matched)
 

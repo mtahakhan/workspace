@@ -16,7 +16,7 @@ import json
 import pandas as pd
 import yfinance as yf
 
-from ..paths import TRANSACTION_LOTS_FILE, PRICE_HISTORY_DIR
+from ..paths import ENRICHED_LOTS_FILE, PRICE_HISTORY_DIR
 
 
 YFINANCE_SOURCE_NAME = "yfinance (Yahoo Finance chart endpoint)"
@@ -34,10 +34,10 @@ def _fx_source_name(pair):
     return f"yfinance ({pair}, Yahoo Finance chart endpoint)"
 
 def load_tickers():
-    """Currently-held tickers, derived from transaction_lots.csv (run
-    the compute_lots tool first if you've traded since it was last generated)."""
+    """Currently-held tickers, derived from enriched_lots.csv (run
+    enrich_lots first if you've traded or resolved tickers recently)."""
     tickers, seen = [], set()
-    with open(TRANSACTION_LOTS_FILE) as f:
+    with open(ENRICHED_LOTS_FILE) as f:
         for row in csv.DictReader(f):
             if row["Ticker"] and row["Ticker"] not in seen:
                 seen.add(row["Ticker"])

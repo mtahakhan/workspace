@@ -38,6 +38,7 @@ from .pipeline.backfill import main as _backfill_history
 from .pipeline.cash import balance as _cash_balance
 from .pipeline.compliance import main as _check_compliance
 from .pipeline.config import load_config
+from .pipeline.enrich import main as _enrich_lots
 from .pipeline.lots import main as _compute_lots
 from .pipeline.prices import main as _fetch_prices
 from .pipeline.report import render as _render_report
@@ -78,11 +79,24 @@ def upload_transactions(csv_content: str) -> str:
 
 @mcp.tool()
 def compute_lots() -> str:
-    """Rebuild transaction_lots.csv (FIFO open lots) from transactions.csv + ticker_map.csv.
+    """Rebuild transaction_lots.csv (pure FIFO lots, ISIN-keyed) from transactions.csv.
     Run after transactions.csv changes (new trades, or a fresh upload_transactions call).
-    Reports current per-ticker share totals and flags any ISIN missing from ticker_map.csv
-    or with a blank Sector."""
+    Reports open ISINs and flags any not yet in ticker_map.csv.
+
+    Run enrich_lots afterward to produce enriched_lots.csv — the file every downstream
+    tool (fetch_prices, analyze_portfolio, etc.) reads."""
     return _locked(_capture_stdout, _compute_lots)
+
+
+@mcp.tool()
+def enrich_lots() -> str:
+    """Join transaction_lots.csv with ticker_map.csv and company_overrides.csv to produce
+    enriched_lots.csv — the single file every downstream tool reads.
+
+    Run this after compute_lots, after resolve_tickers (to pick up newly resolved tickers),
+    or after set_ticker_mapping (to apply a corrected Sector or Ticker). Replaces the old
+    pattern of running compute_lots a second time after resolve_tickers."""
+    return _locked(_capture_stdout, _enrich_lots)
 
 
 @mcp.tool()
@@ -91,7 +105,7 @@ def resolve_tickers() -> str:
     yfinance search (never a guess), and append the result to ticker_map.csv. Returns a review
     table - eyeball every row before trusting it, especially any flagged with a warning (wrong
     company, unsupported currency, multiple candidate listings). Sector is left blank for a
-    human to fill in afterward."""
+    human to fill in afterward. Run enrich_lots after this to apply the resolved tickers."""
     return _locked(_capture_stdout, _resolve_tickers)
 
 
@@ -274,7 +288,8 @@ def set_ticker_mapping(isin: str, ticker: str = "", company: str = "", sector: s
     Needed because resolve_tickers deliberately leaves Sector blank for a human
     judgment call, and a mis-resolved listing occasionally needs correcting. Never
     guess a ticker here - resolve_tickers is the only sanctioned way to determine one
-    (see the skill's rule 1). Run compute_lots afterwards to apply the change."""
+    (see the skill's rule 1). Run enrich_lots afterward to apply the change to
+    enriched_lots.csv — that is what fetch_prices, analyze_portfolio, etc. read."""
     return _locked(_storage.set_ticker_mapping, isin,
                    ticker or None, company or None, sector or None)
 

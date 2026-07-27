@@ -4,15 +4,17 @@ Build FIFO cost-basis lots from transactions.csv -> transaction_lots.csv.
 Full rationale and rules: see AGENT_NOTES.md (read that before changing this
 file - don't rely on figuring out the "why" from reading this source).
 
-Quick reference: uses ticker_map.csv (ISIN,Ticker,Company,Sector - shared,
-committed) for the two things transactions.csv can't provide. FIFO consumes
-oldest lots first on a Sell. "Security transfer" rows are excluded (broker
-migration artifact). "Corporate action" rows carry cost basis to the new ISIN,
-one rescaled lot per original lot (see build_lots). Order fees are captured per
-lot in a Fee column, so cost basis can be all-in without distorting the recorded
-execution price. The displayed Company name comes from the broker's own
-description in transactions.csv, except for ISINs listed in
-company_overrides.csv - see load_company_overrides().
+Quick reference: FIFO consumes oldest lots first on a Sell. "Security transfer"
+rows are excluded (broker migration artifact). "Corporate action" rows carry
+cost basis to the new ISIN, one rescaled lot per original lot (see build_lots).
+Order fees are captured per lot in a Fee column, so cost basis can be all-in
+without distorting the recorded execution price.
+
+Output is ISIN-keyed and contains no Ticker, Company or Sector - those come
+from ticker_map.csv and company_overrides.csv, joined by the separate
+enrich_lots step (pipeline/enrich.py). Every downstream tool reads
+enriched_lots.csv, not this file; the only callers of this file directly are
+tickers.py (to detect ISINs not yet in ticker_map.csv) and enrich.py itself.
 """
 
 import csv
@@ -20,34 +22,9 @@ import re
 from collections import defaultdict
 from datetime import datetime
 
-from ..paths import TRANSACTIONS_FILE, TICKER_MAP_FILE, COMPANY_OVERRIDES_FILE, TRANSACTION_LOTS_FILE
+from ..paths import TRANSACTIONS_FILE, TRANSACTION_LOTS_FILE
 
 OUTPUT_FILE = TRANSACTION_LOTS_FILE
-
-def load_ticker_metadata():
-    """ISIN -> {ticker, sector} from the shared ticker_map.csv."""
-    if not TICKER_MAP_FILE.exists():
-        return {}
-    with open(TICKER_MAP_FILE) as f:
-        return {row["ISIN"]: {"ticker": row["Ticker"], "sector": row.get("Sector", "")}
-                for row in csv.DictReader(f) if row["Ticker"]}
-
-def load_company_overrides():
-    """ISIN -> corrected display name, for the handful of securities the broker
-    export labels misleadingly (e.g. "Iren" for IREN Limited, which reads as the
-    unrelated Italian utility Iren SpA).
-
-    Deliberately a separate, short, hand-maintained table rather than reusing
-    ticker_map.csv's Company column: the broker's own description stays the
-    default for everything, so only ISINs explicitly listed here are overridden,
-    and each entry carries a Note saying why it exists. Missing file or blank
-    Company = no override, so this is safe on a fresh clone.
-    """
-    if not COMPANY_OVERRIDES_FILE.exists():
-        return {}
-    with open(COMPANY_OVERRIDES_FILE) as f:
-        return {row["ISIN"]: row["Company"].strip()
-                for row in csv.DictReader(f) if row.get("Company", "").strip()}
 
 def parse_number(s):
     """German decimal format: '1.074,00' -> 1074.00"""
@@ -203,6 +180,12 @@ def build_lots(rows):
 
     return lots, descriptions, pending_swaps
 
+LOT_FIELDS = [
+    "ISIN", "Company", "Shares", "Purchase Date", "Purchase Price", "Fee",
+    "CA From ISIN", "CA Ratio", "CA Date",
+]
+
+
 def main():
     rows = load_transactions()
     print(f"Loaded {len(rows)} security transactions")
@@ -220,23 +203,14 @@ def main():
             cost = sum(l["shares"] * l["price"] for l in swap["lots"])
             print(f"         {swap['old_isin']} (ref {stem}): {shares:.6f} shares, EUR {cost:.2f}")
 
-    metadata = load_ticker_metadata()
-    overrides = load_company_overrides()
-    applied_overrides = []
-
     output_rows = []
     for isin, ls in lots.items():
-        meta = metadata.get(isin, {})
-        ticker = meta.get("ticker", "")
-        sector = meta.get("sector", "")
         broker_name = descriptions.get(isin, isin)
-        company = overrides.get(isin, broker_name)
-        if company != broker_name:
-            applied_overrides.append((ticker or isin, broker_name, company))
         for l in sorted(ls, key=lambda x: x["date"]):
             if l["shares"] > 1e-6:
                 output_rows.append({
-                    "Company": company, "Ticker": ticker, "ISIN": isin, "Sector": sector,
+                    "ISIN": isin,
+                    "Company": broker_name,
                     "Shares": round(l["shares"], 6),
                     "Purchase Date": l["date"].date().isoformat(),
                     # The actual execution price, never fee-adjusted. Fee is a
@@ -251,45 +225,27 @@ def main():
                     "CA Date": l["ca_date"].date().isoformat() if "ca_date" in l else "",
                 })
 
-    output_rows.sort(key=lambda r: (r["Ticker"] or r["Company"], r["Purchase Date"]))
+    output_rows.sort(key=lambda r: (r["ISIN"], r["Purchase Date"]))
 
     with open(OUTPUT_FILE, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=["Company", "Ticker", "ISIN", "Sector", "Shares", "Purchase Date",
-                                               "Purchase Price", "Fee", "CA From ISIN", "CA Ratio", "CA Date"])
+        writer = csv.DictWriter(f, fieldnames=LOT_FIELDS)
         writer.writeheader()
         writer.writerows(output_rows)
 
     print(f"\nWrote {len(output_rows)} open lots to {OUTPUT_FILE}")
+    print("Run enrich_lots next to join ticker_map + company_overrides -> enriched_lots.csv")
 
-    if applied_overrides:
-        print(f"\nApplied {len(applied_overrides)} company-name override(s) from {COMPANY_OVERRIDES_FILE.name}:")
-        for ticker, broker_name, company in sorted(applied_overrides):
-            print(f"  {ticker}: '{broker_name}' (broker) -> '{company}'")
-
-    print("\nCurrent positions (derived from transactions.csv):")
+    print("\nCurrent positions (ISIN-keyed, no Ticker yet — see enriched_lots.csv after enrich_lots):")
     lot_totals = defaultdict(float)
     for r in output_rows:
-        if r["Ticker"]:
-            lot_totals[r["Ticker"]] += r["Shares"]
-    for t in sorted(lot_totals):
-        print(f"  {t:10s} {lot_totals[t]:>10.4f} shares")
+        lot_totals[r["ISIN"]] += r["Shares"]
+    for isin in sorted(lot_totals):
+        print(f"  {isin}  {lot_totals[isin]:>10.4f} shares")
 
-    # Only ISINs that still hold shares. `lots` is a defaultdict keyed by every
-    # ISIN ever traded, and a fully-sold position leaves an empty list behind, so
-    # testing membership rather than open shares reported 14 long-closed holdings
-    # (Apple, Nvidia, Snowflake, Lufthansa, ...) as needing ticker resolution.
+    # Only ISINs that still hold shares.
     open_isins = {isin for isin, ls in lots.items() if sum(l["shares"] for l in ls) > 1e-6}
-
-    no_ticker = sorted(isin for isin in open_isins if isin not in metadata)
-    if no_ticker:
-        print(f"\nISINs with open positions but NO row in ticker_map.csv - "
-              f"call the resolve_tickers tool, or add manually: {no_ticker}")
-
-    no_sector = sorted(metadata[isin]["ticker"] for isin in open_isins
-                        if isin in metadata and not metadata[isin]["sector"])
-    if no_sector:
-        print(f"\nticker_map.csv rows with a Ticker but a blank Sector - "
-              f"fill in Sector for: {no_sector}")
+    print(f"\n{len(open_isins)} open ISIN(s) — run resolve_tickers if any are new, "
+          f"then enrich_lots to produce enriched_lots.csv")
 
 if __name__ == "__main__":
     main()

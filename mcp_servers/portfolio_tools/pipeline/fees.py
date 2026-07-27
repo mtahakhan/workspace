@@ -31,7 +31,7 @@ from datetime import date, datetime
 from typing import Optional
 
 from .config import load_config
-from ..paths import TRANSACTIONS_FILE, FEE_RULES_FILE, TICKER_MAP_FILE, TRANSACTION_LOTS_FILE
+from ..paths import TRANSACTIONS_FILE, FEE_RULES_FILE, TICKER_MAP_FILE, ENRICHED_LOTS_FILE
 
 FEE_FREE = 0.0
 
@@ -246,8 +246,8 @@ def fee_drag_by_ticker(top_n: int = 10) -> list:
     # ISIN needs one). Without this the fees show up orphaned under a dead ISIN
     # instead of against the ticker still holding the position. Read from lot
     # provenance so no dead ISIN has to be hand-maintained in ticker_map.csv.
-    if TRANSACTION_LOTS_FILE.exists():
-        with open(TRANSACTION_LOTS_FILE, encoding="utf-8") as f:
+    if ENRICHED_LOTS_FILE.exists():
+        with open(ENRICHED_LOTS_FILE, encoding="utf-8") as f:
             for row in csv.DictReader(f):
                 if row.get("CA From ISIN") and row.get("Ticker"):
                     isin_to_ticker.setdefault(row["CA From ISIN"], row["Ticker"])

@@ -18,7 +18,7 @@ from datetime import datetime
 import requests
 import yfinance as yf
 
-from ..paths import TRANSACTION_LOTS_FILE, PRICE_HISTORY_DIR, ENV_FILE
+from ..paths import ENRICHED_LOTS_FILE, PRICE_HISTORY_DIR, ENV_FILE
 
 
 FX_SOURCE_NAME = "exchangerate-api.com"
@@ -61,10 +61,10 @@ if ENV_FILE.exists():
 
 def load_tickers():
     """Return the list of currently-open-position tickers, derived from
-    transaction_lots.csv (call the compute_lots tool first if it's stale)."""
+    enriched_lots.csv (run enrich_lots first if it's stale)."""
     tickers = []
     seen = set()
-    with open(TRANSACTION_LOTS_FILE) as f:
+    with open(ENRICHED_LOTS_FILE) as f:
         for row in csv.DictReader(f):
             t = row["Ticker"]
             if t and t not in seen:

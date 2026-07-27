@@ -20,12 +20,13 @@ import sys
 from datetime import datetime, timedelta
 
 from .config import load_config
-from ..paths import PRICE_HISTORY_DIR, TRANSACTION_LOTS_FILE, ANALYSIS_HISTORY_FILE
+from ..paths import PRICE_HISTORY_DIR, ENRICHED_LOTS_FILE, ANALYSIS_HISTORY_FILE
 
 
 def load_transaction_lots():
     """Return {ticker: [{"date", "shares", "price", "fee", "company", "sector"}, ...]}
-    Missing file / missing ticker -> no lots for it (XIRR falls back gracefully).
+    Reads enriched_lots.csv — the join of FIFO lots + ticker_map + company_overrides.
+    Missing file / missing ticker -> no lots (XIRR falls back gracefully).
     This is also the sole source of current positions - see load_open_positions().
 
     "price" is the execution price exactly as traded; "fee" is that lot's share of
@@ -33,10 +34,10 @@ def load_transaction_lots():
     without the recorded price drifting from what the security actually traded at.
     A lot file written before the Fee column existed reads as fee 0.0 rather than
     failing, so an older data directory still loads."""
-    if not TRANSACTION_LOTS_FILE.exists():
+    if not ENRICHED_LOTS_FILE.exists():
         return {}
     lots = {}
-    with open(TRANSACTION_LOTS_FILE) as f:
+    with open(ENRICHED_LOTS_FILE) as f:
         for row in csv.DictReader(f):
             if not row["Ticker"]:
                 continue

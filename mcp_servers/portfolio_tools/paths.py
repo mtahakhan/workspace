@@ -75,6 +75,11 @@ IMPERSONAL_DIR = DATA_DIR / "impersonal"
 TRANSACTIONS_FILE = PERSONAL_DIR / "transactions.csv"
 TRANSACTIONS_BACKUP_FILE = PERSONAL_DIR / "transactions.csv.bak"
 TRANSACTION_LOTS_FILE = PERSONAL_DIR / "transaction_lots.csv"
+# enriched_lots.csv is the join of transaction_lots.csv + ticker_map.csv +
+# company_overrides.csv.  It is the file every downstream module reads; only
+# lots.py (FIFO engine) and tickers.py (detects blank-Ticker ISINs) read the
+# raw transaction_lots.csv directly.
+ENRICHED_LOTS_FILE = PERSONAL_DIR / "enriched_lots.csv"
 ANALYSIS_HISTORY_FILE = PERSONAL_DIR / "analysis_history.jsonl"
 REPORTS_DIR = PERSONAL_DIR / "daily-analysis"
 # Portfolio role per holding (Core Compounder / Growth / Opportunistic / Defensive).
