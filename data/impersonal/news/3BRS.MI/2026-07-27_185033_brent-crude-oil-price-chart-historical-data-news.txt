@@ -1,0 +1,9 @@
+Ticker: 3BRS.MI
+Company: WisdomTree Brent Crude Oil 3x Daily Short
+Source URL: https://tradingeconomics.com/commodity/brent-crude-oil
+Title: Brent crude oil - Price - Chart - Historical Data - News
+Fetched At: 2026-07-27T18:50:33+02:00
+Fetch Method: WebSearch (query: "Brent crude oil price drop July 2026")
+Retrieved For: portfolio-daily-analysis
+
+Crude Oil fell to 82.67 USD/Bbl on July 27, 2026, down 8.62% from the previous day. The global benchmark had fallen roughly 4% on Friday to settle near $97 a barrel, its biggest one-day drop since late June. Declines were driven by reports that Pakistan, with support from China, was seeking to revive negotiations between the US and Iran, plus demand weakness: the EIA's July 2026 Short-Term Energy Outlook forecast global oil consumption decreasing by an average of 1.2 million barrels per day in 2026. Despite the recent declines, oil remains up more than 20% this month as supply disruptions expanded from the Strait of Hormuz to the Red Sea.

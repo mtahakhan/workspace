@@ -39,7 +39,8 @@ def render_overview(data):
         "",
         "| Metric | Value |",
         "|--------|-------|",
-        f"| **Total Cost Basis** | {money(t['total_cost'])} |",
+        f"| **Total Cost Basis** (incl. fees) | {money(t['total_cost'])} |",
+        f"| **- of which entry fees** | {money(t.get('total_fees_eur', 0.0))} |",
         f"| **Current Market Value** | {money(t['total_value'])} |",
         f"| **Unrealized Gain/Loss** | **{money(t['gain_eur'])}** |",
         f"| **Total Return (non-annualized)** | {pct(t['gain_pct'])} |",
@@ -111,19 +112,81 @@ def render_holdings_table(data):
     lines = [
         "## Complete Holdings Table",
         "",
-        "| Ticker | Company | Sector | Shares | Price € | Value € | Cost € | Gain € | Return |",
-        "|--------|---------|--------|--------|---------|---------|--------|--------|--------|",
+        "| Ticker | Company | Sector | Shares | Price € | Value € | Cost € | Fees € | Gain € | Return |",
+        "|--------|---------|--------|--------|---------|---------|--------|--------|--------|--------|",
     ]
     for p in sorted(data["positions"], key=lambda p: -p["value"]):
         lines.append(
             f"| {p['ticker']} | {p['company']} | {p['sector']} | {p['shares']:g} | {p['price']:,.2f} | "
-            f"{p['value']:,.2f} | {p['cost']:,.2f} | {p['gain_eur']:+,.2f} | {pct(p['gain_pct'])} |"
+            f"{p['value']:,.2f} | {p['cost']:,.2f} | {p.get('fees_eur', 0.0):,.2f} | "
+            f"{p['gain_eur']:+,.2f} | {pct(p['gain_pct'])} |"
         )
     t = data["totals"]
     lines.append(
         f"| **TOTALS** | | | | | **{t['total_value']:,.2f}** | **{t['total_cost']:,.2f}** | "
+        f"**{t.get('total_fees_eur', 0.0):,.2f}** | "
         f"**{t['gain_eur']:+,.2f}** | **{pct(t['gain_pct'])}** |"
     )
+    return "\n".join(lines)
+
+
+def render_corporate_actions(data):
+    """Consolidations/splits behind the current open lots.
+
+    Rendered because a reverse consolidation breaks a position's price history at a
+    single date with no trade behind it: share count and per-share price both change
+    by the ratio. Without this, that position's chart and its % return look like a
+    market move. Nothing to show renders nothing.
+    """
+    events = data.get("corporate_actions") or []
+    if not events:
+        return ""
+    lines = [
+        "## Corporate Actions",
+        "",
+        "Events behind the current open lots. Cost basis and the original acquisition "
+        "date carry across - a consolidation is not a disposal, so the holding period "
+        "does not restart.",
+        "",
+        "| Date | Ticker | Event | From ISIN | Shares Now | Cost Carried € |",
+        "|------|--------|-------|-----------|------------|----------------|",
+    ]
+    for e in events:
+        ratio = e["ratio"]
+        desc = (f"{ratio:g}:1 {e['kind']}" if ratio >= 1 else f"1:{1/ratio:g} {e['kind']}")
+        lines.append(
+            f"| {e['date']} | **{e['ticker']}** | {desc} | {e['from_isin']} | "
+            f"{e['shares_affected']:g} | {e['cost_carried_eur']:,.2f} |"
+        )
+    return "\n".join(lines)
+
+
+def render_fee_drag(data, min_drag_pct):
+    """Positions whose entry fees are a material share of what they're now worth.
+
+    Deliberately a threshold list rather than a column on every row: fee drag is
+    only decision-relevant when it's large, and at that point it bears directly
+    on whether a position can pay for its own exit. Empty section renders as
+    nothing at all rather than an empty table.
+    """
+    flagged = [p for p in data["positions"]
+               if p.get("fee_drag_pct") is not None and p["fee_drag_pct"] >= min_drag_pct]
+    if not flagged:
+        return ""
+    lines = [
+        "## Fee Drag",
+        "",
+        f"Positions where entry fees are >= {min_drag_pct}% of current value. Exiting costs "
+        f"a further EUR 0.99 per order without PRIME.",
+        "",
+        "| Ticker | Company | Value € | Entry Fees € | Fee Drag |",
+        "|--------|---------|---------|--------------|----------|",
+    ]
+    for p in sorted(flagged, key=lambda p: -p["fee_drag_pct"]):
+        lines.append(
+            f"| {p['ticker']} | {p['company']} | {p['value']:,.2f} | {p['fees_eur']:,.2f} | "
+            f"{p['fee_drag_pct']:.2f}% |"
+        )
     return "\n".join(lines)
 
 def render_xirr_context(data, short_hold_days_threshold):
@@ -179,6 +242,8 @@ def render(data, config):
         render_largest_positions(data),
         render_movers(data),
         render_holdings_table(data),
+        render_corporate_actions(data),
+        render_fee_drag(data, config["thresholds"]["fee_drag_notable_pct"]),
         render_xirr_context(data, config["thresholds"]["short_hold_days_threshold"]),
         render_caveats(data),
     ]

@@ -1,0 +1,9 @@
+Ticker: IREN
+Company: IREN Limited
+Source URL: https://www.fool.com/investing/2026/07/20/why-iren-stock-is-soaring-today/
+Title: Why Iren Stock Is Soaring Today
+Fetched At: 2026-07-27T18:51:31+02:00
+Fetch Method: WebSearch (query: "IREN Limited stock news July 2026")
+Retrieved For: portfolio-daily-analysis
+
+IREN stock trended up 20.66% on July 20, 2026 and 15.07% on July 6, driven by AI infrastructure expansion. IREN raised its year-end annual revenue run rate target to over $4 billion from $3.7 billion on new long-term cloud service agreements. It closed the acquisition of Spain-based Nostrum Group, adding about 490 MW of secured, grid-connected AI data center power plus a development pipeline and a 50+ person specialist team, and appointed Eric Hammersley as Chief Information Security Officer on July 15. IREN joined the large-cap Russell 1000 Index after the FTSE Russell reconstitution. Jefferies initiated coverage with a Buy rating and $79 price target. The stock swung from near $52 in late June into the high $30s, then back to roughly $40.

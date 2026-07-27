@@ -26,7 +26,8 @@ workflow, and lessons already learned the hard way.
 
 1. **Never modify a deterministic pipeline module**
    (`portfolio_tools/pipeline/lots.py`, `prices.py`, `backfill.py`,
-   `analysis.py`, `tickers.py`, `report.py`, `config.py`, `uploads.py`, or
+   `analysis.py`, `tickers.py`, `report.py`, `config.py`, `uploads.py`,
+   `compliance.py`, `fees.py`, `cash.py`, `storage.py`, or
    `portfolio_tools/server.py`/`lock.py`/`paths.py`) **without first confirming
    intent with the user.** If something looks wrong or errors, the default
    action is to **report it** - what happened, why it might be happening, and
@@ -180,6 +181,50 @@ corrects the already-duplicated history and keeps every fetch on disk with its
 own source URL and FX rate. `get_current_prices` and the staleness check were
 always correct (latest record = latest price) and are unchanged; re-running
 `analyze_portfolio` after the fix reproduced every figure exactly.
+
+**2026-07-27: a corporate-action audit that the pipeline passed, and four latent bugs
+it flushed out.** A report said 3BRS.MI had been held 101 days; the position's only
+transaction under its own ISIN (`XS3306517098`) is a corporate action dated
+2026-04-20 with price 0,00, and the predecessor ISIN (`IE00BLRPRK35`) is not in
+`ticker_map.csv` at all - so the figure looked fabricated. It was correct.
+`build_lots` keys FIFO by ISIN straight from `transactions.csv` and only applies
+`ticker_map` to *output*, which is why the old ISIN carries its cost basis while
+having no mapping of its own. FIFO left exactly the three 2026-04-17 buys open
+(1187+1500+1475 = 4162 shares, EUR 183.79), and the 650:1 consolidation carried
+both cost and the original acquisition date across - 101 days, not the 98 the
+corporate-action date would give. Re-running `compute_lots` reproduced the file
+byte-identically. **Do not read "the source row has price 0,00" as a missing cost
+basis**, and do not assume an ISIN absent from `ticker_map.csv` is invisible to the
+FIFO engine - it isn't.
+
+What the audit did surface, all now fixed: (1) the swap's two legs were paired by
+"whichever swap is pending" rather than the broker's reference stem
+(`537521_..._1` / `537521_...`), so two overlapping swaps would cross-wire cost
+bases; (2) surviving lots were collapsed into a single lot dated at their
+*weighted-average timestamp*, which was lossless here only because all three
+shared 2026-04-17 - with multi-date survivors it invents a purchase date no
+purchase happened on and destroys the grain later FIFO sells and tax-lot tracking
+need; (3) the incoming leg's description is the bare ISIN, which was excluded by
+hardcoding the literal `"XS3306517098"` rather than comparing against the row's own
+ISIN; (4) the "ISINs with open positions but NO row in ticker_map.csv" warning
+tested membership of a `defaultdict` instead of open shares, so it named 14
+long-closed holdings (Apple, Nvidia, Snowflake, Lufthansa, United Airlines, ...)
+as needing resolution. An unmatched outgoing leg now warns loudly, because a
+vanished cost basis otherwise produces a perfectly well-formed lot file.
+
+**2026-07-27: cost basis went fee-inclusive.** `load_transactions` never read the
+`fee` column, so cost basis excluded every EUR 0.99 order fee. Fees are now captured
+per lot (a `Fee` column in `transaction_lots.csv`, pro-rated when a partial sell
+consumes a lot) and added to cost in `analysis.py`, including the XIRR cashflows -
+the outflow is what actually left the account. Deliberately a separate column rather
+than folded into `Purchase Price`, so the recorded price keeps meaning "what it
+traded at". Effect on the 2026-07-27 figures: total cost 16,703.92 → 16,763.90
+(EUR 59.98 of fees), gain -4.26% → -4.60%, portfolio XIRR -14.68% → -15.81%,
+3BRS.MI -41.78% → -42.71%. **Figures in `analysis_history.jsonl` from before this
+change are fee-exclusive and not directly comparable.** The new `## Fee Drag`
+report section (threshold `fee_drag_notable_pct`) exists because the per-position
+numbers are stark at the small end - HIGH.DE carries EUR 1.98 of entry fees against
+EUR 11.36 of value, 17.4%.
 
 **Careful: flat movers are usually the calendar, not a bug.** While chasing the
 above I wrongly blamed the duplicate records for the 2026-07-25 report's five

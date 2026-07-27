@@ -115,7 +115,8 @@ skill files, not portfolio data.
    data.
 3. **Never modify a deterministic pipeline module**
    (`portfolio_tools/pipeline/lots.py`, `prices.py`, `backfill.py`,
-   `analysis.py`, `tickers.py`, `report.py`, `config.py`, `uploads.py`, or
+   `analysis.py`, `tickers.py`, `report.py`, `config.py`, `uploads.py`,
+   `compliance.py`, `fees.py`, `cash.py`, `storage.py`, or
    `portfolio_tools/server.py`/`lock.py`/`paths.py`, all in the source repo -
    see "Reading vs. editing" above) **without confirming intent with the
    user first.** Default action on an error: report what happened and 2-3

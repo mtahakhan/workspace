@@ -19,10 +19,22 @@ import re
 import unicodedata
 from datetime import datetime
 
-from ..paths import NEWS_DIR, REPORTS_DIR, TICKER_MAP_FILE
+from ..paths import NEWS_DIR, REPORTS_DIR, ROLES_FILE, TICKER_MAP_FILE, TRANSACTION_LOTS_FILE
 
 SLUG_MAX_LEN = 60
 TICKER_MAP_FIELDS = ["ISIN", "Ticker", "Company", "Sector"]
+ROLES_FIELDS = ["Ticker", "Role", "Assigned", "Note"]
+
+# Valid role labels. Allocation is now governed by the two-sleeve model
+# (Core ~80% / Tactical ~20%) rather than per-role bands - see
+# INVESTMENT_FRAMEWORK.md. The old 40-60/20-40/<=15/5-20 bands are superseded.
+# compliance.py is the authoritative place for every limit check.
+PORTFOLIO_ROLES = {
+    "Core Compounder",
+    "Growth",
+    "Opportunistic",
+    "Defensive",
+}
 
 
 def _slugify(text, fallback="source"):
@@ -143,6 +155,30 @@ def read_ticker_map():
     return TICKER_MAP_FILE.read_text(encoding="utf-8")
 
 
+def read_lots(ticker=None):
+    """Open FIFO lots as text - every lot, or just one ticker's.
+
+    The lot-level view (date, shares, execution price, fee per lot) that
+    analyze_portfolio only ever reports in aggregate. Exists so a figure like
+    weighted_avg_holding_days can be traced back to the purchases behind it
+    without reading transaction_lots.csv off disk - which the skill forbids, and
+    which is machine-specific anyway since the data root is configurable.
+    """
+    if not TRANSACTION_LOTS_FILE.exists():
+        return "No lots file yet - run compute_lots first."
+    text = TRANSACTION_LOTS_FILE.read_text(encoding="utf-8")
+    if not ticker:
+        return text
+    lines = text.splitlines()
+    header, rows = lines[0], lines[1:]
+    wanted = ticker.strip().upper()
+    matched = [r for r in rows if r.split(",")[1:2] == [wanted]]
+    if not matched:
+        known = sorted({r.split(",")[1] for r in rows if len(r.split(",")) > 1 and r.split(",")[1]})
+        return f"No open lots for {wanted}. Tickers with open lots: {', '.join(known)}"
+    return "\n".join([header] + matched)
+
+
 def set_ticker_mapping(isin, ticker=None, company=None, sector=None):
     """Create or update one ISIN's row. Only the fields passed are changed, so a
     Sector can be filled in without restating the ticker.
@@ -182,6 +218,50 @@ def set_ticker_mapping(isin, ticker=None, company=None, sector=None):
                         (("Ticker", ticker), ("Company", company), ("Sector", sector)) if v is not None)
     return (f"{'Updated' if found else 'Added'} {isin}: {changed}. "
             f"Run compute_lots to apply it to positions.")
+
+
+def read_roles():
+    """{ticker: {"role", "assigned", "note"}} - empty if never assigned."""
+    if not ROLES_FILE.exists():
+        return {}
+    with open(ROLES_FILE, newline="") as f:
+        return {r["Ticker"].strip(): {"role": r.get("Role", "").strip(),
+                                      "assigned": r.get("Assigned", "").strip(),
+                                      "note": r.get("Note", "").strip()}
+                for r in csv.DictReader(f) if r.get("Ticker", "").strip()}
+
+
+def set_position_role(ticker, role, note=""):
+    """Assign or change one holding's portfolio role.
+
+    Roles are re-assessed, not set once: a Growth position whose thesis breaks
+    becomes Opportunistic (or an exit candidate), and the allocation bands are
+    only meaningful if the labels still describe reality. `Assigned` records when
+    the current label was last confirmed, so a stale one is visible as stale.
+    """
+    ticker = (ticker or "").strip()
+    role = (role or "").strip()
+    if not ticker:
+        raise ValueError("ticker is required")
+    if role not in PORTFOLIO_ROLES:
+        raise ValueError(f"role must be one of {sorted(PORTFOLIO_ROLES)}, got {role!r}")
+
+    roles = read_roles()
+    previous = roles.get(ticker, {}).get("role", "")
+    roles[ticker] = {"role": role, "assigned": datetime.now().date().isoformat(),
+                     "note": note.strip() or roles.get(ticker, {}).get("note", "")}
+
+    ROLES_FILE.parent.mkdir(parents=True, exist_ok=True)
+    with open(ROLES_FILE, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=ROLES_FIELDS)
+        writer.writeheader()
+        for t in sorted(roles):
+            writer.writerow({"Ticker": t, "Role": roles[t]["role"],
+                             "Assigned": roles[t]["assigned"], "Note": roles[t]["note"]})
+
+    if previous and previous != role:
+        return f"{ticker}: role changed {previous} -> {role}"
+    return f"{ticker}: role set to {role}" if not previous else f"{ticker}: role reconfirmed as {role}"
 
 
 def _report_paths():

@@ -1,0 +1,9 @@
+Ticker: IBM
+Company: IBM
+Source URL: https://www.cnbc.com/2026/07/22/ibm-q2-earnings-report-2026.html
+Title: IBM Q2 earnings report 2026
+Fetched At: 2026-07-27T18:50:56+02:00
+Fetch Method: WebSearch (query: "IBM stock news July 2026")
+Retrieved For: portfolio-daily-analysis
+
+IBM stock crashed 25% on July 14, 2026, its worst day on record (exceeding the Oct 19, 1987 drop of 23.7%), after a surprise pre-earnings warning that wiped $67 billion in value. In the last few weeks of June, clients shifted quarterly capex toward servers, storage and memory to secure supply-constrained infrastructure ahead of expected price increases. Infrastructure revenue fell 7% on weak mainframe sales, software revenue rose only 5% against a double-digit target, and consulting revenue was flat. CEO Arvind Krishna said "What played out was worse than our expectations" and "We did not adapt and move quickly enough." At the July 22 Q2 report IBM lowered its 2026 forecast and delivered adjusted EPS of $2.93 vs $2.97 expected.

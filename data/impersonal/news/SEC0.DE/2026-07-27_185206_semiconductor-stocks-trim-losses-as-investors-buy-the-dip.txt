@@ -1,0 +1,9 @@
+Ticker: SEC0.DE
+Company: iShares MSCI Global Semiconductors (Acc)
+Source URL: https://finance.yahoo.com/markets/article/semiconductor-stocks-trim-losses-as-investors-buy-the-dip-130920103.html
+Title: Semiconductor stocks trim losses as investors buy the dip
+Fetched At: 2026-07-27T18:52:06+02:00
+Fetch Method: WebSearch (query: "semiconductor sector stocks news July 2026")
+Retrieved For: portfolio-daily-analysis
+
+The VanEck Semiconductor ETF (SMH) fell more than 4%, extending pressure on chip stocks as investors questioned whether the AI-driven rally has pushed valuations beyond what fundamentals can support. Chip stocks slid after Taiwan Semiconductor posted an increase in its spending forecast, which overshadowed a better-than-expected second-quarter report, with capital expenditures expected between $60 billion and $64 billion for the year, up from prior guidance of $52-56 billion. ASMI and ASML were down 4.6% and 3.8% respectively, STMicroelectronics lost 5%, Infineon 4.2% and BE Semiconductor 3.7%. Despite the volatility, semiconductor stocks are going gangbusters in mid-2026, with the Invesco PHLX Semiconductor ETF up 99% year to date on AI chip demand.

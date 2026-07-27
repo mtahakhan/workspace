@@ -10,7 +10,7 @@ way to use this day to day - see [`SETUP.md`](SETUP.md) and run
 `../bootstrap.sh` instead of this guide.)
 
 **Always use this package's own venv, never a system Python.** Every command
-below is run as `.venv/bin/python3 -m portfolio_tools.pipeline.<module>` from
+below is run as `portfolio_tools/.venv/bin/python3 -m portfolio_tools.pipeline.<module>` from
 inside `mcp_servers/` - there are no standalone script files; the pipeline is
 a subpackage of the `portfolio_tools` server package (see
 [`ARCHITECTURE.md`](ARCHITECTURE.md)), and `-m` is how you invoke a module in
@@ -21,16 +21,16 @@ straight to step 1; there's no separate environment for "manual" use.
 ## 0. Create the venv (skip if `../bootstrap.sh` already has)
 
 ```bash
-cd mcp_servers/portfolio_tools
+cd mcp_servers
 # use the highest available Python >=3.10 - try in order:
 for py in python3.13 python3.12 python3.11 python3.10; do
-  command -v "$py" >/dev/null 2>&1 && { "$py" -m venv .venv; break; }
+  command -v "$py" >/dev/null 2>&1 && { "$py" -m venv portfolio_tools/.venv; break; }
 done
-.venv/bin/pip install -r requirements.txt
+portfolio_tools/.venv/bin/pip install -r portfolio_tools/requirements.txt
 ```
 A system Python is used here only to create the venv — this is unavoidable
 (you can't use the venv to create itself). **Every command after this point
-uses `.venv/bin/python3` or `.venv/bin/pip` exclusively — never a bare
+uses `portfolio_tools/.venv/bin/python3` or `portfolio_tools/.venv/bin/pip` exclusively — never a bare
 `python3` or `pip`.**
 
 ## 1. Get your transaction history
@@ -43,9 +43,9 @@ exports differently, you'll need to adapt `portfolio_tools/pipeline/lots.py`'s
 `load_transactions()` function, or convert your export to match this format
 first.
 
-Save the export as `data/personal/transactions.csv`
-(create the `manual/` directory if it doesn't exist yet - normally the
-`upload_transactions` MCP tool creates it, but you're bypassing that here).
+Save the export as `data/personal/transactions.csv` (create
+`data/personal/` if it doesn't exist yet - normally the `upload_transactions`
+MCP tool creates it, but you're bypassing that here).
 
 ## 2. (Optional) Finnhub API key
 
@@ -62,8 +62,8 @@ card required).
 ## 3. Build your current positions (run this first - resolving tickers needs its output)
 
 ```bash
-cd mcp_servers/portfolio_tools
-.venv/bin/python3 -m portfolio_tools.pipeline.lots
+cd mcp_servers
+portfolio_tools/.venv/bin/python3 -m portfolio_tools.pipeline.lots
 ```
 
 Reconstructs exactly which shares you still hold, and when/at what price you
@@ -76,7 +76,7 @@ expected on a first run and is exactly what the next step resolves.
 ## 4. Resolve tickers for your holdings
 
 ```bash
-.venv/bin/python3 -m portfolio_tools.pipeline.tickers
+portfolio_tools/.venv/bin/python3 -m portfolio_tools.pipeline.tickers
 ```
 
 Reads `data/personal/transaction_lots.csv` for any open position with a
@@ -98,7 +98,7 @@ human judgment replaces what an LLM would otherwise help verify. For each row:
   ticker with a better one. You can check any candidate yourself (still
   through the venv):
   ```bash
-  .venv/bin/python3 -c "import yfinance as yf; print(yf.Ticker('TICKER').fast_info)"
+  portfolio_tools/.venv/bin/python3 -c "import yfinance as yf; print(yf.Ticker('TICKER').fast_info)"
   ```
   Look at the `currency` field - **supported currencies are EUR, USD, GBP,
   and GBp** (British pence - e.g. London `.L`-suffixed listings, converted
@@ -109,8 +109,8 @@ Then open `data/impersonal/ticker_map.csv` and fill in the blank `Sector`
 column for each new row (any taxonomy you like - Technology, Healthcare,
 Commodities, etc; it's just used for the sector-concentration breakdown).
 
-Re-run `.venv/bin/python3 -m portfolio_tools.pipeline.lots` then
-`.venv/bin/python3 -m portfolio_tools.pipeline.tickers` any time you buy a
+Re-run `portfolio_tools/.venv/bin/python3 -m portfolio_tools.pipeline.lots` then
+`portfolio_tools/.venv/bin/python3 -m portfolio_tools.pipeline.tickers` any time you buy a
 new security for the first time - the latter only resolves ISINs it hasn't
 seen before and never overwrites existing rows. Once the former reports no
 missing tickers or sectors, you're done with this step.
@@ -118,7 +118,7 @@ missing tickers or sectors, you're done with this step.
 ## 5. Fetch prices
 
 ```bash
-.venv/bin/python3 -m portfolio_tools.pipeline.prices
+portfolio_tools/.venv/bin/python3 -m portfolio_tools.pipeline.prices
 ```
 
 Gets live prices for every ticker in `transaction_lots.csv` (Finnhub first if
@@ -128,7 +128,7 @@ own history file at `data/impersonal/price_history/{TICKER}.jsonl`.
 ## 6. (One-time) Backfill historical prices
 
 ```bash
-.venv/bin/python3 -m portfolio_tools.pipeline.backfill
+portfolio_tools/.venv/bin/python3 -m portfolio_tools.pipeline.backfill
 ```
 
 Pulls each ticker's full available price history (as far back as `yfinance`
@@ -139,7 +139,7 @@ ticker - step 5 keeps appending to the same files daily after that.
 ## 7. Compute your portfolio metrics
 
 ```bash
-.venv/bin/python3 -m portfolio_tools.pipeline.analysis
+portfolio_tools/.venv/bin/python3 -m portfolio_tools.pipeline.analysis
 ```
 
 Prints a single JSON object to stdout with everything: per-position value and
@@ -152,7 +152,7 @@ and a `stale_prices` list flagging any ticker that hasn't updated in 2+ days.
 
 Redirect it to a file or pipe it into `json.tool` for readability:
 ```bash
-.venv/bin/python3 -m portfolio_tools.pipeline.analysis | .venv/bin/python3 -m json.tool
+portfolio_tools/.venv/bin/python3 -m portfolio_tools.pipeline.analysis | portfolio_tools/.venv/bin/python3 -m json.tool
 ```
 
 It also appends `{generated_at, total_value, xirr_pct}` to
@@ -170,13 +170,47 @@ characteristic.
 ## 8. Render it as markdown
 
 ```bash
-.venv/bin/python3 -m portfolio_tools.pipeline.analysis | .venv/bin/python3 -m portfolio_tools.pipeline.report
+portfolio_tools/.venv/bin/python3 -m portfolio_tools.pipeline.analysis | portfolio_tools/.venv/bin/python3 -m portfolio_tools.pipeline.report
 ```
 
 Turns the JSON into the same markdown tables the daily report uses - Portfolio
 Overview, Trend, Sector Breakdown, Largest Positions, Movers, Complete
-Holdings Table, XIRR Context, Data Notes - no LLM involved, this is plain
-Python string formatting over the JSON above.
+Holdings Table, Corporate Actions, Fee Drag, XIRR Context, Data Notes - no LLM
+involved, this is plain Python string formatting over the JSON above.
+
+The Corporate Actions and Fee Drag sections only appear when there is something
+in them - a holding whose lots came through a share consolidation/split, or one
+whose entry fees are at least `fee_drag_notable_pct` of its current value.
+
+## 9. Check it against the framework's hard limits
+
+```bash
+portfolio_tools/.venv/bin/python3 -m portfolio_tools.pipeline.compliance
+```
+
+This one runs `analysis` internally (its `main()` takes that output as
+arguments rather than reading a file), so it does the work of step 7 again -
+no need to pipe anything in.
+
+Evaluates the portfolio against every allocation limit in the investment
+framework - sleeve split, single-position and secure-hedge caps, top-3 and
+per-sector concentration, the cash ceiling, and positions too small to pay their
+own exit fee - and prints a `breaches` list. Empty means nothing to act on.
+
+Two inputs are yours to maintain:
+
+- **`data/personal/roles.csv`** assigns each holding a role (Core Compounder /
+  Growth / Opportunistic / Defensive). The sleeve split is computed from these,
+  so anything listed in `missing_roles` makes that particular check partial.
+- **`data/impersonal/fee_rules.json`** holds the PRIME ETF issuer list and the
+  secure-hedge ISIN list. Add a new gold/silver instrument there, not in code.
+
+It also reports `prime_status` (parsed from the transaction ledger - worth
+knowing, since without an active PRIME subscription every sell costs a fee),
+`fee_history`, and `fee_drag_by_ticker`. That last one is lifetime fees per
+ticker *including* closed positions, which is different from the per-position
+`fees_eur` in step 7 - that counts only fees still attached to open lots. The gap
+between the two is what repeated round-trips actually cost.
 
 ## Automating this without Claude
 
@@ -185,8 +219,8 @@ step 5 daily, then step 7+8 shortly after. Example crontab entry (adjust the
 path and time - note it still always calls the venv's own interpreter, never
 a bare `python3`):
 ```
-7 7 * * *  cd /path/to/mcp_servers/portfolio_tools && .venv/bin/python3 -m portfolio_tools.pipeline.prices
-25 7 * * *  cd /path/to/mcp_servers/portfolio_tools && .venv/bin/python3 -m portfolio_tools.pipeline.analysis | .venv/bin/python3 -m portfolio_tools.pipeline.report > data/personal/daily-analysis/$(date +\%Y-\%m-\%d).md
+7 7 * * *  cd /path/to/mcp_servers && portfolio_tools/.venv/bin/python3 -m portfolio_tools.pipeline.prices
+25 7 * * *  cd /path/to/mcp_servers && portfolio_tools/.venv/bin/python3 -m portfolio_tools.pipeline.analysis | portfolio_tools/.venv/bin/python3 -m portfolio_tools.pipeline.report > data/personal/daily-analysis/$(date +\%Y-\%m-\%d).md
 ```
 This is a genuine alternative to running the MCP server for the
 deterministic half of the pipeline - it just means you're maintaining your

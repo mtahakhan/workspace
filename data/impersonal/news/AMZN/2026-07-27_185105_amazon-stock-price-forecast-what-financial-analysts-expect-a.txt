@@ -1,0 +1,9 @@
+Ticker: AMZN
+Company: Amazon.com
+Source URL: https://www.tipranks.com/news/amazon-stock-price-forecast-what-financial-analysts-expect-ahead-of-q2-earnings
+Title: Amazon Stock Price Forecast — What Financial Analysts Expect Ahead of Q2 Earnings
+Fetched At: 2026-07-27T18:51:05+02:00
+Fetch Method: WebSearch (query: "Amazon AMZN stock news July 2026")
+Retrieved For: portfolio-daily-analysis
+
+Amazon reports Q2 2026 results on July 30. Analysts expect EPS of $1.82, up from $1.68 a year ago, with revenue growing 17.3% to $196.71 billion. AMZN carries a Strong Buy rating with 29% upside potential; KeyBanc raised its target from $325 to $335. Amazon delivered its fastest AWS growth in 15 quarters in Q1 2026 (AWS revenue $37.6 billion, up 28% year over year) while committing $200 billion in AI capital expenditure for the full year. Free cash flow collapsed 95% to $1.2 billion as quarterly capex alone reached $43.2 billion, and long-term debt climbed to $119.1 billion. Shares have climbed 9% this year as of July 20.

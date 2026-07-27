@@ -35,6 +35,8 @@ from .paths import LOCK_FILE
 from .pipeline import storage as _storage
 from .pipeline.analysis import main as _analyze_portfolio
 from .pipeline.backfill import main as _backfill_history
+from .pipeline.cash import balance as _cash_balance
+from .pipeline.compliance import main as _check_compliance
 from .pipeline.config import load_config
 from .pipeline.lots import main as _compute_lots
 from .pipeline.prices import main as _fetch_prices
@@ -128,10 +130,39 @@ def analyze_portfolio() -> dict:
 
 
 @mcp.tool()
+def check_compliance(analysis: dict) -> dict:
+    """Evaluate the portfolio against every hard rule in INVESTMENT_FRAMEWORK.md.
+    Pass the exact dict analyze_portfolio returned.
+
+    Checks: sleeve split (Core ~80% / Tactical ~20%), max single non-hedge
+    position (<=20%), secure-hedge combined cap (<=30%), top-3 combined
+    (<=40%), sector concentration (<=40% each), cash ceiling (<=EUR 5,000),
+    and positions below EUR 250 whose exit fee is EUR 0.99.
+
+    Returns a structured dict with a top-level `breaches` list (empty = clean)
+    and per-check detail sections. The agent reads this output; it never
+    re-applies the rules in prose.
+
+    Also returns `prime_status` (current PRIME subscription state derived from
+    transactions), `fee_history` (aggregate fee drag stats), and
+    `missing_roles` (tickers with no role assigned, which makes sleeve checks
+    partial)."""
+    cash = _cash_balance()
+    cash_eur = cash.get("balance_eur") if cash.get("complete") else None
+    return _locked(
+        _check_compliance,
+        analysis_positions=analysis["positions"],
+        sector_breakdown=analysis["sectors"],
+        total_value=analysis["totals"]["total_value"],
+        cash_balance_eur=cash_eur,
+    )
+
+
+@mcp.tool()
 def render_report(analysis: dict) -> str:
     """Render analyze_portfolio's JSON output as the same markdown tables the daily report uses
     (Portfolio Overview, Trend, Sector Breakdown, Largest Positions, Movers, Complete Holdings
-    Table, XIRR Context, Data Notes). Pass the exact dict analyze_portfolio returned - never
+    Table, Fee Drag, XIRR Context, Data Notes). Pass the exact dict analyze_portfolio returned - never
     hand-transcribe a figure out of it yourself; if a section needs to look different, that's a
     change to make here, not a one-off rewrite."""
     return _locked(_render_report, analysis, load_config())
@@ -192,10 +223,47 @@ def get_news_source(ticker: str, filename: str) -> str:
 
 
 @mcp.tool()
+def read_roles() -> str:
+    """Current portfolio role per holding (Core Compounder / Growth / Opportunistic /
+    Defensive), with when each was last confirmed. Roles drive the framework's
+    allocation bands, so a stale label quietly invalidates that check."""
+    roles = _locked(_storage.read_roles)
+    if not roles:
+        return "No roles assigned yet."
+    return "\n".join(f"{t}: {v['role']} (confirmed {v['assigned']})"
+                     + (f" - {v['note']}" if v["note"] else "")
+                     for t, v in sorted(roles.items()))
+
+
+@mcp.tool()
+def set_position_role(ticker: str, role: str, note: str = "") -> str:
+    """Assign or re-confirm one holding's portfolio role. Valid roles: Core Compounder,
+    Growth, Opportunistic, Defensive.
+
+    Re-assess rather than trusting the stored label: a Growth position whose thesis
+    breaks is Opportunistic (or an exit candidate), and the allocation bands only mean
+    something if the labels still describe reality."""
+    return _locked(_storage.set_position_role, ticker, role, note)
+
+
+@mcp.tool()
 def read_ticker_map() -> str:
     """The ISIN -> Ticker/Company/Sector table as text. Use this to review a blank
     Sector or a suspect ticker instead of opening the file."""
     return _locked(_storage.read_ticker_map)
+
+
+@mcp.tool()
+def list_lots(ticker: str = "") -> str:
+    """Open FIFO lots - every lot, or one ticker's if you pass it.
+
+    Read-only lot-level detail (purchase date, shares, execution price, fee per lot)
+    behind figures analyze_portfolio only reports in aggregate. Use it to check what a
+    weighted_avg_holding_days or cost basis is actually built from - e.g. whether a
+    position is one lot or several, and whether its shares came through a corporate
+    action. Never edit the underlying file to "fix" what this shows; lots are derived,
+    so the fix is in transactions.csv or compute_lots."""
+    return _locked(_storage.read_lots, ticker or None)
 
 
 @mcp.tool()

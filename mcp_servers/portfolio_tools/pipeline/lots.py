@@ -7,13 +7,16 @@ file - don't rely on figuring out the "why" from reading this source).
 Quick reference: uses ticker_map.csv (ISIN,Ticker,Company,Sector - shared,
 committed) for the two things transactions.csv can't provide. FIFO consumes
 oldest lots first on a Sell. "Security transfer" rows are excluded (broker
-migration artifact). "Corporate action" rows carry cost basis to the new ISIN.
-The displayed Company name comes from the broker's own description in
-transactions.csv, except for ISINs listed in company_overrides.csv - see
-load_company_overrides().
+migration artifact). "Corporate action" rows carry cost basis to the new ISIN,
+one rescaled lot per original lot (see build_lots). Order fees are captured per
+lot in a Fee column, so cost basis can be all-in without distorting the recorded
+execution price. The displayed Company name comes from the broker's own
+description in transactions.csv, except for ISINs listed in
+company_overrides.csv - see load_company_overrides().
 """
 
 import csv
+import re
 from collections import defaultdict
 from datetime import datetime
 
@@ -68,14 +71,31 @@ def load_transactions():
                 continue
             rows.append({
                 "date": datetime.strptime(f'{r["date"]} {r["time"]}', "%Y-%m-%d %H:%M:%S"),
+                "reference": (r.get("reference") or "").strip('"'),
                 "description": r["description"].strip('"'),
                 "type": r["type"],
                 "isin": r["isin"],
                 "shares": parse_number(r["shares"]),
                 "price": parse_number(r["price"]),
+                # Order fee, always a positive charge in the export. Blank on
+                # non-order rows (corporate actions, transfers) -> 0.0.
+                "fee": parse_number(r.get("fee")) or 0.0,
             })
     rows.sort(key=lambda r: r["date"])
     return rows
+
+
+def reference_stem(reference):
+    """Pairing key for the two legs of a corporate action.
+
+    The broker gives both legs the same reference stem and suffixes the outgoing
+    leg: `537521_..._1` (shares out, old ISIN) and `537521_...` (shares in, new
+    ISIN). Pairing on this stem rather than "whichever swap happens to be
+    pending" is what keeps two overlapping swaps from cross-wiring their cost
+    bases - with one swap in the history either works, which is exactly why the
+    weaker version survived unnoticed.
+    """
+    return re.sub(r"_\d+$", "", reference or "")
 
 def verify_transfers_net_zero(rows):
     """Confirm the Security transfer assumption before relying on it."""
@@ -91,53 +111,79 @@ def verify_transfers_net_zero(rows):
         print(f"Verified: Security transfer rows net to zero for all {len(net)} affected ISINs - excluding them.")
 
 def build_lots(rows):
-    """FIFO lots per ISIN. Returns {isin: [{"date", "shares", "price"}, ...]}"""
+    """FIFO lots per ISIN. Returns ({isin: [{"date", "shares", "price", "fee"}, ...]},
+    descriptions, unmatched_swaps).
+
+    Note this keys lots by ISIN straight from transactions.csv and never consults
+    ticker_map.csv - the map is applied to *output* in main(). That is why a
+    corporate action's old ISIN carries its cost basis correctly while having no
+    ticker_map row of its own: only the surviving ISIN ever needs a mapping.
+    """
     lots = defaultdict(list)
     descriptions = {}
+    pending_swaps = {}  # reference stem -> outgoing leg awaiting its incoming leg
 
     for r in rows:
         isin, shares, price = r["isin"], r["shares"], r["price"]
-        if r["description"] and r["description"] not in ("", "XS3306517098"):
+        # The broker sometimes puts the bare ISIN in the description field (seen on
+        # the incoming leg of a corporate action). That is an identifier, not a
+        # company name, and must not become one - compared against this row's own
+        # ISIN rather than any specific hardcoded value, so it holds for the next
+        # swap too.
+        if r["description"] and r["description"] != isin:
             descriptions[isin] = r["description"]
 
         if r["type"] == "Security transfer":
             continue  # verified net-zero migration artifact, not a real transaction
 
         if r["type"] == "Corporate action":
-            # Only known case: WisdomTree ISIN swap. The negative-share row on the
-            # OLD isin signals "consolidate all lots of this ISIN"; the positive-share
-            # row on the NEW isin is where they land, carrying total cost + weighted
-            # average original date forward (not the corporate-action date), so the
-            # real holding period for return purposes is preserved.
+            # ISIN swap / share consolidation (e.g. a reverse split). The
+            # negative-share leg on the OLD isin releases that ISIN's open lots;
+            # the positive-share leg on the NEW isin is where they land. The
+            # original purchase dates carry across deliberately: a consolidation
+            # is not a disposal, so the holding period must not restart.
+            stem = reference_stem(r["reference"])
             if shares < 0:
-                old_isin = isin
-                old_lots = lots.pop(old_isin, [])
-                total_shares = sum(l["shares"] for l in old_lots)
-                total_cost = sum(l["shares"] * l["price"] for l in old_lots)
-                if total_shares > 0:
-                    weighted_date_ts = sum(l["date"].timestamp() * l["shares"] for l in old_lots) / total_shares
-                    lots[f"__pending_from_{old_isin}"] = [{
-                        "date": datetime.fromtimestamp(weighted_date_ts),
-                        "shares": total_shares,
-                        "price": total_cost / total_shares,
-                    }]
-                    if old_isin in descriptions:
-                        descriptions[f"__pending_desc"] = descriptions[old_isin]
+                outgoing = lots.pop(isin, [])
+                if outgoing:
+                    pending_swaps[stem] = {"lots": outgoing, "old_isin": isin,
+                                           "description": descriptions.get(isin)}
             else:
-                pending_key = next((k for k in lots if k.startswith("__pending_from_")), None)
-                if pending_key:
-                    carried = lots.pop(pending_key)
-                    if "__pending_desc" in descriptions:
-                        descriptions[isin] = descriptions.pop("__pending_desc")
-                    for l in carried:
-                        # new ISIN's share count differs (that's the whole point of the
-                        # split) but total cost basis is preserved, just re-priced per share
-                        new_price = (l["shares"] * l["price"]) / shares
-                        lots[isin].append({"date": l["date"], "shares": shares, "price": new_price})
+                swap = pending_swaps.pop(stem, None)
+                if swap:
+                    old_lots = swap["lots"]
+                    total_old = sum(l["shares"] for l in old_lots)
+                    if total_old > 0 and shares > 0:
+                        if swap["description"]:
+                            descriptions[isin] = swap["description"]
+                        # One rescaled lot per original lot. Collapsing them into a
+                        # single lot dated at their weighted-average timestamp would
+                        # invent a purchase date on which no purchase happened, and
+                        # destroy the per-lot grain that later FIFO sells and
+                        # tax-lot tracking depend on. Each lot keeps its own date,
+                        # total cost and fee; only the share count is rescaled.
+                        for l in old_lots:
+                            new_shares = l["shares"] / total_old * shares
+                            lot_cost = l["shares"] * l["price"]
+                            lots[isin].append({
+                                "date": l["date"],
+                                "shares": new_shares,
+                                "price": lot_cost / new_shares,
+                                "fee": l["fee"],
+                                # Provenance, so a reader of the lot file can see why
+                                # this lot's share count and price look nothing like
+                                # any order in transactions.csv. Ratio is old:new -
+                                # >1 is a reverse consolidation. A lot through two
+                                # swaps keeps its original date but records the most
+                                # recent event.
+                                "ca_from": swap["old_isin"],
+                                "ca_ratio": total_old / shares,
+                                "ca_date": r["date"],
+                            })
             continue
 
         if r["type"] in ("Buy", "Reinvestment_Distribution", "Savings plan"):
-            lots[isin].append({"date": r["date"], "shares": shares, "price": price})
+            lots[isin].append({"date": r["date"], "shares": shares, "price": price, "fee": r["fee"]})
         elif r["type"] == "Sell":
             remaining_to_sell = shares
             while remaining_to_sell > 1e-9 and lots[isin]:
@@ -146,20 +192,34 @@ def build_lots(rows):
                     remaining_to_sell -= oldest["shares"]
                     lots[isin].pop(0)
                 else:
+                    # Partial consumption: the entry fee follows the shares that
+                    # remain open, so the surviving lot's all-in cost stays
+                    # proportional. Computed before shares are decremented.
+                    oldest["fee"] *= 1 - (remaining_to_sell / oldest["shares"])
                     oldest["shares"] -= remaining_to_sell
                     remaining_to_sell = 0
             if remaining_to_sell > 1e-6:
                 print(f"WARNING: sold {remaining_to_sell} more shares of {isin} than tracked lots had - data gap")
 
-    return lots, descriptions
+    return lots, descriptions, pending_swaps
 
 def main():
     rows = load_transactions()
     print(f"Loaded {len(rows)} security transactions")
     verify_transfers_net_zero(rows)
 
-    lots, descriptions = build_lots(rows)
-    lots = {isin: ls for isin, ls in lots.items() if not isin.startswith("__pending_from_")}
+    lots, descriptions, unmatched_swaps = build_lots(rows)
+    if unmatched_swaps:
+        # An outgoing corporate-action leg whose incoming leg never arrived means
+        # that position's entire cost basis silently vanished from the output.
+        # Loud, because the resulting lot file looks perfectly well-formed.
+        print(f"WARNING: {len(unmatched_swaps)} corporate action(s) released lots that were never "
+              f"re-landed on a new ISIN - cost basis for these is MISSING from the output:")
+        for stem, swap in sorted(unmatched_swaps.items()):
+            shares = sum(l["shares"] for l in swap["lots"])
+            cost = sum(l["shares"] * l["price"] for l in swap["lots"])
+            print(f"         {swap['old_isin']} (ref {stem}): {shares:.6f} shares, EUR {cost:.2f}")
+
     metadata = load_ticker_metadata()
     overrides = load_company_overrides()
     applied_overrides = []
@@ -179,13 +239,23 @@ def main():
                     "Company": company, "Ticker": ticker, "ISIN": isin, "Sector": sector,
                     "Shares": round(l["shares"], 6),
                     "Purchase Date": l["date"].date().isoformat(),
+                    # The actual execution price, never fee-adjusted. Fee is a
+                    # separate column so all-in cost is available without the
+                    # recorded price silently ceasing to mean "what it traded at".
                     "Purchase Price": round(l["price"], 4),
+                    "Fee": round(l["fee"], 4),
+                    # Blank on ordinary lots; set only where a corporate action
+                    # rescaled this lot (see build_lots).
+                    "CA From ISIN": l.get("ca_from", ""),
+                    "CA Ratio": round(l["ca_ratio"], 6) if "ca_ratio" in l else "",
+                    "CA Date": l["ca_date"].date().isoformat() if "ca_date" in l else "",
                 })
 
     output_rows.sort(key=lambda r: (r["Ticker"] or r["Company"], r["Purchase Date"]))
 
     with open(OUTPUT_FILE, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=["Company", "Ticker", "ISIN", "Sector", "Shares", "Purchase Date", "Purchase Price"])
+        writer = csv.DictWriter(f, fieldnames=["Company", "Ticker", "ISIN", "Sector", "Shares", "Purchase Date",
+                                               "Purchase Price", "Fee", "CA From ISIN", "CA Ratio", "CA Date"])
         writer.writeheader()
         writer.writerows(output_rows)
 
@@ -204,12 +274,18 @@ def main():
     for t in sorted(lot_totals):
         print(f"  {t:10s} {lot_totals[t]:>10.4f} shares")
 
-    no_ticker = sorted(isin for isin in lots if isin not in metadata)
+    # Only ISINs that still hold shares. `lots` is a defaultdict keyed by every
+    # ISIN ever traded, and a fully-sold position leaves an empty list behind, so
+    # testing membership rather than open shares reported 14 long-closed holdings
+    # (Apple, Nvidia, Snowflake, Lufthansa, ...) as needing ticker resolution.
+    open_isins = {isin for isin, ls in lots.items() if sum(l["shares"] for l in ls) > 1e-6}
+
+    no_ticker = sorted(isin for isin in open_isins if isin not in metadata)
     if no_ticker:
         print(f"\nISINs with open positions but NO row in ticker_map.csv - "
               f"call the resolve_tickers tool, or add manually: {no_ticker}")
 
-    no_sector = sorted(metadata[isin]["ticker"] for isin in lots
+    no_sector = sorted(metadata[isin]["ticker"] for isin in open_isins
                         if isin in metadata and not metadata[isin]["sector"])
     if no_sector:
         print(f"\nticker_map.csv rows with a Ticker but a blank Sector - "

@@ -24,9 +24,15 @@ from ..paths import PRICE_HISTORY_DIR, TRANSACTION_LOTS_FILE, ANALYSIS_HISTORY_F
 
 
 def load_transaction_lots():
-    """Return {ticker: [{"date", "shares", "price", "company", "sector"}, ...]}
+    """Return {ticker: [{"date", "shares", "price", "fee", "company", "sector"}, ...]}
     Missing file / missing ticker -> no lots for it (XIRR falls back gracefully).
-    This is also the sole source of current positions - see load_open_positions()."""
+    This is also the sole source of current positions - see load_open_positions().
+
+    "price" is the execution price exactly as traded; "fee" is that lot's share of
+    the order fee, kept separate so cost basis can be all-in (shares*price + fee)
+    without the recorded price drifting from what the security actually traded at.
+    A lot file written before the Fee column existed reads as fee 0.0 rather than
+    failing, so an older data directory still loads."""
     if not TRANSACTION_LOTS_FILE.exists():
         return {}
     lots = {}
@@ -38,10 +44,43 @@ def load_transaction_lots():
                 "date": datetime.strptime(row["Purchase Date"], "%Y-%m-%d"),
                 "shares": float(row["Shares"]),
                 "price": float(row["Purchase Price"]),
+                "fee": float(row.get("Fee") or 0.0),
                 "company": row["Company"],
                 "sector": row["Sector"],
+                "ca_from": row.get("CA From ISIN") or None,
+                "ca_ratio": float(row["CA Ratio"]) if row.get("CA Ratio") else None,
+                "ca_date": row.get("CA Date") or None,
             })
     return lots
+
+
+def compute_corporate_actions(lots):
+    """Corporate actions behind the current open lots, one entry per (ticker, event).
+
+    A reverse consolidation makes a position's own price history discontinuous - the
+    share count and per-share price change by the ratio on a single day with no trade
+    behind it - so a % return or a price chart spanning the event needs this context to
+    read correctly. Derived from lot provenance rather than re-read from
+    transactions.csv, so it always describes the lots actually being reported on.
+    """
+    events = {}
+    for ticker, ticker_lots in lots.items():
+        for l in ticker_lots:
+            if not l["ca_from"] or not l["ca_ratio"]:
+                continue
+            key = (ticker, l["ca_date"], l["ca_from"])
+            e = events.setdefault(key, {
+                "ticker": ticker, "company": l["company"], "date": l["ca_date"],
+                "from_isin": l["ca_from"], "ratio": round(l["ca_ratio"], 4),
+                "kind": "reverse consolidation" if l["ca_ratio"] > 1 else "split",
+                "shares_affected": 0.0, "cost_carried_eur": 0.0,
+            })
+            e["shares_affected"] += l["shares"]
+            e["cost_carried_eur"] += l["shares"] * l["price"] + l["fee"]
+    for e in events.values():
+        e["shares_affected"] = round(e["shares_affected"], 6)
+        e["cost_carried_eur"] = round(e["cost_carried_eur"], 2)
+    return sorted(events.values(), key=lambda e: (e["date"] or "", e["ticker"]))
 
 def xirr(cashflows):
     """cashflows: [(date, amount), ...] - negative for outflows (purchases),
@@ -85,7 +124,10 @@ def compute_annualized_returns(open_positions, prices, lots):
         ticker = pos["Ticker"]
         ticker_lots = lots.get(ticker, [])
         price = prices.get(ticker)
-        cashflows = [(l["date"], -l["shares"] * l["price"]) for l in ticker_lots]
+        # Outflow is what actually left the account: consideration plus the order
+        # fee, so the return is measured against real money spent, not the
+        # fee-excluding notional.
+        cashflows = [(l["date"], -(l["shares"] * l["price"] + l["fee"])) for l in ticker_lots]
         if price is not None and ticker_lots:
             current_value = sum(l["shares"] for l in ticker_lots) * price
             cashflows.append((today, current_value))
@@ -115,9 +157,12 @@ def compute_annualized_returns(open_positions, prices, lots):
 
 def load_open_positions(lots):
     """Derive current open positions (Ticker, Company, Sector, Shares, Bought at
-    EUR) from transaction_lots.csv - the sole source, no separate file. "Bought
-    at EUR" here is the shares-weighted average cost across that ticker's open
-    lots, always in sync with the real transaction history."""
+    EUR, Fees EUR) from transaction_lots.csv - the sole source, no separate file.
+    "Bought at EUR" here is the shares-weighted average execution price across
+    that ticker's open lots, always in sync with the real transaction history.
+    "Fees EUR" is the entry fees still attached to those open lots - carried
+    alongside rather than folded into the average price, so cost basis is all-in
+    while the price stays the traded price."""
     open_positions = []
     for ticker, ticker_lots in lots.items():
         total_shares = sum(l["shares"] for l in ticker_lots)
@@ -130,6 +175,7 @@ def load_open_positions(lots):
             "Sector": ticker_lots[0]["sector"],
             "Shares": round(total_shares, 6),
             "Bought at EUR": round(weighted_cost, 4),
+            "Fees EUR": round(sum(l["fee"] for l in ticker_lots), 2),
         })
     open_positions.sort(key=lambda pos: pos["Ticker"])
     return open_positions
@@ -235,15 +281,20 @@ def price_at_or_before(history, when):
     return result
 
 def compute_positions(open_positions, prices):
+    """Cost basis is all-in: shares * execution price + the entry fees still
+    attached to the open lots. `fees_eur` is reported separately as well, so a
+    position's fee drag is visible rather than buried inside its cost."""
     positions = []
     for pos in open_positions:
         ticker = pos["Ticker"]
         price = prices.get(ticker)
-        cost = pos["Shares"] * pos["Bought at EUR"]
+        fees = pos["Fees EUR"]
+        cost = pos["Shares"] * pos["Bought at EUR"] + fees
         if price is None:
             positions.append({"ticker": ticker, "company": pos["Company"], "sector": pos["Sector"],
                                "shares": pos["Shares"], "price": None, "value": None,
-                               "cost": round(cost, 2), "gain_eur": None, "gain_pct": None})
+                               "cost": round(cost, 2), "fees_eur": round(fees, 2),
+                               "gain_eur": None, "gain_pct": None, "fee_drag_pct": None})
             continue
         value = pos["Shares"] * price
         gain_eur = value - cost
@@ -251,19 +302,29 @@ def compute_positions(open_positions, prices):
         positions.append({
             "ticker": ticker, "company": pos["Company"], "sector": pos["Sector"],
             "shares": pos["Shares"], "price": price, "value": round(value, 2),
-            "cost": round(cost, 2), "gain_eur": round(gain_eur, 2),
+            "cost": round(cost, 2), "fees_eur": round(fees, 2),
+            "gain_eur": round(gain_eur, 2),
             "gain_pct": round(gain_pct, 2) if gain_pct is not None else None,
+            # Entry fees as a share of what the position is worth now - the number
+            # that says whether a small position can still pay for its own exit.
+            "fee_drag_pct": round(fees / value * 100, 2) if value else None,
         })
     return positions
 
 def compute_portfolio_totals(positions):
     total_value = sum(p["value"] for p in positions if p["value"] is not None)
     total_cost = sum(p["cost"] for p in positions)
+    total_fees = sum(p["fees_eur"] for p in positions)
     gain_eur = total_value - total_cost
     gain_pct = (gain_eur / total_cost * 100) if total_cost else None
     return {
         "total_value": round(total_value, 2),
         "total_cost": round(total_cost, 2),
+        # Entry fees inside total_cost above, surfaced separately so the drag is
+        # attributable rather than invisible. Fees on already-closed round trips
+        # are NOT here - those left with the lots they belonged to; see
+        # fees.fee_drag_summary() for whole-history fee statistics.
+        "total_fees_eur": round(total_fees, 2),
         "gain_eur": round(gain_eur, 2),
         "gain_pct": round(gain_pct, 2) if gain_pct is not None else None,
         "positions_priced": sum(1 for p in positions if p["value"] is not None),
@@ -428,6 +489,7 @@ def main():
     movers = compute_movers(open_positions, all_history, th["movers_top_n"])
     trend = compute_trend(full_value_series, lots)
     annualized = compute_annualized_returns(open_positions, prices, lots)
+    corporate_actions = compute_corporate_actions(lots)
 
     caveats = [
         cv["gain_pct_note"],
@@ -482,6 +544,7 @@ def main():
         "movers": movers,
         "trend": trend,
         "annualized_returns": annualized,
+        "corporate_actions": corporate_actions,
         "stale_prices": stale,
         "caveats": caveats,
         "notable": bool(notify_reasons),

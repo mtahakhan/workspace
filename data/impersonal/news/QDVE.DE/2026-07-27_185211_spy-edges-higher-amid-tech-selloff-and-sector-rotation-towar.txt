@@ -1,0 +1,9 @@
+Ticker: QDVE.DE
+Company: iShares S&P 500 Information Technology Sector (Acc)
+Source URL: https://www.interactivecrypto.com/spy-edges-higher-amid-tech-selloff-and-sector-rotation-toward-healthcare-and-financials-jul-2026
+Title: SPY Edges Higher Amid Tech Selloff and Sector Rotation Toward Healthcare and Financials
+Fetched At: 2026-07-27T18:52:11+02:00
+Fetch Method: WebSearch (query: "S&P 500 technology sector performance July 2026")
+Retrieved For: portfolio-daily-analysis
+
+The Technology Select Sector SPDR Fund (XLK) fell 1.44%, dragged down by semiconductor and software stocks. The S&P 500 ETF (SPY) closed slightly higher on July 27, 2026, buoyed by a sector rotation away from technology and semiconductors toward healthcare, financials and energy, reflecting growing investor caution amid geopolitical risks, oil prices near $100 earlier in the month, and uncertainty over the Federal Reserve's next move on interest rates. While tech giants like Intel and Oracle fell sharply, Apple bucked the trend with gains following regulatory approval in China. July 2026 saw the technology sector transition from leading gains in early-to-mid July to a pullback in late July as investors rotated capital toward other sectors.

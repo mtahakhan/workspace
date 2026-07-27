@@ -1,0 +1,29 @@
+{
+  "_comment": "Scalable Capital fee schedule exceptions and instrument classifications. Committed (impersonal) - describes the broker's public rules, not personal holdings. Edit this file to update rules without touching code.",
+
+  "prime_etf_issuers": [
+    "amundi",
+    "ishares",
+    "vanguard",
+    "xtrackers"
+  ],
+
+  "_prime_etf_rule": "PRIME ETF Buy >= EUR 250 is free on both FREE and PRIME+ tiers on EIX/gettex (until 2026-08-31). Matched by substring of the broker's instrument description field (case-insensitive). Only applies to type=Buy; Sells of the same instruments cost EUR 0.99 without PRIME.",
+
+  "hedge_isins": [
+    "FR0013416716",
+    "DE000EWG2LD7",
+    "IE00B4NCWG09",
+    "IE00B4LHGB49"
+  ],
+
+  "_hedge_isins_note": "ISINs classified as secure-hedge instruments for the 30%-combined cap. Currently: Amundi Physical Gold ETC (FR0013416716), Boerse Stuttgart EUWAX Gold II (DE000EWG2LD7), iShares Physical Silver ETC Acc (IE00B4NCWG09), iShares Physical Silver ETC (IE00B4LHGB49). Add new gold/silver/precious-metal ETCs here as they are opened.",
+
+  "hedge_descriptions": [
+    "gold",
+    "silver",
+    "euwax"
+  ],
+
+  "_hedge_descriptions_note": "Fallback description-based hedge detection when an ISIN is not in hedge_isins (e.g. a newly opened position before its ISIN is added above). Matched as case-insensitive substring of the company/description field. Lower precision than ISIN matching - prefer adding the ISIN to hedge_isins."
+}

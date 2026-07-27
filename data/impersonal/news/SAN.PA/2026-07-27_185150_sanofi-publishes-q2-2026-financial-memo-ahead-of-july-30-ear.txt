@@ -1,0 +1,9 @@
+Ticker: SAN.PA
+Company: Sanofi
+Source URL: https://pluang.com/en/news-feed/sanofi-rilis-dokumen-pra-tinjauan-laba-q2-2026
+Title: Sanofi publishes Q2 2026 financial memo ahead of July 30 earnings release
+Fetched At: 2026-07-27T18:51:50+02:00
+Fetch Method: WebSearch (query: "Sanofi stock news July 2026")
+Retrieved For: portfolio-daily-analysis
+
+Sanofi is expected to announce Q2 2026 results before market open on Thursday, July 30, with analysts expecting EPS of $1.09 and revenue of $12.4453 billion. Recent regulatory wins include FDA approval on July 13, 2026 for its first anticancer therapy delivered via on-body injector, and subcutaneous Sarclisa Escena approval in the U.S. on July 8, 2026. Sanofi announced an Executive Committee to support its next strategic chapter on July 20, 2026. J.P. Morgan remains a hold as of July 22. Across 10 analysts the average rating is Buy with a 12-month price target of $55.90, roughly 31% above the latest price. On July 21 there was news of a potential 100% tariff on generic drugs imported into the U.S. starting in 2028.

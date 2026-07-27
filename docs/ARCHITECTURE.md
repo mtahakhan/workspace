@@ -98,15 +98,22 @@ mcp_servers/
     pipeline/                    the deterministic computation
       lots.py, tickers.py, prices.py, backfill.py, analysis.py, report.py, config.py, uploads.py
       storage.py                 the agent-authored artifacts (news, reports) + ticker-map
-                                edits - the only way anything outside the server reads
-                                or writes data
+                                and role edits - the only way anything outside the server
+                                reads or writes data
+      compliance.py              evaluates the portfolio against INVESTMENT_FRAMEWORK.md's
+                                hard limits and returns a structured `breaches` list, so the
+                                agent never re-applies an allocation rule in prose
+      fees.py                    the broker's fee schedule as code (executed rows, prospective
+                                orders, PRIME status, aggregate + per-ticker fee drag)
+      cash.py                    cash balance derived from the transaction ledger, for the
+                                cash-ceiling check
     requirements.txt, .venv/     one venv for the whole package (needs Python >=3.10) -
                                 the ONLY interpreter ever used to run this code
 data/                        <- DEFAULT data root, outside the package (relocatable
                                 via PORTFOLIO_DATA_DIR - see "Deployment model")
-  personal/                    transactions.csv, transaction_lots.csv,
+  personal/                    transactions.csv, transaction_lots.csv, roles.csv,
                                 analysis_history.jsonl, daily-analysis/          (not committed)
-  impersonal/                  ticker_map.csv, company_overrides.csv,
+  impersonal/                  ticker_map.csv, company_overrides.csv, fee_rules.json,
                                 price_history/*.jsonl, news/                     (committed)
 bootstrap.sh                 <- repo root - full bootstrap orchestrator (delegates to scripts/)
 setup-env.sh                 <- interactive prompt to write the Finnhub API key to .env
@@ -182,7 +189,15 @@ exposed as an MCP tool - that's the sanctioned way to invoke it.
    actual purchase dates. Flags stale prices and a run-over-run value
    divergence (see "Notable incidents" in `AGENT_NOTES.md`). Every threshold
    lives in `config.json` (see "Configurable thresholds" below).
-6. **`render_report`** - takes `analyze_portfolio`'s JSON (as the `analysis`
+6. **`check_compliance`** - takes the same `analyze_portfolio` dict and
+   evaluates it against every hard limit in the investment framework (sleeve
+   split, single-position and hedge caps, top-3 and per-sector concentration,
+   cash ceiling, sub-EUR 250 positions). Returns a structured `breaches` list
+   rather than prose, for the same reason `analyze_portfolio` returns numbers:
+   an agent restating a limit from memory against a hand-copied percentage is
+   exactly how a wrong "within limits" gets published. Sleeve checks depend on
+   `roles.csv`, so anything in `missing_roles` makes that check partial.
+7. **`render_report`** - takes `analyze_portfolio`'s JSON (as the `analysis`
    argument) and renders every table/figure in the daily report as markdown,
    so the LLM writing the report never hand-transcribes a number out of the
    JSON - it only writes the Executive Summary and Movers research prose.
@@ -212,7 +227,7 @@ flowchart TD
         UPLOAD["upload_transactions tool<br/>raw CSV text argument<br/>(only external input)"]:::script
         TXN[("data/personal/transactions.csv")]:::data
         TMAP[("data/impersonal/ticker_map.csv<br/>ISIN, Ticker, Company, Sector<br/>shared / committed")]:::data
-        LOTS[("data/personal/transaction_lots.csv<br/>FIFO open lots<br/>ISIN, Ticker, Shares, dates, cost")]:::data
+        LOTS[("data/personal/transaction_lots.csv<br/>FIFO open lots<br/>ISIN, Ticker, Shares, dates,<br/>execution price, fee,<br/>corporate-action provenance")]:::data
 
         CL1["pipeline.lots<br/>FIFO engine"]:::script
         SCAFF["pipeline.tickers<br/>yfinance resolve<br/>(only if new ISIN)"]:::script
@@ -232,20 +247,24 @@ flowchart TD
     subgraph DAILY["② SCHEDULED - Claude Code tasks, daily"]
         direction TB
         PRICES[("data/impersonal/price_history/{TICKER}.jsonl<br/>one file per ticker")]:::data
-        JSONOUT[("pipeline.analysis output<br/>value, gain/loss, XIRR,<br/>drawdown, movers, trend, caveats,<br/>notable/notify_reasons")]:::data
+        JSONOUT[("pipeline.analysis output<br/>value, gain/loss (fee-inclusive), XIRR,<br/>drawdown, movers, trend, fee drag,<br/>corporate actions,<br/>caveats, notable/notify_reasons")]:::data
         HIST[("data/personal/analysis_history.jsonl<br/>generated_at, total_value, xirr_pct<br/>one line per run")]:::data
         MDOUT[("pipeline.report output<br/>deterministic markdown sections")]:::data
         REPORT[("data/personal/daily-analysis/YYYY-MM-DD.md")]:::data
         NEWS[("data/impersonal/news/{TICKER}/*.txt<br/>one file per meaningful source<br/>URL + fetched-at + method + text")]:::data
 
         CONFIG[("config.json<br/>thresholds + caveat/notify<br/>message templates")]:::data
+        ROLES[("data/personal/roles.csv<br/>portfolio role per holding<br/>drives the sleeve split")]:::data
+        FEERULES[("data/impersonal/fee_rules.json<br/>PRIME ETF issuers + hedge ISINs")]:::data
+        COMPOUT[("pipeline.compliance output<br/>breaches + per-check detail,<br/>prime_status, fee drag,<br/>missing_roles")]:::data
 
         FETCH["pipeline.prices<br/>Finnhub / yfinance"]:::script
         ANALYZE["pipeline.analysis<br/>incl. value-divergence check"]:::script
         RENDER["pipeline.report"]:::script
+        COMPLY["pipeline.compliance<br/>framework limits<br/>(+ pipeline.fees, pipeline.cash)"]:::script
 
         TASKFETCH{{"portfolio-price-fetch<br/>~07:11 Berlin<br/>LLM calls fetch_prices tool, reports 1 line"}}:::task
-        TASKANALYSIS{{"portfolio-daily-analysis<br/>~07:25 Berlin<br/>LLM web-searches ALL holdings in parallel<br/>(deeper context on flagged movers),<br/>writes Executive Summary + News Digest,<br/>never hand-transcribes a number"}}:::task
+        TASKANALYSIS{{"portfolio-daily-analysis<br/>~07:25 Berlin<br/>LLM web-searches ALL holdings in parallel<br/>(deeper context on flagged movers),<br/>writes Signals &amp; Actions + Executive Summary<br/>+ News Digest, never hand-transcribes a number<br/>nor re-applies a framework limit itself"}}:::task
 
         TASKFETCH -.triggers.-> FETCH
         LOTS --> FETCH
@@ -255,10 +274,16 @@ flowchart TD
         PRICES --> ANALYZE
         HIST -- "prior run's total_value" --> ANALYZE
         CONFIG -- "thresholds/caveat templates" --> ANALYZE
-        CONFIG -- "short_hold_days_threshold" --> RENDER
+        CONFIG -- "short_hold_days_threshold,<br/>fee_drag_notable_pct" --> RENDER
         ANALYZE --> JSONOUT
         ANALYZE -- "appends" --> HIST
         JSONOUT --> RENDER
+        JSONOUT --> COMPLY
+        ROLES --> COMPLY
+        FEERULES --> COMPLY
+        TXN -- "fees, cash, PRIME status" --> COMPLY
+        COMPLY --> COMPOUT
+        COMPOUT --> TASKANALYSIS
         RENDER --> MDOUT
         MDOUT --> TASKANALYSIS
         TASKANALYSIS --> REPORT
@@ -287,9 +312,11 @@ diagram.
 | `data/impersonal/ticker_map.csv` | ISIN, Ticker, Company, Sector - shared, committed | `resolve_tickers` (Ticker/Company) + `set_ticker_mapping` (Sector, corrections) |
 | `data/impersonal/company_overrides.csv` | ISIN, Company, Note - shared, committed. Corrects the handful of broker descriptions that name the wrong company; everything unlisted keeps the broker's own label | You (hand-edited in the repo); `pipeline/lots.py` applies it |
 | `config.json` | All tunable thresholds and every caveat/notify-reason message template - shared, committed, not personal data | You (hand-edited); `pipeline/config.py` just loads it |
-| `data/personal/transaction_lots.csv` | Current open positions - FIFO lots, real dates/prices | `compute_lots` |
+| `data/personal/transaction_lots.csv` | Current open positions - FIFO lots, real dates/prices, per-lot order fee, corporate-action provenance (`CA From ISIN`/`CA Ratio`/`CA Date`) | `compute_lots` |
 | `data/impersonal/price_history/{TICKER}.jsonl` | Full sourced price history, one file per ticker. May hold several records for one day (one per `fetch_prices` run); readers collapse to one per day, last wins | `fetch_prices` (appends, no same-day check) / `backfill_history` (one-off, rewrites at one record per day) |
 | `data/personal/analysis_history.jsonl` | One line per `analyze_portfolio` run: `generated_at`, `total_value`, `xirr_pct` - append-only, powers the value-divergence caveat | `analyze_portfolio` |
+| `data/personal/roles.csv` | Portfolio role per holding (Core Compounder / Growth / Opportunistic / Defensive) + when last confirmed. Personal, not impersonal: a role describes how a position functions in *this* portfolio, so the same ETF is Growth for one holder and Defensive for another | `set_position_role` (read via `read_roles`) |
+| `data/impersonal/fee_rules.json` | PRIME ETF issuer list + secure-hedge ISIN list - describes the broker's public fee structure and instrument categories, not anything personal | You (hand-edited in the repo); `pipeline/fees.py` and `pipeline/compliance.py` read it |
 | `data/personal/daily-analysis/*.md` | Generated reports | `portfolio-daily-analysis` task |
 | `data/impersonal/news/{TICKER}/*.txt` | One file per fetched news source deemed meaningful (metadata header + fetched text) | `portfolio-daily-analysis` task + any ad-hoc analysis that fetches news |
 
@@ -301,17 +328,20 @@ serialized through the global lock:
 | Tool | Wraps | Uses | Produces | Run order |
 |---|---|---|---|---|
 | `upload_transactions` | `pipeline/uploads.py` | Raw CSV text (tool argument) | `data/personal/transactions.csv` (+ `.bak` of previous) | whenever the user has a new export |
-| `compute_lots` | `pipeline/lots.py` | `data/personal/transactions.csv` + `data/impersonal/ticker_map.csv` | `data/personal/transaction_lots.csv` | 1st (works even if ticker_map.csv is empty/missing) |
+| `compute_lots` | `pipeline/lots.py` | `data/personal/transactions.csv` + `data/impersonal/ticker_map.csv` | `data/personal/transaction_lots.csv` (incl. per-lot `Fee`) | 1st (works even if ticker_map.csv is empty/missing) |
 | `resolve_tickers` | `pipeline/tickers.py` | `data/personal/transaction_lots.csv` (blank-Ticker rows, by ISIN) + `yfinance` search/currency/history checks | Appends rows to `data/impersonal/ticker_map.csv` (Sector blank) | 2nd, only when needed |
 | `compute_lots` (re-run) | same | same | fresh `data/personal/transaction_lots.csv` with resolved tickers | 3rd, after resolve_tickers |
 | `fetch_prices` | `pipeline/prices.py` | `data/personal/transaction_lots.csv` + Finnhub/yfinance | Appends to `data/impersonal/price_history/*.jsonl` | daily |
 | `backfill_history` | `pipeline/backfill.py` | `data/personal/transaction_lots.csv` + yfinance historical | Rewrites `data/impersonal/price_history/*.jsonl` (full history) | one-off/rare |
-| `analyze_portfolio` | `pipeline/analysis.py` (+ `pipeline/config.py`) | `data/personal/transaction_lots.csv` + `data/impersonal/price_history/*.jsonl` + last line of `data/personal/analysis_history.jsonl` + `config.json` | JSON: value, gain/loss, drawdown, XIRR, movers, trend, `stale_prices`, `caveats`, `notable`/`notify_reasons`; appends a new line to `data/personal/analysis_history.jsonl` | after fetch_prices |
-| `render_report` | `pipeline/report.py` | `analyze_portfolio`'s JSON + `config.json` (`short_hold_days_threshold`) | Markdown: Portfolio Overview, Trend, Sector Breakdown, Largest Positions, Movers, Complete Holdings Table, XIRR Context, Data Notes | after analyze_portfolio, before the report is written |
+| `analyze_portfolio` | `pipeline/analysis.py` (+ `pipeline/config.py`) | `data/personal/transaction_lots.csv` + `data/impersonal/price_history/*.jsonl` + last line of `data/personal/analysis_history.jsonl` + `config.json` | JSON: value, fee-inclusive cost/gain/loss, `total_fees_eur`, per-position `fees_eur`/`fee_drag_pct`, drawdown, XIRR, movers, trend, `corporate_actions`, `stale_prices`, `caveats`, `notable`/`notify_reasons`; appends a new line to `data/personal/analysis_history.jsonl` | after fetch_prices |
+| `render_report` | `pipeline/report.py` | `analyze_portfolio`'s JSON + `config.json` (`short_hold_days_threshold`, `fee_drag_notable_pct`) | Markdown: Portfolio Overview, Trend, Sector Breakdown, Largest Positions, Movers, Complete Holdings Table, Corporate Actions, Fee Drag, XIRR Context, Data Notes | after analyze_portfolio, before the report is written |
 | `save_news_source` | `pipeline/storage.py` | Ticker + source facts + fetched text (tool arguments) | One file under `data/impersonal/news/{TICKER}/`; server generates timestamp, slug, metadata header | during news research |
 | `save_report` / `get_report` / `list_reports` | `pipeline/storage.py` | Report markdown (tool argument) / a date | `data/personal/daily-analysis/YYYY-MM-DD.md` (re-saving replaces) | end of the daily task |
 | `list_news` / `get_news_source` | `pipeline/storage.py` | Ticker (+ filename) | Filenames / full stored text | when checking what's already captured |
 | `read_ticker_map` / `set_ticker_mapping` | `pipeline/storage.py` | ISIN + any of Ticker/Company/Sector | Rewrites `data/impersonal/ticker_map.csv` in place, preserving unset fields | filling in a blank Sector, or correcting a mis-resolved listing |
+| `list_lots` | `pipeline/storage.py` | optional ticker | `data/personal/transaction_lots.csv` as text (all lots, or one ticker's) - read-only | auditing what a cost basis or holding period is built from |
+| `read_roles` / `set_position_role` | `pipeline/storage.py` | Ticker + role (+ note) | Rewrites `data/personal/roles.csv`; roles drive the sleeve split, so a stale label quietly invalidates that check | when a position's thesis changes sleeve |
+| `check_compliance` | `pipeline/compliance.py` (+ `pipeline/fees.py`, `pipeline/cash.py`, `data/personal/roles.csv`, `data/impersonal/fee_rules.json`) | `analyze_portfolio`'s output dict | `breaches` list + per-check detail, `prime_status`, `fee_history`, `fee_drag_by_ticker`, `missing_roles` | daily, after analyze_portfolio |
 
 ## Scheduled tasks
 

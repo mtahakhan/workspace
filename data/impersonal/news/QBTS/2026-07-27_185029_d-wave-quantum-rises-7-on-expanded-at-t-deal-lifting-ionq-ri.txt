@@ -1,0 +1,9 @@
+Ticker: QBTS
+Company: D-Wave Quantum
+Source URL: https://247wallst.com/investing/2026/07/27/d-wave-quantum-rises-7-on-expanded-att-deal-lifting-ionq-rigetti-quantum-computing-inc/
+Title: D-Wave Quantum Rises 7% on Expanded AT&T Deal, Lifting IonQ, Rigetti, Quantum Computing Inc.
+Fetched At: 2026-07-27T18:50:29+02:00
+Fetch Method: WebSearch (query: "D-Wave Quantum QBTS stock surge news July 2026")
+Retrieved For: portfolio-daily-analysis
+
+D-Wave Quantum (NYSE:QBTS) shares are up 7% to $19.29 in Monday morning trading after the company announced an expanded agreement with AT&T (NYSE:T) to deploy its annealing quantum systems across network operations. D-Wave surged 7% on an AT&T deal delivering a 240x network speedup, lifting IonQ (IONQ) 12% in a sympathy move. Separately, D-Wave announced that CEO Dr. Alan Baratz and the management team will ring the Nasdaq Opening Bell on July 27, 2026, to mark the company's listing debut on Nasdaq after voluntarily transferring its listing from NYSE, which ended after market close on July 24, 2026.

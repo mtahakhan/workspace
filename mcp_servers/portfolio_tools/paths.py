@@ -77,10 +77,20 @@ TRANSACTIONS_BACKUP_FILE = PERSONAL_DIR / "transactions.csv.bak"
 TRANSACTION_LOTS_FILE = PERSONAL_DIR / "transaction_lots.csv"
 ANALYSIS_HISTORY_FILE = PERSONAL_DIR / "analysis_history.jsonl"
 REPORTS_DIR = PERSONAL_DIR / "daily-analysis"
+# Portfolio role per holding (Core Compounder / Growth / Opportunistic / Defensive).
+# Personal, not impersonal: a role describes how a position functions in *this*
+# portfolio, not a fact about the security - the same ETF is Growth for one holder
+# and Defensive for another.
+ROLES_FILE = PERSONAL_DIR / "roles.csv"
 
 # --- impersonal: facts about securities, true for everyone, committed ---
 TICKER_MAP_FILE = IMPERSONAL_DIR / "ticker_map.csv"
 COMPANY_OVERRIDES_FILE = IMPERSONAL_DIR / "company_overrides.csv"
+# Fee schedule rules: PRIME ETF issuer list, hedge ISIN list, any other
+# hand-maintained exceptions to the programmatic fee logic.  Committed
+# (impersonal) because it describes the broker's public fee structure, not
+# anything personal about the user's holdings.
+FEE_RULES_FILE = IMPERSONAL_DIR / "fee_rules.json"
 PRICE_HISTORY_DIR = IMPERSONAL_DIR / "price_history"
 NEWS_DIR = IMPERSONAL_DIR / "news"
 

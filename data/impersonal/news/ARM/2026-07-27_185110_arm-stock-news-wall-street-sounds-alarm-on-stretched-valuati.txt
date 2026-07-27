@@ -1,0 +1,9 @@
+Ticker: ARM
+Company: Arm Holdings ADR
+Source URL: https://www.benzinga.com/markets/tech/26/07/60497501/arm-stock-news-wall-street-sounds-alarm-on-stretched-valuation-ahead-of-july-earnings
+Title: ARM Stock News: Wall Street Sounds Alarm on Stretched Valuation Ahead of July Earnings
+Fetched At: 2026-07-27T18:51:10+02:00
+Fetch Method: WebSearch (query: "Arm Holdings ARM stock news July 2026")
+Retrieved For: portfolio-daily-analysis
+
+Arm Holdings reports earnings on July 29, 2026. As of July 20, 2026, Arm traded at $271.49, up 144.43% year to date on a data center royalty explosion and the launch of Arm's first production silicon. However the stock is off 17.38% over the past week and 36.21% over the past month, sitting 33% below its 52-week high of $452.70. Arm slid nearly 5% premarket after an investment firm downgrade raised near-term valuation concerns. Wells Fargo lowered its price target to $350 from $410 and UBS to $360 from $470. Arm also led a more than 5% drop within the VanEck Semiconductor ETF during the sector selloff.

@@ -1,0 +1,9 @@
+Ticker: INTC
+Company: Intel Corp
+Source URL: https://www.cnbc.com/2026/07/23/intel-intc-earnings-report-q2-2026.html
+Title: Intel (INTC) earnings report Q2 2026
+Fetched At: 2026-07-27T18:50:51+02:00
+Fetch Method: WebSearch (query: "Intel INTC stock news July 2026")
+Retrieved For: portfolio-daily-analysis
+
+Intel's Q2 2026 results (July 23) showed 25% revenue growth, the fastest for any period in almost 15 years, with Data Center and AI revenue up 59%. Despite this, concerns over rising capital spending and foundry losses led to a sharp selloff, with shares dropping 8% on earnings before rebounding toward $94.62. Earlier in July, INTC fell 7.67% on July 8 to $110.68, extending a 21% weekly slide after Intel's 18A yield delay and AMD's first-ever data-center revenue lead. Intel shares are up over 170% in 2026 after soaring 84% last year, but the stock dropped 28% in July.

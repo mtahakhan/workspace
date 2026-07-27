@@ -1,0 +1,9 @@
+Ticker: CCJ
+Company: Cameco
+Source URL: https://www.quiverquant.com/news/Cameco+Falls+as+Investors+Weigh+Mine+Disruption+and+Softer+Uranium+Sentiment
+Title: Cameco Falls as Investors Weigh Mine Disruption and Softer Uranium Sentiment
+Fetched At: 2026-07-27T18:51:36+02:00
+Fetch Method: WebSearch (query: "Cameco CCJ uranium stock news July 2026")
+Retrieved For: portfolio-daily-analysis
+
+Cameco announced on July 1, 2026 that Cigar Lake temporarily suspended mining because Orano's McClean Lake mill, which processes the ore, ran into sulfuric acid plant problems. The mill was expected to return in about two weeks, but the impact on 2026 production depends on whether delays extend beyond that window. As of July 22 shares are down 8.22% year to date but up more than 16% over the past year, trading well off the 52-week high of $135.24. Cameco reports Q2 earnings July 31, 2026, with analysts predicting a 49% year-over-year drop in EPS and a 15.7% revenue decrease. The most likely driver of recent declines is continued concern over the Cigar Lake suspension plus broader weakness in uranium equities.

@@ -1,0 +1,9 @@
+Ticker: AZN
+Company: AstraZeneca
+Source URL: https://www.stocktitan.net/news/AZN/astra-zeneca-results-h1-and-q2-faf4tqd0lvtq.html
+Title: AstraZeneca H1 Results: $30.7B Revenue, Core EPS Up 12%
+Fetched At: 2026-07-27T18:51:45+02:00
+Fetch Method: WebSearch (query: "AstraZeneca AZN stock news July 2026")
+Retrieved For: portfolio-daily-analysis
+
+AstraZeneca posted mixed second-quarter 2026 results, beating Wall Street's earnings estimates while falling short on revenue, with H1 revenue of $30.7 billion and core EPS up 12%. The company reported disappointing late-stage trial results for two experimental therapies, including a Phase 3 study of Ultomiris. In July AstraZeneca signed an exclusive license agreement with Dizal Pharmaceutical for Zegfrovy (sunvozertinib) with a $900m upfront payment upon achievement of development, regulatory and sales milestones, and an exclusive licence with Chia Tai Tianqing for PDE3/4 inhibitor TQC3721 for respiratory indications. CEO Pascal Soriot said the company is "on track to deliver our $80bn Total Revenue ambition, which assumes successes and setbacks".

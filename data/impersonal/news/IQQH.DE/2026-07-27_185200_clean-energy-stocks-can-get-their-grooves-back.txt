@@ -1,0 +1,9 @@
+Ticker: IQQH.DE
+Company: iShares Global Clean Energy Transition (Dist)
+Source URL: https://www.etftrends.com/etf-building-blocks-content-hub/clean-energy-stocks-grooves-back/
+Title: Clean Energy Stocks Can Get Their Grooves Back
+Fetched At: 2026-07-27T18:52:00+02:00
+Fetch Method: WebSearch (query: "clean energy ETF renewable stocks news July 2026")
+Retrieved For: portfolio-daily-analysis
+
+On a year-to-date basis clean energy equities and related ETFs have delivered solid returns, but recent price action has disappointed. ICLN has climbed over 20% with inflows of $507 million in 2026; TAN returned 14.7% with $536.1 million of inflows and FAN rose 21.8%. ETFs such as the ALPS Clean Energy ETF got a lift from surging oil prices stemming from the war in Iran, but over the past month ceasefire and peace talk headlines dominated the geopolitical news cycle, contributing to slumping oil prices, and clean energy stocks are along for the ride. The iShares Global Clean Energy ETF tracks the S&P Global Clean Energy Index, giving market-cap weighted exposure to approximately 100 companies in renewable energy generation and clean energy technologies.

@@ -1,0 +1,9 @@
+Ticker: IONQ
+Company: IonQ
+Source URL: https://stockstory.org/us/stocks/nyse/ionq/news/why-up-down/why-ionq-ionq-stock-is-nosediving
+Title: Why IonQ (IONQ) Stock Is Nosediving
+Fetched At: 2026-07-27T18:50:42+02:00
+Fetch Method: WebSearch (query: "IonQ stock news July 2026")
+Retrieved For: portfolio-daily-analysis
+
+IonQ shares fell 7.1% on July 7, 2026 as investor caution grew around the quantum computing sector amid high valuations and a new competitor. The stock moved lower for 8 consecutive trading days, erasing about $4.1 billion of market value, a cumulative loss of 20.5%. European firm IQM Quantum Computers began trading on Nasdaq, increasing competition for investment capital, and commentary pointed to the sector's extreme price-to-sales multiples. Management reported its biggest quarter in IonQ history with revenue of $64.7 million and raised full-year outlook, but faces projected operating losses of $310-330 million for the full year. Shares returned -38.5% over the past month versus the S&P 500's +0.6%.

@@ -1,0 +1,9 @@
+Ticker: SAP.DE
+Company: SAP SE
+Source URL: https://www.gurufocus.com/news/8977973/sap-shares-surge-7-on-strong-q2-cloud-growth-amid-geopolitical-concerns
+Title: SAP Shares Surge 7% on Strong Q2 Cloud Growth Amid Geopolitical Concerns
+Fetched At: 2026-07-27T18:50:38+02:00
+Fetch Method: WebSearch (query: "SAP SE stock jump earnings July 2026")
+Retrieved For: portfolio-daily-analysis
+
+SAP SE posted Q2 2026 results on July 23 after market close. On July 24, 2026, SAP shares rose 7% in early trading after robust second-quarter results, particularly in cloud services, and continued climbing into July 25. SAP earned non-IFRS profit per basic share of EUR 1.59 on revenue of EUR 9.88 billion, versus analyst expectations of EUR 9.85 billion. The company raised full-year non-IFRS operating profit guidance from EUR 11.8-12.2 billion to EUR 11.9-12.3 billion. The standout metric was a record cloud backlog of EUR 22.9 billion, up 27%, showing strong demand for SAP cloud and ERP suite offerings.
