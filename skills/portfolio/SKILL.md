@@ -68,6 +68,7 @@ here in the skill bundle (in the source repo at
 | Backfill full price history (rare/one-off) | `backfill_history` | `pipeline/backfill.py` |
 | Compute portfolio value/gain/XIRR/movers/etc. | `analyze_portfolio` | `pipeline/analysis.py` |
 | Render that JSON as report markdown | `render_report` | `pipeline/report.py` |
+| Full exit P&L: net gain/loss if everything sold today (pass analyze_portfolio's dict) | `generate_exit_report` | `pipeline/exit_report.py` |
 | Persist a news source you fetched | `save_news_source` | `pipeline/storage.py` |
 | Save today's finished report | `save_report` | `pipeline/storage.py` |
 | Read a past report / list report dates | `get_report` / `list_reports` | `pipeline/storage.py` |
@@ -117,7 +118,7 @@ skill files, not portfolio data.
 3. **Never modify a deterministic pipeline module**
    (`portfolio_tools/pipeline/lots.py`, `enrich.py`, `prices.py`, `backfill.py`,
    `analysis.py`, `tickers.py`, `report.py`, `config.py`, `uploads.py`,
-   `compliance.py`, `fees.py`, `cash.py`, `storage.py`, or
+   `compliance.py`, `fees.py`, `cash.py`, `exit_report.py`, `storage.py`, or
    `portfolio_tools/server.py`/`lock.py`/`paths.py`, all in the source repo -
    see "Reading vs. editing" above) **without confirming intent with the
    user first.** Default action on an error: report what happened and 2-3

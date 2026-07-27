@@ -39,6 +39,8 @@ from .pipeline.cash import balance as _cash_balance
 from .pipeline.compliance import main as _check_compliance
 from .pipeline.config import load_config
 from .pipeline.enrich import main as _enrich_lots
+from .pipeline.exit_report import generate as _generate_exit_report
+from .pipeline.exit_report import render as _render_exit_report
 from .pipeline.lots import main as _compute_lots
 from .pipeline.prices import main as _fetch_prices
 from .pipeline.report import render as _render_report
@@ -180,6 +182,29 @@ def render_report(analysis: dict) -> str:
     hand-transcribe a figure out of it yourself; if a section needs to look different, that's a
     change to make here, not a one-off rewrite."""
     return _locked(_render_report, analysis, load_config())
+
+
+@mcp.tool()
+def generate_exit_report(analysis: dict) -> str:
+    """Compute and render the full exit P&L report: "if I sell everything today and walk
+    away from Scalable Capital, how much have I gained or lost net?"
+
+    Pass the exact dict analyze_portfolio returned (the same one you pass to render_report
+    and check_compliance).
+
+    The report breaks down:
+      - Capital flows: total deposited, total withdrawn, net capital in
+      - Realized activity: FIFO-matched gain/loss on every closed position
+      - Open positions: current market value and unrealized gain (from the analysis dict)
+      - Taxes: all tax withheld by the broker to date
+      - All-time fees: entry + exit fees on both closed and open positions
+      - Hypothetical exit summary: exit value − net capital in = net P&L
+
+    Tax that would be triggered by selling the remaining open positions is explicitly
+    excluded (jurisdiction/rate-specific) — see the taxes section of the report for
+    the caveat wording."""
+    report_data = _locked(_generate_exit_report, analysis)
+    return _render_exit_report(report_data)
 
 
 @mcp.tool()

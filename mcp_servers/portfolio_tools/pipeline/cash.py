@@ -12,17 +12,25 @@ had no concept of cash at all, with two consequences:
      A position at "36% of the portfolio" is only 36% of your actual wealth if
      cash is ~0.
 
-Method: the balance is just the running sum of every executed row's signed
-`amount`, minus fees and taxes carried in their own columns. Security buys are
-negative amounts and sells positive, so securities and cash rows reconcile
-against each other in one pass - no separate accounting needed.
+Method: the balance is the running sum of every executed row's signed `amount`,
+minus fees and taxes carried in their own columns. Security buys are negative
+amounts and sells positive, so securities and cash rows reconcile against each
+other in one pass - no separate accounting needed.
+
+One exception: `Security transfer` rows are broker-migration artifacts (an
+identical portfolio moving from one Scalable Capital sub-account or custody
+partner to another). Both legs of the transfer are recorded in the same export,
+but the outgoing leg is valued at the old custodian's price and the incoming
+leg at the new custodian's price on a different date - so their amounts do NOT
+net to zero. Including them would corrupt the balance with a phantom gain or
+loss that was never real cash. `lots.py` already excludes these for the same
+reason; the same exclusion applies here.
 
 Sanity check: for a complete export the result should be a small, plausible
-balance. When this was first written it came to EUR 7.93 across 268 rows,
-which is what "the export is internally consistent" looks like - a wildly
-negative or implausibly large number means rows are missing (a partial export,
-or a broker migration with no opening balance), so `balance()` returns that
-diagnosis alongside the figure rather than a bare number.
+balance. A wildly negative or implausibly large number means rows are missing
+(a partial export, or a broker migration with no opening balance), so
+`balance()` returns that diagnosis alongside the figure rather than a bare
+number.
 """
 
 import csv
@@ -44,12 +52,17 @@ def _parse_number(s):
 
 
 def load_cash_rows():
-    """Every executed row with its signed cash effect, oldest first."""
+    """Every executed row with its signed cash effect, oldest first.
+
+    Security transfer rows are excluded — see module docstring for why.
+    """
     rows = []
     with open(TRANSACTIONS_FILE, encoding="utf-8") as f:
         for r in csv.DictReader(f, delimiter=";"):
             if r["status"] != "Executed":
                 continue
+            if r["type"] == "Security transfer":
+                continue  # migration artifact: two legs at different prices, not real cash
             rows.append({
                 "date": datetime.strptime(f'{r["date"]} {r["time"]}', "%Y-%m-%d %H:%M:%S"),
                 "asset_type": r["assetType"],

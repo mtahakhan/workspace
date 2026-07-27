@@ -27,7 +27,7 @@ workflow, and lessons already learned the hard way.
 1. **Never modify a deterministic pipeline module**
    (`portfolio_tools/pipeline/lots.py`, `prices.py`, `backfill.py`,
    `analysis.py`, `tickers.py`, `report.py`, `config.py`, `uploads.py`,
-   `compliance.py`, `fees.py`, `cash.py`, `storage.py`, or
+   `compliance.py`, `fees.py`, `cash.py`, `exit_report.py`, `storage.py`, or
    `portfolio_tools/server.py`/`lock.py`/`paths.py`) **without first confirming
    intent with the user.** If something looks wrong or errors, the default
    action is to **report it** - what happened, why it might be happening, and
@@ -287,3 +287,20 @@ fine as long as it's parallel.
 that phrase never corresponded to any tracked data (no price-target field
 exists anywhere in this pipeline) and was removed rather than implemented;
 revisit if per-position price targets are ever actually added.
+
+**2026-07-27: `cash.py` was corrupted by Security transfer amounts from the
+broker migration.** The Dec 2025 Scalable Capital migration (Baader Bank →
+Scalable) produced 12 `Security transfer` rows in the export. `lots.py`
+already excluded these as migration artifacts (the shares net to zero per
+ISIN). But `cash.py` summed their `amount` column too - and the two legs of
+each transfer were valued at different prices on different dates (outgoing at
+Baader's Dec 5 NAV, incoming at Scalable's Dec 6 NAV), so their amounts do
+NOT net to zero. The result was a phantom +€13.20 in the reported cash
+balance. Fix: `load_cash_rows()` now skips `type == "Security transfer"` rows
+with the same `continue` `lots.py` uses, and the module docstring explains why.
+The corrected balance dropped from €8.92 → −€4.28, which correctly triggers
+the "implausible negative" warning because the export was also missing a small
+number of executed trades from after 2026-07-16 (confirmed by comparing against
+the broker's displayed balance of €0.73). **The rule: any time `cash.py` reports
+a negative balance on a supposedly complete export, the first suspect is either
+missing rows or a new type of non-cash Security row that must be excluded.**

@@ -98,15 +98,18 @@ mcp_servers/
     pipeline/                    the deterministic computation
       lots.py, tickers.py, prices.py, backfill.py, analysis.py, report.py, config.py, uploads.py
       storage.py                 the agent-authored artifacts (news, reports) + ticker-map
-                                and role edits - the only way anything outside the server
-                                reads or writes data
+                                 and role edits - the only way anything outside the server
+                                 reads or writes data
       compliance.py              evaluates the portfolio against INVESTMENT_FRAMEWORK.md's
-                                hard limits and returns a structured `breaches` list, so the
-                                agent never re-applies an allocation rule in prose
+                                 hard limits and returns a structured `breaches` list, so the
+                                 agent never re-applies an allocation rule in prose
       fees.py                    the broker's fee schedule as code (executed rows, prospective
-                                orders, PRIME status, aggregate + per-ticker fee drag)
+                                 orders, PRIME status, aggregate + per-ticker fee drag)
       cash.py                    cash balance derived from the transaction ledger, for the
-                                cash-ceiling check
+                                 cash-ceiling check
+      exit_report.py             capital-flow + realized-gain pass over transactions.csv;
+                                 answers "net P&L if I exit everything today" without
+                                 touching any existing pipeline module
     requirements.txt, .venv/     one venv for the whole package (needs Python >=3.10) -
                                 the ONLY interpreter ever used to run this code
 data/                        <- DEFAULT data root, outside the package (relocatable
@@ -306,6 +309,16 @@ flowchart TD
     ENRICHED -. seeds .-> BACKFILL
     BACKFILL -. rewrites .-> PRICES
 
+    subgraph ONEOFF["③ ON-DEMAND - ad hoc, never part of the daily cycle"]
+        direction TB
+        EXITOUT[("pipeline.exit_report output<br/>capital flows, realized gain/loss,<br/>all-time fees + tax, net P&amp;L")]:::data
+        EXIT["pipeline.exit_report<br/>(+ pipeline.cash)<br/>FIFO realized-gain pass<br/>over full transaction history"]:::script
+    end
+
+    TXN -. "capital flows +<br/>realized FIFO pass" .-> EXIT
+    JSONOUT -. "open positions<br/>value/cost" .-> EXIT
+    EXIT -. produces .-> EXITOUT
+
     classDef data fill:#eef1fb,stroke:#4b5fa8,stroke-width:1.5px,color:#262c52
     classDef script fill:#eaf4ec,stroke:#2f6f4e,stroke-width:1.5px,color:#163823
     classDef task fill:#fbf1de,stroke:#b3701f,stroke-width:1.5px,color:#4a2c0a
@@ -355,6 +368,7 @@ serialized through the global lock:
 | `list_lots` | `pipeline/storage.py` | optional ticker | `data/personal/enriched_lots.csv` as text (all lots, or one ticker's) - read-only | auditing what a cost basis or holding period is built from |
 | `read_roles` / `set_position_role` | `pipeline/storage.py` | Ticker + role (+ note) | Rewrites `data/personal/roles.csv`; roles drive the sleeve split, so a stale label quietly invalidates that check | when a position's thesis changes sleeve |
 | `check_compliance` | `pipeline/compliance.py` (+ `pipeline/fees.py`, `pipeline/cash.py`, `data/personal/roles.csv`, `data/impersonal/fee_rules.json`) | `analyze_portfolio`'s output dict | `breaches` list + per-check detail, `prime_status`, `fee_history`, `fee_drag_by_ticker`, `missing_roles` | daily, after analyze_portfolio |
+| `generate_exit_report` | `pipeline/exit_report.py` (+ `pipeline/cash.py`) | `data/personal/transactions.csv` (direct read for capital flows + realized FIFO pass) + `analyze_portfolio`'s output dict (open-position value/cost) | Markdown report: capital flows (deposited/withdrawn/net), realized gain/loss on closed positions, open unrealized gain, all-time fees and taxes withheld, hypothetical exit value, and **net P&L** (exit value − net capital in) | on-demand, after analyze_portfolio |
 
 ## Scheduled tasks
 
