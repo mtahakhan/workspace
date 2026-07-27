@@ -3,12 +3,15 @@
 Deterministically resolve new ISINs into ticker_map.csv - a CONFIRM-don't-GUESS
 step. Full rationale/history: see AGENT_NOTES.md (read that first).
 
-Quick reference: reads transaction_lots.csv (NOT transactions.csv directly -
-run compute_lots.py first) for open positions with a blank Ticker, resolves
-each via a real yfinance search + currency/history check, then appends the
-new rows to ticker_map.csv (shared, committed - never overwrites existing
-rows) with Sector left blank for a human to fill in. Every new pick must
-still be reviewed against the printed table before trusting it.
+Quick reference: reads transaction_lots.csv (NOT enriched_lots.csv — that file
+is stale until enrich_lots runs, but tickers.py sits before enrich_lots in the
+setup sequence) for currently-open ISINs, cross-checks against ticker_map.csv
+to find any not yet mapped, resolves each via a real yfinance search +
+currency/history check, then appends the new rows to ticker_map.csv (shared,
+committed - never overwrites existing rows) with Sector left blank for a human
+to fill in. Automatically calls enrich_lots at the end so enriched_lots.csv
+is immediately current. Every new pick must still be reviewed against the
+printed table before trusting it.
 """
 
 import csv
