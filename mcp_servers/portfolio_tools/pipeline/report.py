@@ -108,24 +108,87 @@ def render_movers(data):
         )
     return "\n".join(lines)
 
+
+def render_trend_movers(data, cfg):
+    """Positions whose medium-window move exceeds the notable threshold.
+
+    Kept separate from the day-over-day Movers section on purpose: "something
+    happened today" and "something has been happening for two months" are different
+    questions and answer to different readers. Empty when nothing breaches the
+    threshold (quiet markets, or all positions bought recently enough to lack a full
+    medium window).
+    """
+    trend_movers = data.get("trend_movers") or []
+    if not trend_movers:
+        return ""
+    medium_days = cfg["thresholds"]["trend_medium_days"]
+    notable_pct = cfg["thresholds"]["trend_notable_pct"]
+    lines = [
+        "## Trend Movers",
+        "",
+        f"Positions whose {medium_days}-day return breaches ±{notable_pct:.0f}% — "
+        f"a multi-week directional move, distinct from today's session noise. "
+        f"`Why` needs a targeted WebSearch for each ticker here: query with the trend "
+        f"as context (e.g. \"why is X down 35% since May\"), not just today's headlines. "
+        f"For tickers held as core (3-5yr): assess whether the slide breaks the original "
+        f"thesis before treating it as a signal — sustained drawdown ≠ exit trigger for a "
+        f"long-duration hold. For tactical positions: check whether the horizon assumption still holds.",
+        "",
+        f"| Ticker | Company | {medium_days}d Return | Drawdown vs {cfg['thresholds']['trend_high_window_days']}d High | Why |",
+        f"|--------|---------|{'--------':-<{len(str(medium_days))+9}}|{'--------':-<{len(str(cfg['thresholds']['trend_high_window_days']))+12}}|----|",
+    ]
+    for m in trend_movers:
+        drawdown = f"{m['drawdown_from_high_pct']:+.1f}%" if m["drawdown_from_high_pct"] is not None else "n/a"
+        lines.append(
+            f"| **{m['ticker']}** | {m['company']} | **{pct(m['change_pct'])}** | "
+            f"{drawdown} | _fill in_ |"
+        )
+    return "\n".join(lines)
+
 def render_holdings_table(data):
+    """Complete Holdings Table with per-position trend columns.
+
+    The three trend columns (30d, medium-window, Δ vs High) sit next to the
+    since-buy Return so the two can be read side by side. They routinely disagree
+    and that disagreement is the point: ARM at +25.9% since buy / −35% over 56 days
+    reads very differently once both are visible in the same row.
+    """
+    cfg = data.get("_config_thresholds", {})
+    short_d = cfg.get("trend_short_days", 30)
+    medium_d = cfg.get("trend_medium_days", 56)
+    high_d = cfg.get("trend_high_window_days", 365)
+
+    priced = [p for p in data["positions"] if p.get("value") is not None]
+    unpriced = [p for p in data["positions"] if p.get("value") is None]
+
+    def _trend_col(p, key):
+        v = p.get(key)
+        return pct(v) if v is not None else "—"
+
     lines = [
         "## Complete Holdings Table",
         "",
-        "| Ticker | Company | Sector | Shares | Price € | Value € | Cost € | Fees € | Gain € | Return |",
-        "|--------|---------|--------|--------|---------|---------|--------|--------|--------|--------|",
+        f"| Ticker | Company | Sector | Shares | Price € | Value € | Cost € | Fees € | Gain € | Return | {short_d}d | {medium_d}d | Δ vs {high_d}d High |",
+        f"|--------|---------|--------|--------|---------|---------|--------|--------|--------|--------|{'----':-<{len(str(short_d))+2}}|{'----':-<{len(str(medium_d))+2}}|{'----':-<{len(str(high_d))+12}}|",
     ]
-    for p in sorted(data["positions"], key=lambda p: -p["value"]):
+    for p in sorted(priced, key=lambda p: -p["value"]):
         lines.append(
             f"| {p['ticker']} | {p['company']} | {p['sector']} | {p['shares']:g} | {p['price']:,.2f} | "
             f"{p['value']:,.2f} | {p['cost']:,.2f} | {p.get('fees_eur', 0.0):,.2f} | "
-            f"{p['gain_eur']:+,.2f} | {pct(p['gain_pct'])} |"
+            f"{p['gain_eur']:+,.2f} | {pct(p['gain_pct'])} | "
+            f"{_trend_col(p, f'trend_{short_d}d_pct')} | {_trend_col(p, f'trend_{medium_d}d_pct')} | "
+            f"{_trend_col(p, 'drawdown_from_high_pct')} |"
+        )
+    for p in unpriced:
+        lines.append(
+            f"| {p['ticker']} | {p['company']} | {p['sector']} | {p['shares']:g} | — | "
+            f"— | {p['cost']:,.2f} | {p.get('fees_eur', 0.0):,.2f} | — | — | — | — | — |"
         )
     t = data["totals"]
     lines.append(
         f"| **TOTALS** | | | | | **{t['total_value']:,.2f}** | **{t['total_cost']:,.2f}** | "
         f"**{t.get('total_fees_eur', 0.0):,.2f}** | "
-        f"**{t['gain_eur']:+,.2f}** | **{pct(t['gain_pct'])}** |"
+        f"**{t['gain_eur']:+,.2f}** | **{pct(t['gain_pct'])}** | | | |"
     )
     return "\n".join(lines)
 
@@ -236,11 +299,16 @@ def render_caveats(data):
     return "\n".join(lines)
 
 def render(data, config):
+    # Stitch config thresholds onto data so render_holdings_table can read column
+    # widths from config without being refactored to accept config separately.
+    # This is a shallow copy to avoid mutating the caller's dict.
+    data = {**data, "_config_thresholds": config["thresholds"]}
     sections = [
         render_overview(data),
         render_sectors(data),
         render_largest_positions(data),
         render_movers(data),
+        render_trend_movers(data, config),
         render_holdings_table(data),
         render_corporate_actions(data),
         render_fee_drag(data, config["thresholds"]["fee_drag_notable_pct"]),
