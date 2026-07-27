@@ -247,7 +247,7 @@ flowchart TD
     subgraph DAILY["② SCHEDULED - Claude Code tasks, daily"]
         direction TB
         PRICES[("data/impersonal/price_history/{TICKER}.jsonl<br/>one file per ticker")]:::data
-        JSONOUT[("pipeline.analysis output<br/>value, gain/loss (fee-inclusive), XIRR,<br/>drawdown, movers, trend, fee drag,<br/>corporate actions,<br/>caveats, notable/notify_reasons")]:::data
+        JSONOUT[("pipeline.analysis output<br/>value, gain/loss (fee-inclusive), XIRR,<br/>drawdown, movers, trend, fee drag,<br/>corporate actions, per-position<br/>trend_30d/56d_pct + drawdown_from_high,<br/>trend_movers, caveats, notable/notify_reasons")]:::data
         HIST[("data/personal/analysis_history.jsonl<br/>generated_at, total_value, xirr_pct<br/>one line per run")]:::data
         MDOUT[("pipeline.report output<br/>deterministic markdown sections")]:::data
         REPORT[("data/personal/daily-analysis/YYYY-MM-DD.md")]:::data
@@ -264,7 +264,7 @@ flowchart TD
         COMPLY["pipeline.compliance<br/>framework limits<br/>(+ pipeline.fees, pipeline.cash)"]:::script
 
         TASKFETCH{{"portfolio-price-fetch<br/>~07:11 Berlin<br/>LLM calls fetch_prices tool, reports 1 line"}}:::task
-        TASKANALYSIS{{"portfolio-daily-analysis<br/>~07:25 Berlin<br/>LLM web-searches ALL holdings in parallel<br/>(deeper context on flagged movers),<br/>writes Signals &amp; Actions + Executive Summary<br/>+ News Digest, never hand-transcribes a number<br/>nor re-applies a framework limit itself"}}:::task
+        TASKANALYSIS{{"portfolio-daily-analysis<br/>~07:25 Berlin<br/>LLM web-searches ALL holdings in parallel<br/>(day-over-day movers: today's headlines;<br/>trend movers: cause query + stored-news continuity;<br/>all others: one-line digest),<br/>writes Signals &amp; Actions + Executive Summary<br/>+ News Digest, never hand-transcribes a number<br/>nor re-applies a framework limit itself"}}:::task
 
         TASKFETCH -.triggers.-> FETCH
         LOTS --> FETCH
@@ -274,7 +274,7 @@ flowchart TD
         PRICES --> ANALYZE
         HIST -- "prior run's total_value" --> ANALYZE
         CONFIG -- "thresholds/caveat templates" --> ANALYZE
-        CONFIG -- "short_hold_days_threshold,<br/>fee_drag_notable_pct" --> RENDER
+        CONFIG -- "short_hold_days_threshold,<br/>fee_drag_notable_pct,<br/>trend_medium_days,<br/>trend_high_window_days,<br/>trend_notable_pct" --> RENDER
         ANALYZE --> JSONOUT
         ANALYZE -- "appends" --> HIST
         JSONOUT --> RENDER
@@ -333,8 +333,8 @@ serialized through the global lock:
 | `compute_lots` (re-run) | same | same | fresh `data/personal/transaction_lots.csv` with resolved tickers | 3rd, after resolve_tickers |
 | `fetch_prices` | `pipeline/prices.py` | `data/personal/transaction_lots.csv` + Finnhub/yfinance | Appends to `data/impersonal/price_history/*.jsonl` | daily |
 | `backfill_history` | `pipeline/backfill.py` | `data/personal/transaction_lots.csv` + yfinance historical | Rewrites `data/impersonal/price_history/*.jsonl` (full history) | one-off/rare |
-| `analyze_portfolio` | `pipeline/analysis.py` (+ `pipeline/config.py`) | `data/personal/transaction_lots.csv` + `data/impersonal/price_history/*.jsonl` + last line of `data/personal/analysis_history.jsonl` + `config.json` | JSON: value, fee-inclusive cost/gain/loss, `total_fees_eur`, per-position `fees_eur`/`fee_drag_pct`, drawdown, XIRR, movers, trend, `corporate_actions`, `stale_prices`, `caveats`, `notable`/`notify_reasons`; appends a new line to `data/personal/analysis_history.jsonl` | after fetch_prices |
-| `render_report` | `pipeline/report.py` | `analyze_portfolio`'s JSON + `config.json` (`short_hold_days_threshold`, `fee_drag_notable_pct`) | Markdown: Portfolio Overview, Trend, Sector Breakdown, Largest Positions, Movers, Complete Holdings Table, Corporate Actions, Fee Drag, XIRR Context, Data Notes | after analyze_portfolio, before the report is written |
+| `analyze_portfolio` | `pipeline/analysis.py` (+ `pipeline/config.py`) | `data/personal/transaction_lots.csv` + `data/impersonal/price_history/*.jsonl` + last line of `data/personal/analysis_history.jsonl` + `config.json` | JSON: value, fee-inclusive cost/gain/loss, `total_fees_eur`, per-position `fees_eur`/`fee_drag_pct`/`trend_30d_pct`/`trend_56d_pct`/`drawdown_from_high_pct`, drawdown, XIRR, movers, `trend_movers`, trend, `corporate_actions`, `stale_prices`, `caveats`, `notable`/`notify_reasons`; appends a new line to `data/personal/analysis_history.jsonl` | after fetch_prices |
+| `render_report` | `pipeline/report.py` | `analyze_portfolio`'s JSON + `config.json` (`short_hold_days_threshold`, `fee_drag_notable_pct`, `trend_medium_days`, `trend_high_window_days`, `trend_notable_pct`) | Markdown: Portfolio Overview, Trend, Sector Breakdown, Largest Positions, Movers, Trend Movers (gated on `trend_notable_pct`), Complete Holdings Table (incl. 30d/56d/Δ-vs-high columns), Corporate Actions, Fee Drag, XIRR Context, Data Notes | after analyze_portfolio, before the report is written |
 | `save_news_source` | `pipeline/storage.py` | Ticker + source facts + fetched text (tool arguments) | One file under `data/impersonal/news/{TICKER}/`; server generates timestamp, slug, metadata header | during news research |
 | `save_report` / `get_report` / `list_reports` | `pipeline/storage.py` | Report markdown (tool argument) / a date | `data/personal/daily-analysis/YYYY-MM-DD.md` (re-saving replaces) | end of the daily task |
 | `list_news` / `get_news_source` | `pipeline/storage.py` | Ticker (+ filename) | Filenames / full stored text | when checking what's already captured |
@@ -350,7 +350,7 @@ Thin LLM wrappers around the deterministic core:
 | Task | Does | Deterministic or LLM? |
 |---|---|---|
 | `portfolio-price-fetch` (~07:11 Berlin) | Calls `fetch_prices`, reports one line | Almost entirely deterministic - LLM just calls the tool and reports |
-| `portfolio-daily-analysis` (~07:25 Berlin) | Calls `analyze_portfolio` then `render_report`, WebSearches the flagged `movers` (deeper context) and all other holdings (one-line news digest) in a single parallel batch, writes an Executive Summary, and prepends it to the rendered markdown | Hybrid - every number/table comes untouched from `render_report`; LLM only adds the Executive Summary and news-research prose, never hand-transcribes a figure |
+| `portfolio-daily-analysis` (~07:25 Berlin) | Calls `analyze_portfolio` then `render_report`, WebSearches all holdings in one parallel batch — day-over-day movers (today's headlines), trend movers (cause-oriented query + stored-news continuity via `list_news`/`get_news_source`), all others (one-line digest) — writes Signals & Actions + Executive Summary + News Digest | Hybrid - every number/table comes untouched from `render_report`; LLM only adds the Executive Summary and news-research prose, never hand-transcribes a figure |
 
 Both tasks' real instructions live in the skill bundle at
 `skills/portfolio/references/tasks/*.md` (each scheduled task's own prompt is
@@ -439,9 +439,12 @@ Whether the daily task sends a push notification is a fixed rule evaluated by
 `analyze_portfolio`, not a judgment call made fresh each run. `notable` is
 `true` if any of: a mover's `|change_pct|` is >= `config.json`'s
 `thresholds.mover_notable_pct` (5% by default, percentage move, not EUR
-size), `stale_prices` is non-empty, or the value-divergence check fired.
-`notify_reasons` lists which, rendered from `config.json`'s `notify_reasons`
-templates.
+size), `stale_prices` is non-empty, the value-divergence check fired, or any
+`trend_movers` entry's `drawdown_from_high_pct` is <= `-thresholds.drawdown_notable_pct`
+(30% by default — fires regardless of whether anything moved today, so a
+position that has been sliding for weeks without a single big daily session
+will still trigger). `notify_reasons` lists which, rendered from `config.json`'s
+`notify_reasons` templates.
 
 ## Configurable thresholds and caveats (`config.json`)
 
@@ -450,9 +453,11 @@ Every numeric threshold and every caveat/notify-reason message string used by
 hardcoded in the modules - `stale_price_max_age_days`, `mover_notable_pct`,
 `value_divergence_pct`, `split_adjustment_sanity_ratio`,
 `full_year_holding_days`, `short_hold_days_threshold`, `movers_top_n`,
-`largest_positions_top_n` under `thresholds`; the boilerplate methodology
+`largest_positions_top_n`, `trend_short_days`, `trend_medium_days`,
+`trend_high_window_days`, `trend_notable_pct`, `trend_movers_top_n`,
+`drawdown_notable_pct` under `thresholds`; the boilerplate methodology
 notes plus the templated tickers-without-lot-data/stale-prices/short-holding/
-value-divergence messages under `caveats`; the three notification message
+value-divergence messages under `caveats`; the four notification message
 templates under `notify_reasons`. To change a number or wording, edit
 `config.json` directly - no code change needed, and it takes effect on the
 next call to either tool (the server reads the file fresh every call - no
