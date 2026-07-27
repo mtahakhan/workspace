@@ -7,7 +7,8 @@ the skill - it doesn't assume access to the source repo.
 ## Missing or stale prices
 
 - Check `fetch_prices`'s output for which tickers failed and why
-- Check `analyze_portfolio`'s `stale_prices` output field - flags any ticker
+- Check the analysis step's `stale_prices` field (`get_refresh(kind="analysis")` -
+  `create_refresh` itself only returns a refresh id) - flags any ticker
   whose last price-history entry is 2+ days old
 - Verify the ticker is still the correct exchange symbol (companies
   occasionally change listings) - ask the user to confirm if unsure

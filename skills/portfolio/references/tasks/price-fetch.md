@@ -1,11 +1,39 @@
 # portfolio-price-fetch task instructions
 
-Call the `portfolio` MCP server's `fetch_prices` tool (no arguments). It's
-registered globally (see `../../SKILL.md`'s intro) - it runs the exact same
-code as `portfolio_tools/pipeline/prices.py`, see that module for what it does.
+Run the full deterministic pipeline - two tool calls, in order:
 
-This gets the ticker list from the computed lots (derived from real broker transactions - there is no separate holdings file), fetches live prices (Finnhub primary, yfinance backup), and appends one fully-sourced record per ticker to that ticker's price history. There is no separate prices snapshot - the newest record IS the current price, read directly by `analyze_portfolio`. Where any of that is stored is the server's business; you never open it yourself. No further action needed - this task is fetch-only.
+1. Call `fetch_prices` (no arguments). Gets the ticker list from the computed
+   lots (derived from real broker transactions - there is no separate
+   holdings file), fetches live prices (Finnhub primary, yfinance backup),
+   and appends one fully-sourced record per ticker to that ticker's price
+   history. **Raises if any ticker fails on both sources** - tickers that DID
+   resolve are still fetched and appended first, so a partial fetch isn't
+   lost, but the call as a whole errors out. If it errors, report the exact
+   error and stop (see `../../SKILL.md`'s rule 3) - do not proceed to step 2
+   on an incomplete price set, do not attempt to fix ticker mappings
+   yourself, and do not fall back to running a script via Bash. If a ticker
+   is missing/unmapped (as opposed to a live fetch failure), that likely
+   means a new trade happened and `compute_lots` then `enrich_lots` need to
+   be called (in that order) - but only do that if you have reason to
+   believe transactions changed (a fresh `upload_transactions` call); don't
+   run them speculatively.
+2. Call `create_refresh` (no arguments). Runs every remaining deterministic
+   step in order - analysis, compliance, render, exit-report - and writes
+   all four results into one new directory (a "refresh"), returning only
+   its id (e.g. `2026-07-28/07-11-03-041233`). It stops at the first step
+   that fails and reports the error the same way - do not attempt any of
+   this yourself if it errors, and do not treat a partially-written refresh
+   as usable; the next task that reads it (`portfolio-daily-analysis`,
+   `portfolio-refresh`) already knows to skip an incomplete one.
 
-**Running this more than once a day is safe, and does not need avoiding.** The tool appends unconditionally with no same-day check, so N runs in a day leave N records for that day in each ticker's file. `analyze_portfolio` collapses each ticker's history to the last record per calendar day when it reads, so movers stay day-over-day and no reported figure is affected. The only real costs are API calls and extra lines in the history file - don't try to "clean up" or delete the extra records, and don't skip a scheduled run because someone already fetched manually. Report a one-line summary (how many tickers resolved, any missing) and stop. Do not write the daily analysis report - that's a separate task (`portfolio-daily-analysis`).
+**Running this whole task more than once a day is safe and does not need
+avoiding** - `fetch_prices` still appends unconditionally (no same-day
+check), and `create_refresh` writes a new directory per call rather than
+overwriting a previous one. Don't skip a scheduled run because someone
+already ran this manually today.
 
-If a ticker is missing/unmapped, that likely means a new trade happened and `compute_lots` then `enrich_lots` need to be called (in that order) - but only do that if you have reason to believe transactions changed (a fresh `upload_transactions` call); don't run them speculatively. If the tool errors, report the exact error - do not attempt to fix ticker mappings or reintroduce a manual-override file, and do not fall back to running a script via Bash instead - an MCP tool error is a real error to report (see `../../SKILL.md`'s rule 3), not something to route around.
+Report a one-line summary (confirmation that both calls succeeded, and the
+refresh id `create_refresh` returned) and stop. Do not research news, do not
+write an Executive Summary, and do not call `save_report` - all of that is
+`portfolio-daily-analysis`'s job, working from the refresh this task just
+wrote.

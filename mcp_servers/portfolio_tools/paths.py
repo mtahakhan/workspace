@@ -82,6 +82,15 @@ TRANSACTION_LOTS_FILE = PERSONAL_DIR / "transaction_lots.csv"
 ENRICHED_LOTS_FILE = PERSONAL_DIR / "enriched_lots.csv"
 ANALYSIS_HISTORY_FILE = PERSONAL_DIR / "analysis_history.jsonl"
 REPORTS_DIR = PERSONAL_DIR / "daily-analysis"
+# Root of the "refresh" tree: one subdirectory per call to the create_refresh
+# MCP tool, nested PIPELINE_RUNS_DIR/{YYYY-MM-DD}/{HH-MM-SS-ffffff}/, each
+# holding the four files that one refresh produces (analysis.json,
+# compliance.json, render.md, exit-report.json - see pipeline/run_store.py for
+# the exact names). create_refresh returns only the "{date}/{time}" refresh id,
+# never the payload; a separate refresh is never split across tool calls that
+# pass data between them - see pipeline/run_store.py and
+# skills/portfolio/references/tasks/*.md for how the two daily tasks use this.
+PIPELINE_RUNS_DIR = PERSONAL_DIR / "pipeline-runs"
 # Portfolio role per holding (Core Compounder / Growth / Opportunistic / Defensive).
 # Personal, not impersonal: a role describes how a position functions in *this*
 # portfolio, not a fact about the security - the same ETF is Growth for one holder

@@ -26,12 +26,14 @@ called directly with no capture needed.
 
 import contextlib
 import io
+import json
 import os
 
 from mcp.server.fastmcp import FastMCP
 
 from .lock import locked
-from .paths import LOCK_FILE
+from .paths import LOCK_FILE, PIPELINE_RUNS_DIR
+from .pipeline import run_store as _run_store
 from .pipeline import storage as _storage
 from .pipeline.analysis import main as _analyze_portfolio
 from .pipeline.backfill import main as _backfill_history
@@ -40,7 +42,6 @@ from .pipeline.compliance import main as _check_compliance
 from .pipeline.config import load_config
 from .pipeline.enrich import main as _enrich_lots
 from .pipeline.exit_report import generate as _generate_exit_report
-from .pipeline.exit_report import render as _render_exit_report
 from .pipeline.lots import main as _compute_lots
 from .pipeline.prices import main as _fetch_prices
 from .pipeline.report import render as _render_report
@@ -115,13 +116,109 @@ def resolve_tickers() -> str:
 def fetch_prices() -> str:
     """Fetch today's live price for every ticker in transaction_lots.csv (Finnhub primary,
     yfinance fallback) and append one fully-sourced record per ticker to
-    price_history/{TICKER}.jsonl. Run daily before analyze_portfolio.
+    price_history/{TICKER}.jsonl. Run daily before create_refresh.
 
     Safe to run more than once a day: it appends unconditionally (no same-day check),
-    so N runs leave N records for that day, and analyze_portfolio collapses each ticker
-    to the last record per calendar day on read. Extra runs cost API calls and add
-    history lines, but cannot corrupt a reported figure."""
+    so N runs leave N records for that day, and create_refresh's analysis step collapses
+    each ticker to the last record per calendar day on read. Extra runs cost API calls
+    and add history lines, but cannot corrupt a reported figure.
+
+    Raises if any ticker fails on both Finnhub and yfinance - tickers that DID resolve
+    are still fetched and appended first, so a partial fetch isn't lost, but the call as
+    a whole errors out. Report the exact error and stop (see SKILL.md rule 3); don't
+    proceed to create_refresh on an incomplete price set."""
     return _locked(_capture_stdout, _fetch_prices)
+
+
+@mcp.tool()
+def create_refresh() -> str:
+    """Run the full deterministic pass - analyze_portfolio, then check_compliance,
+    render_report, and generate_exit_report, all reading the analysis step's own output -
+    and write all four results into one new directory (a "refresh"), returning only its
+    id (e.g. "2026-07-28/07-11-03-041233"), never the payload. Call fetch_prices first.
+
+    What each step computes:
+      - analysis: portfolio value, gain/loss, sector breakdown, largest positions,
+        high-water-mark/drawdown, movers, trend, XIRR, stale_prices, caveats,
+        notable/notify_reasons. Appends to analysis_history.jsonl as a side effect.
+      - compliance: every hard limit in INVESTMENT_FRAMEWORK.md (sleeve split, single/
+        hedge/top-3/sector concentration, cash ceiling, sub-EUR 250 positions), plus
+        prime_status, fee_history, missing_roles.
+      - render: the analysis step's numbers as the markdown tables the daily report uses.
+      - exit_report: the full exit P&L - capital flows, realized FIFO gain, taxes,
+        all-time fees, hypothetical exit value.
+
+    Stops at the first step that fails and reports the error (see SKILL.md rule 3) -
+    it does not attempt later steps once an earlier one has failed. That can leave a
+    refresh directory with fewer than four files; get_refresh and list_refreshes treat
+    such a refresh as invalid and skip it when resolving "the latest" - use another
+    valid refresh from the same day, or call create_refresh again.
+
+    Safe to call more than once a day - each call is its own new directory, nothing is
+    overwritten. Call get_refresh to read a step's output back; never recompute or
+    hand-transcribe any of these numbers yourself."""
+    def _run():
+        refresh_dir = _run_store.new_refresh_dir(PIPELINE_RUNS_DIR)
+
+        analysis = _analyze_portfolio()
+        _run_store.save_kind(refresh_dir, "analysis", analysis)
+
+        cash = _cash_balance()
+        cash_eur = cash.get("balance_eur") if cash.get("complete") else None
+        compliance = _check_compliance(
+            analysis_positions=analysis["positions"],
+            sector_breakdown=analysis["sectors"],
+            total_value=analysis["totals"]["total_value"],
+            cash_balance_eur=cash_eur,
+        )
+        _run_store.save_kind(refresh_dir, "compliance", compliance)
+
+        markdown = _render_report(analysis, load_config())
+        _run_store.save_kind(refresh_dir, "render", markdown)
+
+        exit_report = _generate_exit_report(analysis)
+        _run_store.save_kind(refresh_dir, "exit_report", exit_report)
+
+        return _run_store.refresh_id(PIPELINE_RUNS_DIR, refresh_dir)
+    return _locked(_run)
+
+
+@mcp.tool()
+def list_refreshes(date: str = "") -> str:
+    """List refresh ids for one day (default today), oldest first, each flagged valid or
+    incomplete. An incomplete refresh (a create_refresh call that stopped partway
+    through) is unusable - pick a valid one instead, or call create_refresh again.
+
+    Pass a returned id to get_refresh's refresh_id argument to read that exact refresh
+    instead of the latest valid one."""
+    def _run():
+        refresh_dirs = _run_store.list_refresh_dirs(PIPELINE_RUNS_DIR, date or None)
+        if not refresh_dirs:
+            day = date or "today"
+            return f"No refreshes for {day}."
+        lines = []
+        for d in refresh_dirs:
+            tag = "valid" if _run_store.is_valid(d) else "INCOMPLETE"
+            lines.append(f"{_run_store.refresh_id(PIPELINE_RUNS_DIR, d)}  [{tag}]")
+        return "\n".join(lines)
+    return _locked(_run)
+
+
+@mcp.tool()
+def get_refresh(kind: str, refresh_id: str = "") -> str:
+    """Read one step's output back from a refresh written by create_refresh.
+
+    `kind` is one of "analysis", "compliance", "render", "exit_report" - JSON text for
+    the first three, markdown text for "render" (the ready-to-use block for the daily
+    report - never hand-transcribe its numbers). `refresh_id` pins an exact refresh
+    (from list_refreshes); omit it for the latest *valid* refresh overall (across any
+    day) - an incomplete refresh is skipped automatically when resolving "latest"."""
+    try:
+        refresh_dir = _locked(_run_store.resolve_refresh_dir, PIPELINE_RUNS_DIR, refresh_id or None)
+        data = _locked(_run_store.get_kind, refresh_dir, kind)
+    except (FileNotFoundError, ValueError) as e:
+        return str(e)
+    return data if isinstance(data, str) else json.dumps(data, indent=2, default=str)
 
 
 @mcp.tool()
@@ -131,80 +228,6 @@ def backfill_history(period: str = "max") -> str:
     not part of the daily cycle - only run this for a brand-new ticker or if history looks
     corrupted."""
     return _locked(_capture_stdout, _backfill_history, period=period)
-
-
-@mcp.tool()
-def analyze_portfolio() -> dict:
-    """Deterministic numeric layer: portfolio value, gain/loss, sector breakdown, largest
-    positions, high-water-mark/drawdown, today's movers, trend over several windows, and a real
-    money-weighted XIRR - computed from transaction_lots.csv + price_history/*.jsonl, with every
-    threshold read from config.json. Never recompute any of these numbers by hand; if one looks
-    wrong, that's a bug to fix in this pipeline, not something to override by reasoning over the
-    raw data. Also returns stale_prices (2+ day old quotes) and caveats (incl. a run-over-run
-    value-divergence check), and appends this run to analysis_history.jsonl as a side effect."""
-    return _locked(_analyze_portfolio)
-
-
-@mcp.tool()
-def check_compliance(analysis: dict) -> dict:
-    """Evaluate the portfolio against every hard rule in INVESTMENT_FRAMEWORK.md.
-    Pass the exact dict analyze_portfolio returned.
-
-    Checks: sleeve split (Core ~80% / Tactical ~20%), max single non-hedge
-    position (<=20%), secure-hedge combined cap (<=30%), top-3 combined
-    (<=40%), sector concentration (<=40% each), cash ceiling (<=EUR 5,000),
-    and positions below EUR 250 whose exit fee is EUR 0.99.
-
-    Returns a structured dict with a top-level `breaches` list (empty = clean)
-    and per-check detail sections. The agent reads this output; it never
-    re-applies the rules in prose.
-
-    Also returns `prime_status` (current PRIME subscription state derived from
-    transactions), `fee_history` (aggregate fee drag stats), and
-    `missing_roles` (tickers with no role assigned, which makes sleeve checks
-    partial)."""
-    cash = _cash_balance()
-    cash_eur = cash.get("balance_eur") if cash.get("complete") else None
-    return _locked(
-        _check_compliance,
-        analysis_positions=analysis["positions"],
-        sector_breakdown=analysis["sectors"],
-        total_value=analysis["totals"]["total_value"],
-        cash_balance_eur=cash_eur,
-    )
-
-
-@mcp.tool()
-def render_report(analysis: dict) -> str:
-    """Render analyze_portfolio's JSON output as the same markdown tables the daily report uses
-    (Portfolio Overview, Trend, Sector Breakdown, Largest Positions, Movers, Complete Holdings
-    Table, Fee Drag, XIRR Context, Data Notes). Pass the exact dict analyze_portfolio returned - never
-    hand-transcribe a figure out of it yourself; if a section needs to look different, that's a
-    change to make here, not a one-off rewrite."""
-    return _locked(_render_report, analysis, load_config())
-
-
-@mcp.tool()
-def generate_exit_report(analysis: dict) -> str:
-    """Compute and render the full exit P&L report: "if I sell everything today and walk
-    away from Scalable Capital, how much have I gained or lost net?"
-
-    Pass the exact dict analyze_portfolio returned (the same one you pass to render_report
-    and check_compliance).
-
-    The report breaks down:
-      - Capital flows: total deposited, total withdrawn, net capital in
-      - Realized activity: FIFO-matched gain/loss on every closed position
-      - Open positions: current market value and unrealized gain (from the analysis dict)
-      - Taxes: all tax withheld by the broker to date
-      - All-time fees: entry + exit fees on both closed and open positions
-      - Hypothetical exit summary: exit value − net capital in = net P&L
-
-    Tax that would be triggered by selling the remaining open positions is explicitly
-    excluded (jurisdiction/rate-specific) — see the taxes section of the report for
-    the caveat wording."""
-    report_data = _locked(_generate_exit_report, analysis)
-    return _render_exit_report(report_data)
 
 
 @mcp.tool()

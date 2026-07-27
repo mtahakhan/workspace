@@ -27,8 +27,8 @@ workflow, and lessons already learned the hard way.
 1. **Never modify a deterministic pipeline module**
    (`portfolio_tools/pipeline/lots.py`, `prices.py`, `backfill.py`,
    `analysis.py`, `tickers.py`, `report.py`, `config.py`, `uploads.py`,
-   `compliance.py`, `fees.py`, `cash.py`, `exit_report.py`, `storage.py`, or
-   `portfolio_tools/server.py`/`lock.py`/`paths.py`) **without first confirming
+   `compliance.py`, `fees.py`, `cash.py`, `exit_report.py`, `storage.py`,
+   `run_store.py`, or `portfolio_tools/server.py`/`lock.py`/`paths.py`) **without first confirming
    intent with the user.** If something looks wrong or errors, the default
    action is to **report it** - what happened, why it might be happening, and
    2-3 concrete options for how to debug or fix it - and stop there. Only
@@ -337,3 +337,54 @@ diagnosis is actually correct remains an open question, not resolved by this
 fix. **The rule: a "quiet period, then a stale-data warning" pattern is worth
 checking for this exact conflation before trusting the warning - lack of
 recent activity is not evidence of missing data.**
+
+**2026-07-28: `analyze_portfolio`/`check_compliance`/`render_report`/
+`generate_exit_report` collapsed from four stateful MCP tools into one
+`create_refresh` call, writing a "refresh" directory instead of four
+independent files.** The original four each took no arguments *except* that
+three of them required the caller to pass `analyze_portfolio`'s dict back in
+as an `analysis` argument - fine within one task's own conversation, but it
+meant `portfolio-daily-analysis` (which has no memory of
+`portfolio-price-fetch`'s conversation - they're separate scheduled
+invocations) had to call all four itself just to get numbers it could have
+read off disk. An intermediate design (this same day, superseded before
+ship) tried fixing that by giving each of the four its own timestamped file
+under `pipeline-runs/{tool}/*.json` and a matching `get_*` tool - stateless,
+but eight tools for four computations, and four directories to keep in sync
+by convention rather than by construction.
+
+The shipped design: `portfolio-price-fetch` now calls exactly two tools -
+`fetch_prices`, then `create_refresh` - and `create_refresh` runs all four
+steps in one call, each reading the previous step's result in memory (never
+from a file, never as a passed argument) and writing its own file into one
+new directory: `pipeline-runs/{date}/{time}/{analysis,compliance,render,
+exit-report}`. The call returns only that directory's id. `portfolio-daily-
+analysis` reads it back with one tool, `get_refresh(kind, refresh_id)`, and
+`list_refreshes(date)` lists what's available (flagging `[valid]` vs.
+`[INCOMPLETE]`). Net surface: 4 tools instead of 8, one directory instead of
+four, and the two scheduled tasks stay fully independent - nothing computed
+by one is ever an argument to a tool the other calls.
+
+`create_refresh` deliberately stops at the first step that fails rather
+than attempting the rest - a mid-run failure leaves an incomplete
+directory (fewer than four files), and every reader (`get_refresh`,
+`list_refreshes`, the task instructions) treats that as unusable and falls
+back to another valid refresh from the same day, or a fresh `create_refresh`
+call. This was a deliberate choice over a "best-effort, run all four
+independently" alternative: compliance/render/exit-report don't actually
+depend on each other (only on analysis), so best-effort would salvage more
+of a broken run - but it would also make "which steps actually ran" a thing
+every reader has to reason about per-refresh, instead of a single valid/
+invalid flag. Stop-on-first-failure was chosen to keep that binary.
+
+Same day, a second, independent gap got fixed while this was in flight:
+`fetch_prices` never raised on a per-ticker miss (both Finnhub and yfinance
+failing for one ticker) - it only printed to stdout, and that stdout was the
+*only* place the failure was visible, via the old tool's return value. Under
+the new design `fetch_prices` returns almost nothing on success (by design -
+see `create_refresh`'s docstring), which would have made a silent miss
+completely invisible. Fix: `pipeline/prices.py`'s `main()` now raises after
+appending whatever *did* succeed, so a partial fetch isn't lost but the tool
+call surfaces as a real error - the caller is expected to stop and report it
+rather than proceed to `create_refresh` on an incomplete price set (same
+"report and stop" rule as everywhere else in this pipeline).

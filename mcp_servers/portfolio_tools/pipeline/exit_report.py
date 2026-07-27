@@ -79,11 +79,15 @@ Hypothetical exit:
 
 This module is self-contained: it reads `transactions.csv` directly (for the
 realized/tax/capital-flow pass), and accepts the open-position data from a
-caller (pass `analysis` — the dict `analyze_portfolio` returns) so it does NOT
-re-run the full analysis just to get open values.  A typical call:
+caller (pass `analysis` — the dict `pipeline.analysis.main()` returns) so it
+does NOT re-run the full analysis just to get open values. The MCP server's
+`create_refresh` tool is the caller in practice - it runs
+`pipeline.analysis.main()` once and passes the result to this module's
+`generate()` directly (in-memory, same tool call), never via a separate
+MCP round-trip:
 
-    analysis = analyze_portfolio()          # via MCP tool
-    report   = generate_exit_report(analysis)   # via MCP tool
+    analysis = pipeline.analysis.main()
+    report   = generate(analysis)
 
 Running this module directly (debugging):
 

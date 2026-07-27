@@ -126,9 +126,12 @@ GBP, and GBp).
 
 ## Step 6: Verify the numbers
 
-Call **`analyze_portfolio`** and show the user the resulting portfolio
-value, gain/loss, and any entries in `caveats` or `stale_prices`. Confirm the
-total roughly matches what they'd expect before considering setup done - this
+Call **`create_refresh`** (it writes its result to a new refresh directory
+and returns only the refresh id - call **`get_refresh`** with
+`kind="analysis"` right after to read it back) and show the user the
+resulting portfolio value, gain/loss, and any entries in `caveats` or
+`stale_prices`. Confirm the total roughly matches what they'd expect before
+considering setup done - this
 is the same kind of sanity check that caught several real bugs during this
 pipeline's own development (wrong tickers, unadjusted stock splits, phantom
 FIFO lots from a sort-order bug) - don't skip it just because the tool call

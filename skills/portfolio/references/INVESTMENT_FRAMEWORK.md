@@ -1,7 +1,7 @@
 # Investment Framework
 
-**Scope:** this file governs how analysis and advice get formed once
-`analyze_portfolio` / `render_report` output already exists - for
+**Scope:** this file governs how analysis and advice get formed once a
+refresh's analysis/render output already exists (`get_refresh`) - for
 on-demand chat questions ("what do you think about AMD", "should I trim
 IREN", "score my portfolio") and, in lighter form, the daily automated
 report's Executive Summary and Holdings News Digest (see
@@ -64,8 +64,8 @@ to this.
 
 **2. Portfolio Review** - structure only, no per-stock deep dive:
 sector/geographic diversification, concentration risk, correlation risk,
-balance improvements. Ground the diagnosis in `analyze_portfolio`'s
-actual `sectors`/`largest_positions` output, not guessed weights.
+balance improvements. Ground the diagnosis in the analysis step's
+actual `sectors`/`largest_positions` output (`get_refresh(kind="analysis")`), not guessed weights.
 
 **3. Macro** - global macro environment: rates, inflation, liquidity,
 geopolitical risk, and what it implies for sector positioning.
@@ -147,15 +147,16 @@ thesis breaks has become Opportunistic (or an exit), and it has therefore
 moved sleeve - which changes both the horizon it's judged against and the
 sleeve percentages.
 
-**Call `check_compliance` (pass `analyze_portfolio`'s output) — never
-re-evaluate these rules yourself.** The tool encodes every limit below, reads
-the issuer and hedge-ISIN lists from `fee_rules.json`, and returns a
-structured `breaches` list. What to do with the output: read `breaches`
-(empty = nothing to act on), then read per-check sections for detail if
-something is flagged. Don't restate the limits in prose or recalculate them
-against manually transcribed figures.
+**`create_refresh`'s compliance step runs automatically as part of every
+refresh - read its output with `get_refresh(kind="compliance")` — never
+re-evaluate these rules yourself.** It encodes every limit below, reads the
+issuer and hedge-ISIN lists from `fee_rules.json`, and produces a structured
+`breaches` list. What to do with the output: read `breaches` (empty =
+nothing to act on), then read per-check sections for detail if something is
+flagged. Don't restate the limits in prose or recalculate them against
+manually transcribed figures.
 
-Limits enforced by `check_compliance` (listed here for context only):
+Limits enforced by the compliance step (listed here for context only):
 - Max single non-hedge position: 20% of investable
 - Secure-hedge category (gold, silver, equivalents — ISINs in `fee_rules.json`): ≤30% combined
 - Top 3 positions combined: ≤40%
@@ -173,13 +174,13 @@ Position sizing (as % of portfolio):
 - Medium (2-5%): solid thesis, some real uncertainty
 - Low (<2%): exploratory or higher-risk
 
-Minimum size is also bounded by exit costs — `check_compliance` reports the
+Minimum size is also bounded by exit costs — the compliance step reports the
 `small_positions` list for any position below EUR 250 whose exit would cost
 EUR 0.99.
 
 ## Transaction costs
 
-**Use `check_compliance` for fee context** — it returns `prime_status`,
+**Use `get_refresh(kind="compliance")` for fee context** — it has `prime_status`,
 `fee_history` (aggregate drag stats from real history), and `small_positions`.
 **Use `fees.fee_for_prospective_order()` (via the pipeline) for a specific
 trade's expected fee** — it encodes the rules below in code, verified against
@@ -203,7 +204,7 @@ PRIME, even for PRIME ETFs.
 free-buy rule ends. PRIME then pays for itself after 3 trades/month.
 
 PRIME status is derived from the transaction export automatically —
-`check_compliance` surfaces it; you don't need to check manually.
+the compliance step surfaces it; you don't need to check manually.
 
 ## Cash
 
@@ -211,9 +212,9 @@ PRIME status is derived from the transaction export automatically —
 as unavailable for trading. Every percentage in this framework is of the
 **investable portfolio — securities only, excluding the cash reserve.**
 
-`check_compliance` checks the cash ceiling. Near-zero cash is explicitly not
-a breach. The older "5-10% normal / 10-25% uncertain" guidance is superseded
-— do not reintroduce it.
+The compliance step checks the cash ceiling. Near-zero cash is explicitly
+not a breach. The older "5-10% normal / 10-25% uncertain" guidance is
+superseded — do not reintroduce it.
 
 ### After a sale: hold or reinvest
 

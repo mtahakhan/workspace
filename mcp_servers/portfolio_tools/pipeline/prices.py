@@ -193,7 +193,17 @@ def main():
 
     print(f"\nAppended {len(records)} sourced prices to {PRICE_HISTORY_DIR}/")
     if missing:
-        print(f"⚠️  {len(missing)} tickers missing: {', '.join(sorted(missing))}")
+        # Raised, not just printed: the caller (the create_refresh MCP tool)
+        # needs to stop rather than proceed to analyze_portfolio on a stale/
+        # incomplete price set - see SKILL.md rule 3, "report the exact error
+        # and stop" rather than silently continuing. Successfully-fetched
+        # tickers are still appended above before this raises, so a partial
+        # fetch isn't lost - only the tickers that actually failed are missing.
+        raise RuntimeError(
+            f"{len(missing)} ticker(s) missing (not found in Finnhub or yfinance): "
+            f"{', '.join(sorted(missing))}. {len(records)} other ticker(s) were "
+            f"fetched and appended successfully."
+        )
 
 if __name__ == "__main__":
     main()

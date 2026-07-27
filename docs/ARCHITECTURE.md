@@ -179,37 +179,92 @@ exposed as an MCP tool - that's the sanctioned way to invoke it.
    primary, yfinance fallback), and appends one fully-sourced record per
    ticker (original currency, source name/URL, FX rate + source) to its own
    history file. There is no separate latest-price snapshot file - each
-   file's last line IS the current price.
+   file's last line IS the current price. **Raises if any ticker fails on
+   both sources** - tickers that DID resolve are still fetched and appended
+   first, so a partial fetch isn't lost, but the call as a whole errors out
+   (the caller is expected to stop and report it, not proceed to
+   `create_refresh` on an incomplete price set).
 
    **Running it N times in a day appends N records for that day** - it is a
    plain append, with no same-day check. That is allowed and non-destructive
    (each record carries its own timestamp, source URL and FX rate), but it
-   means the raw file is *not* a daily series. `analyze_portfolio` collapses
-   each ticker to one record per calendar day on read (last write wins - see
-   `_collapse_to_daily` in `pipeline/analysis.py`), so every downstream figure
-   is day-over-day regardless of how many times prices were fetched. Note
-   `backfill_history` writes exactly one record per day (`open(..., "w")`, it
-   rewrites the file), so one-per-day is the file's intended grain and
-   `fetch_prices` is the writer that departs from it - a backfill after a
-   multi-fetch day will silently discard that day's extra records.
-5. **`analyze_portfolio`** - deterministic numeric layer: value, gain/loss,
-   sector breakdown, high-water-mark/drawdown, movers, trend, and a real
-   money-weighted XIRR (annualized return) from `enriched_lots.csv`'s actual
-   purchase dates. Flags stale prices and a run-over-run value divergence
-   (see "Notable incidents" in `AGENT_NOTES.md`). Every threshold lives in
-   `config.json` (see "Configurable thresholds" below).
-6. **`check_compliance`** - takes the same `analyze_portfolio` dict and
-   evaluates it against every hard limit in the investment framework (sleeve
-   split, single-position and hedge caps, top-3 and per-sector concentration,
-   cash ceiling, sub-EUR 250 positions). Returns a structured `breaches` list
-   rather than prose, for the same reason `analyze_portfolio` returns numbers:
-   an agent restating a limit from memory against a hand-copied percentage is
-   exactly how a wrong "within limits" gets published. Sleeve checks depend on
-   `roles.csv`, so anything in `missing_roles` makes that check partial.
-7. **`render_report`** - takes `analyze_portfolio`'s JSON (as the `analysis`
-   argument) and renders every table/figure in the daily report as markdown,
-   so the LLM writing the report never hand-transcribes a number out of the
-   JSON - it only writes the Executive Summary and Movers research prose.
+   means the raw file is *not* a daily series. The analysis step (below)
+   collapses each ticker to one record per calendar day on read (last write
+   wins - see `_collapse_to_daily` in `pipeline/analysis.py`), so every
+   downstream figure is day-over-day regardless of how many times prices
+   were fetched. Note `backfill_history` writes exactly one record per day
+   (`open(..., "w")`, it rewrites the file), so one-per-day is the file's
+   intended grain and `fetch_prices` is the writer that departs from it - a
+   backfill after a multi-fetch day will silently discard that day's extra
+   records.
+5. **`create_refresh`** → **`data/personal/pipeline-runs/{date}/{time}/`** -
+   takes no arguments; runs four steps in order, each reading whatever it
+   needs from the previous step's in-memory result (not from a file - all
+   four run inside one tool call) and writing its own file into one new
+   directory (a "refresh"):
+   - **analysis** (`analysis.json`) - deterministic numeric layer: value,
+     gain/loss, sector breakdown, high-water-mark/drawdown, movers, trend,
+     and a real money-weighted XIRR (annualized return) from
+     `enriched_lots.csv`'s actual purchase dates. Flags stale prices and a
+     run-over-run value divergence (see "Notable incidents" in
+     `AGENT_NOTES.md`). Every threshold lives in `config.json` (see
+     "Configurable thresholds" below). Also appends to
+     `analysis_history.jsonl` as a side effect.
+   - **compliance** (`compliance.json`) - evaluates the analysis step's
+     output against every hard limit in the investment framework (sleeve
+     split, single-position and hedge caps, top-3 and per-sector
+     concentration, cash ceiling, sub-EUR 250 positions). A structured
+     `breaches` list rather than prose, for the same reason the analysis
+     step returns numbers: an agent restating a limit from memory against a
+     hand-copied percentage is exactly how a wrong "within limits" gets
+     published. Sleeve checks depend on `roles.csv`, so anything in
+     `missing_roles` makes that check partial.
+   - **render** (`render.md`) - renders the analysis step's numbers as
+     every table/figure the daily report uses, so the LLM writing the
+     report never hand-transcribes a number out of the JSON - it only
+     writes the Executive Summary and Movers research prose.
+   - **exit_report** (`exit-report.json`) - the full exit P&L: capital
+     flows, realized FIFO gain, taxes, all-time fees, hypothetical exit
+     value (see "On-demand" below for what this answers).
+
+   **Stops at the first step that fails** and reports the error rather than
+   attempting the rest - a mid-run failure leaves a refresh directory with
+   fewer than four files, which `get_refresh`/`list_refreshes` treat as
+   invalid (see "Refreshes" below). Returns only the refresh's id (its path
+   relative to `pipeline-runs/`, e.g. `"2026-07-28/07-11-03-041233"`), never
+   any of the four payloads - read them back with `get_refresh`.
+
+### Refreshes
+
+`create_refresh`'s output is a directory, not a value: every deterministic
+step it runs writes its file into one new directory nested
+`pipeline-runs/{YYYY-MM-DD}/{HH-MM-SS-ffffff}/`, and the tool call returns
+only that directory's id. Two more tools read it back:
+
+- **`list_refreshes(date)`** - every refresh id for one day (default
+  today), each flagged `[valid]` (all four files present) or
+  `[INCOMPLETE]` (a `create_refresh` call that stopped partway through -
+  see above). Used to find a specific refresh to re-read, or to check
+  whether *any* valid refresh exists yet for a day before deciding whether
+  a report can be regenerated from it (see `portfolio-refresh` below) or
+  needs a fresh `create_refresh` first.
+- **`get_refresh(kind, refresh_id)`** - the content of one step's file:
+  `kind` is `"analysis"` / `"compliance"` / `"render"` / `"exit_report"`,
+  returned as JSON text (or markdown text for `"render"`). `refresh_id` is
+  optional - omit it for the latest *valid* refresh across any day; an
+  incomplete refresh is skipped automatically when resolving "latest",
+  exactly the same way `fetch_prices` writing 9 records for one day doesn't
+  break "the current price" (last valid one wins).
+
+This exists because `portfolio-price-fetch` and `portfolio-daily-analysis`
+(see "Scheduled tasks" below) are separate scheduled invocations with no
+shared conversation: `portfolio-price-fetch` calls `fetch_prices` then
+`create_refresh` - the entire deterministic pass, two tool calls - and
+`portfolio-daily-analysis` only reads that refresh back via `get_refresh`
+before doing news research and writing the report. Nothing computed by one
+task is ever an argument passed to a tool called by the other - see
+`pipeline/run_store.py` for the directory/id logic and
+`skills/portfolio/references/tasks/*.md` for the task-level split.
 
 Run order: `compute_lots` FIRST (ISIN-only lots; works with no `ticker_map.csv`),
 THEN `resolve_tickers` if any ISINs are new (appends to `ticker_map.csv`, then
@@ -262,29 +317,35 @@ flowchart TD
     subgraph DAILY["② SCHEDULED - Claude Code tasks, daily"]
         direction TB
         PRICES[("data/impersonal/price_history/{TICKER}.jsonl<br/>one file per ticker")]:::data
-        JSONOUT[("pipeline.analysis output<br/>value, gain/loss (fee-inclusive), XIRR,<br/>drawdown, movers, trend, fee drag,<br/>corporate actions, per-position<br/>trend_30d/56d_pct + drawdown_from_high,<br/>trend_movers, caveats, notable/notify_reasons")]:::data
         HIST[("data/personal/analysis_history.jsonl<br/>generated_at, total_value, xirr_pct<br/>one line per run")]:::data
-        MDOUT[("pipeline.report output<br/>deterministic markdown sections")]:::data
         REPORT[("data/personal/daily-analysis/YYYY-MM-DD.md")]:::data
         NEWS[("data/impersonal/news/{TICKER}/*.txt<br/>one file per meaningful source<br/>URL + fetched-at + method + text")]:::data
-
         CONFIG[("config.json<br/>thresholds + caveat/notify<br/>message templates")]:::data
         ROLES[("data/personal/roles.csv<br/>portfolio role per holding<br/>drives the sleeve split")]:::data
         FEERULES[("data/impersonal/fee_rules.json<br/>PRIME ETF issuers + hedge ISINs")]:::data
-        COMPOUT[("pipeline.compliance output<br/>breaches + per-check detail,<br/>prime_status, fee drag,<br/>missing_roles")]:::data
 
-        FETCH["pipeline.prices<br/>Finnhub / yfinance"]:::script
+        subgraph REFRESH["pipeline-runs/{date}/{time}/ - one refresh, written by ONE create_refresh call"]
+            direction TB
+            JSONOUT[("analysis.json<br/>value, gain/loss (fee-inclusive), XIRR,<br/>drawdown, movers, trend, fee drag,<br/>corporate actions, per-position<br/>trend_30d/56d_pct + drawdown_from_high,<br/>trend_movers, caveats, notable/notify_reasons")]:::data
+            COMPOUT[("compliance.json<br/>breaches + per-check detail,<br/>prime_status, fee drag,<br/>missing_roles")]:::data
+            MDOUT[("render.md<br/>deterministic markdown sections")]:::data
+            EXITOUT[("exit-report.json<br/>capital flows, realized gain/loss,<br/>all-time fees + tax, net P&amp;L")]:::data
+        end
+
+        FETCH["pipeline.prices<br/>Finnhub / yfinance<br/>raises if any ticker fails both sources"]:::script
         ANALYZE["pipeline.analysis<br/>incl. value-divergence check"]:::script
         RENDER["pipeline.report"]:::script
         COMPLY["pipeline.compliance<br/>framework limits<br/>(+ pipeline.fees, pipeline.cash)"]:::script
+        EXIT["pipeline.exit_report<br/>(+ pipeline.cash)<br/>FIFO realized-gain pass<br/>over full transaction history"]:::script
 
-        TASKFETCH{{"portfolio-price-fetch<br/>~07:11 Berlin<br/>LLM calls fetch_prices tool, reports 1 line"}}:::task
-        TASKANALYSIS{{"portfolio-daily-analysis<br/>~07:25 Berlin<br/>LLM web-searches ALL holdings in parallel<br/>(day-over-day movers: today's headlines;<br/>trend movers: cause query + stored-news continuity;<br/>all others: one-line digest),<br/>writes Signals &amp; Actions + Executive Summary<br/>+ News Digest, never hand-transcribes a number<br/>nor re-applies a framework limit itself"}}:::task
+        TASKFETCH{{"portfolio-price-fetch<br/>~07:11 Berlin<br/>two calls: fetch_prices, then create_refresh<br/>(analysis → compliance → render → exit_report,<br/>stopping at the first step that fails).<br/>Neither call takes arguments or returns a<br/>payload - create_refresh returns only the new<br/>refresh's id; reports 1 line"}}:::task
+        TASKANALYSIS{{"portfolio-daily-analysis<br/>~07:25 Berlin<br/>separate invocation, no memory of the run<br/>above - reads the REFRESH directory back via<br/>get_refresh(kind=...), then web-searches ALL<br/>holdings in parallel (day-over-day movers:<br/>today's headlines; trend movers: cause query<br/>+ stored-news continuity; all others: one-line<br/>digest), writes Signals &amp; Actions + Executive<br/>Summary + News Digest, never hand-transcribes a<br/>number nor re-applies a framework limit itself"}}:::task
 
         TASKFETCH -.triggers.-> FETCH
         ENRICHED --> FETCH
         FETCH --> PRICES
 
+        TASKFETCH -.triggers.-> ANALYZE
         ENRICHED --> ANALYZE
         PRICES --> ANALYZE
         HIST -- "prior run's total_value" --> ANALYZE
@@ -292,15 +353,21 @@ flowchart TD
         CONFIG -- "short_hold_days_threshold,<br/>fee_drag_notable_pct,<br/>trend_medium_days,<br/>trend_high_window_days,<br/>trend_notable_pct" --> RENDER
         ANALYZE --> JSONOUT
         ANALYZE -- "appends" --> HIST
-        JSONOUT --> RENDER
-        JSONOUT --> COMPLY
+
+        JSONOUT -- "in-memory,<br/>same create_refresh call" --> COMPLY
         ROLES --> COMPLY
         FEERULES --> COMPLY
         TXN -- "fees, cash, PRIME status" --> COMPLY
         COMPLY --> COMPOUT
-        COMPOUT --> TASKANALYSIS
+
+        JSONOUT -- "in-memory,<br/>same create_refresh call" --> RENDER
         RENDER --> MDOUT
-        MDOUT --> TASKANALYSIS
+
+        JSONOUT -- "in-memory,<br/>same create_refresh call<br/>(open positions value/cost)" --> EXIT
+        TXN -- "capital flows +<br/>realized FIFO pass" --> EXIT
+        EXIT --> EXITOUT
+
+        REFRESH -- "get_refresh(kind=...)" --> TASKANALYSIS
         TASKANALYSIS --> REPORT
         TASKANALYSIS -- "meaningful sources" --> NEWS
     end
@@ -309,20 +376,25 @@ flowchart TD
     ENRICHED -. seeds .-> BACKFILL
     BACKFILL -. rewrites .-> PRICES
 
-    subgraph ONEOFF["③ ON-DEMAND - ad hoc, never part of the daily cycle"]
-        direction TB
-        EXITOUT[("pipeline.exit_report output<br/>capital flows, realized gain/loss,<br/>all-time fees + tax, net P&amp;L")]:::data
-        EXIT["pipeline.exit_report<br/>(+ pipeline.cash)<br/>FIFO realized-gain pass<br/>over full transaction history"]:::script
-    end
-
-    TXN -. "capital flows +<br/>realized FIFO pass" .-> EXIT
-    JSONOUT -. "open positions<br/>value/cost" .-> EXIT
-    EXIT -. produces .-> EXITOUT
-
     classDef data fill:#eef1fb,stroke:#4b5fa8,stroke-width:1.5px,color:#262c52
     classDef script fill:#eaf4ec,stroke:#2f6f4e,stroke-width:1.5px,color:#163823
     classDef task fill:#fbf1de,stroke:#b3701f,stroke-width:1.5px,color:#4a2c0a
 ```
+
+There's a third, on-demand-only task alongside the two above:
+**`portfolio-refresh`** (`skills/portfolio/references/tasks/refresh.md`),
+invoked from a chat request rather than the schedule, for a mid-day "rerun
+the numbers" / "refresh the news" / "redo the whole report" without waiting
+for the next scheduled cycle. It has two operations: a full refresh (same
+two calls `portfolio-price-fetch` makes - always atomic, never partial) and
+a news/report regeneration that reuses an existing valid refresh for the
+day via `list_refreshes` + `get_refresh`, falling back to a full refresh
+first only if nothing valid exists yet for today.
+
+`generate_exit_report` (the `pipeline.exit_report` step inside
+`create_refresh`) remains reachable on demand too via `get_refresh(kind="exit_report")`
+on any existing refresh - it just also runs as a standard step of every
+`create_refresh` call now, rather than being computed separately.
 
 **Keep this diagram in sync.** Any change to a module's inputs/outputs, the
 run order, a data file, or a scheduled task must land alongside a matching
@@ -345,6 +417,10 @@ diagram.
 | `data/impersonal/fee_rules.json` | PRIME ETF issuer list + secure-hedge ISIN list - describes the broker's public fee structure and instrument categories, not anything personal | You (hand-edited in the repo); `pipeline/fees.py` and `pipeline/compliance.py` read it |
 | `data/personal/daily-analysis/*.md` | Generated reports | `portfolio-daily-analysis` task |
 | `data/impersonal/news/{TICKER}/*.txt` | One file per fetched news source deemed meaningful (metadata header + fetched text) | `portfolio-daily-analysis` task + any ad-hoc analysis that fetches news |
+| `data/personal/pipeline-runs/{date}/{time}/analysis.json` | The analysis step's JSON, on disk instead of returned inline (see above) | `create_refresh` (read back via `get_refresh(kind="analysis")`) |
+| `data/personal/pipeline-runs/{date}/{time}/compliance.json` | The compliance step's JSON | `create_refresh` (read back via `get_refresh(kind="compliance")`) |
+| `data/personal/pipeline-runs/{date}/{time}/render.md` | The render step's markdown | `create_refresh` (read back via `get_refresh(kind="render")`) |
+| `data/personal/pipeline-runs/{date}/{time}/exit-report.json` | The exit-report step's JSON | `create_refresh` (read back via `get_refresh(kind="exit_report")`) |
 
 ## MCP tools
 
@@ -357,18 +433,17 @@ serialized through the global lock:
 | `compute_lots` | `pipeline/lots.py` | `data/personal/transactions.csv` | `data/personal/transaction_lots.csv` (ISIN-keyed, no Ticker/Sector/Company, incl. per-lot `Fee`) | 1st |
 | `resolve_tickers` | `pipeline/tickers.py` | `data/personal/transaction_lots.csv` (checks unmapped ISINs against `ticker_map.csv`) + `yfinance` search/currency/history checks | Appends rows to `data/impersonal/ticker_map.csv` (Sector blank); **automatically calls `enrich_lots`** at the end | 2nd, only when a new ISIN appears |
 | `enrich_lots` | `pipeline/enrich.py` | `data/personal/transaction_lots.csv` + `data/impersonal/ticker_map.csv` + `data/impersonal/company_overrides.csv` | `data/personal/enriched_lots.csv` (full join; Ticker, Company, Sector filled in) | after `compute_lots` (explicit); called automatically by `resolve_tickers` and `set_ticker_mapping` |
-| `fetch_prices` | `pipeline/prices.py` | `data/personal/enriched_lots.csv` + Finnhub/yfinance | Appends to `data/impersonal/price_history/*.jsonl` | daily |
+| `fetch_prices` | `pipeline/prices.py` | `data/personal/enriched_lots.csv` + Finnhub/yfinance | Appends to `data/impersonal/price_history/*.jsonl`; **raises if any ticker fails on both sources** (successfully-fetched tickers are still appended first) | daily, before `create_refresh` |
 | `backfill_history` | `pipeline/backfill.py` | `data/personal/enriched_lots.csv` + yfinance historical | Rewrites `data/impersonal/price_history/*.jsonl` (full history) | one-off/rare |
-| `analyze_portfolio` | `pipeline/analysis.py` (+ `pipeline/config.py`) | `data/personal/enriched_lots.csv` + `data/impersonal/price_history/*.jsonl` + last line of `data/personal/analysis_history.jsonl` + `config.json` | JSON: value, fee-inclusive cost/gain/loss, `total_fees_eur`, per-position `fees_eur`/`fee_drag_pct`/`trend_30d_pct`/`trend_56d_pct`/`drawdown_from_high_pct`, drawdown, XIRR, movers, `trend_movers`, trend, `corporate_actions`, `stale_prices`, `caveats`, `notable`/`notify_reasons`; appends a new line to `data/personal/analysis_history.jsonl` | after fetch_prices |
-| `render_report` | `pipeline/report.py` | `analyze_portfolio`'s JSON + `config.json` (`short_hold_days_threshold`, `fee_drag_notable_pct`, `trend_medium_days`, `trend_high_window_days`, `trend_notable_pct`) | Markdown: Portfolio Overview, Trend, Sector Breakdown, Largest Positions, Movers, Trend Movers (gated on `trend_notable_pct`), Complete Holdings Table (incl. 30d/56d/Δ-vs-high columns), Corporate Actions, Fee Drag, XIRR Context, Data Notes | after analyze_portfolio, before the report is written |
+| `create_refresh` | `pipeline/analysis.py` + `compliance.py` + `report.py` + `exit_report.py`, via `pipeline/run_store.py` | No arguments. Runs analysis → compliance → render → exit_report in order, each step reading the previous one's result in-memory (all within one tool call) | Writes all four files into one new `data/personal/pipeline-runs/{date}/{time}/` directory and returns only that directory's id - never any payload. **Stops at the first step that fails**, which can leave fewer than four files (see "Refreshes" above) | after `fetch_prices` |
+| `list_refreshes` | `pipeline/run_store.py` | Optional `date` (YYYY-MM-DD, default today) | Refresh ids for that day, oldest first, each flagged `[valid]` or `[INCOMPLETE]` | whenever a caller needs to find or check a refresh |
+| `get_refresh` | `pipeline/run_store.py` | `kind` (`"analysis"`/`"compliance"`/`"render"`/`"exit_report"`) + optional `refresh_id` | That step's content (JSON text, or markdown for `"render"`) from the given refresh, or the latest *valid* refresh overall if `refresh_id` is omitted | whenever a caller needs the payload `create_refresh` wrote |
 | `save_news_source` | `pipeline/storage.py` | Ticker + source facts + fetched text (tool arguments) | One file under `data/impersonal/news/{TICKER}/`; server generates timestamp, slug, metadata header | during news research |
 | `save_report` / `get_report` / `list_reports` | `pipeline/storage.py` | Report markdown (tool argument) / a date | `data/personal/daily-analysis/YYYY-MM-DD.md` (re-saving replaces) | end of the daily task |
 | `list_news` / `get_news_source` | `pipeline/storage.py` | Ticker (+ filename) | Filenames / full stored text | when checking what's already captured |
 | `read_ticker_map` / `set_ticker_mapping` | `pipeline/storage.py` | ISIN + any of Ticker/Company/Sector | Rewrites `data/impersonal/ticker_map.csv` in place; **`set_ticker_mapping` automatically calls `enrich_lots`** so `enriched_lots.csv` is immediately current | filling in a blank Sector, or correcting a mis-resolved listing |
 | `list_lots` | `pipeline/storage.py` | optional ticker | `data/personal/enriched_lots.csv` as text (all lots, or one ticker's) - read-only | auditing what a cost basis or holding period is built from |
 | `read_roles` / `set_position_role` | `pipeline/storage.py` | Ticker + role (+ note) | Rewrites `data/personal/roles.csv`; roles drive the sleeve split, so a stale label quietly invalidates that check | when a position's thesis changes sleeve |
-| `check_compliance` | `pipeline/compliance.py` (+ `pipeline/fees.py`, `pipeline/cash.py`, `data/personal/roles.csv`, `data/impersonal/fee_rules.json`) | `analyze_portfolio`'s output dict | `breaches` list + per-check detail, `prime_status`, `fee_history`, `fee_drag_by_ticker`, `missing_roles` | daily, after analyze_portfolio |
-| `generate_exit_report` | `pipeline/exit_report.py` (+ `pipeline/cash.py`) | `data/personal/transactions.csv` (direct read for capital flows + realized FIFO pass) + `analyze_portfolio`'s output dict (open-position value/cost) | Markdown report: capital flows (deposited/withdrawn/net), realized gain/loss on closed positions, open unrealized gain, all-time fees and taxes withheld, hypothetical exit value, and **net P&L** (exit value − net capital in) | on-demand, after analyze_portfolio |
 
 ## Scheduled tasks
 
@@ -376,10 +451,20 @@ Thin LLM wrappers around the deterministic core:
 
 | Task | Does | Deterministic or LLM? |
 |---|---|---|
-| `portfolio-price-fetch` (~07:11 Berlin) | Calls `fetch_prices`, reports one line | Almost entirely deterministic - LLM just calls the tool and reports |
-| `portfolio-daily-analysis` (~07:25 Berlin) | Calls `analyze_portfolio` then `render_report`, WebSearches all holdings in one parallel batch — day-over-day movers (today's headlines), trend movers (cause-oriented query + stored-news continuity via `list_news`/`get_news_source`), all others (one-line digest) — writes Signals & Actions + Executive Summary + News Digest | Hybrid - every number/table comes untouched from `render_report`; LLM only adds the Executive Summary and news-research prose, never hand-transcribes a figure |
+| `portfolio-price-fetch` (~07:11 Berlin) | Two calls: `fetch_prices`, then `create_refresh` (analysis → compliance → render → exit_report, stopping at the first step that fails). Neither takes arguments or returns a payload - `create_refresh` returns only the new refresh's id. Reports one summary line | Entirely deterministic - LLM just calls the two tools in order and reports |
+| `portfolio-daily-analysis` (~07:25 Berlin) | Separate invocation with no memory of the run above - reads that refresh back with `get_refresh(kind=...)`, WebSearches all holdings in one parallel batch — day-over-day movers (today's headlines), trend movers (cause-oriented query + stored-news continuity via `list_news`/`get_news_source`), all others (one-line digest) — writes Signals & Actions + Executive Summary + News Digest | Hybrid - every number/table comes untouched from what `portfolio-price-fetch` already wrote; LLM only adds the Executive Summary and news-research prose, never hand-transcribes a figure |
 
-Both tasks' real instructions live in the skill bundle at
+There's a third, on-demand-only task alongside the two schedule-triggered
+ones above: **`portfolio-refresh`** (`skills/portfolio/references/tasks/refresh.md`),
+invoked from a chat request rather than a cron schedule, for a mid-day
+"rerun the numbers" / "refresh the news" / "redo the whole report" without
+waiting for the next scheduled cycle. Two operations: a full refresh (the
+same two calls `portfolio-price-fetch` makes - always atomic, never
+partial) and a news/report regeneration that reuses an existing valid
+refresh for the day (`list_refreshes` + `get_refresh`), falling back to a
+full refresh first only if nothing valid exists yet for today.
+
+All three tasks' real instructions live in the skill bundle at
 `skills/portfolio/references/tasks/*.md` (each scheduled task's own prompt is
 just a one-line pointer into the globally-deployed copy of that file, not the
 instructions themselves) - see [`AGENT_NOTES.md`](AGENT_NOTES.md) for how to
