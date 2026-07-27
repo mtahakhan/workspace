@@ -8,7 +8,12 @@
     "short_hold_days_threshold": 90,
     "fee_drag_notable_pct": 1.0,
     "movers_top_n": 5,
-    "largest_positions_top_n": 5
+    "largest_positions_top_n": 5,
+    "trend_short_days": 30,
+    "trend_medium_days": 56,
+    "trend_high_window_days": 365,
+    "trend_notable_pct": 15.0,
+    "trend_movers_top_n": 5
   },
   "compliance": {
     "max_single_position_pct": 20.0,

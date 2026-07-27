@@ -280,10 +280,97 @@ def price_at_or_before(history, when):
             break
     return result
 
-def compute_positions(open_positions, prices):
+def price_return_pct(history, days, now=None):
+    """Percent change in a ticker's own price over the trailing `days`.
+
+    Forward-filled at the start of the window (price_at_or_before), so a
+    non-trading day or a gap in history doesn't silently drop the window. None
+    when there is no price that far back - a position younger than the window
+    has no trend over it, which is different from a flat one.
+    """
+    if not history:
+        return None
+    now = now or datetime.now()
+    then = price_at_or_before(history, now - timedelta(days=days))
+    current = history[-1]["price"]
+    if not then or not current:
+        return None
+    return round((current / then - 1) * 100, 2)
+
+
+def window_high(history, days, now=None):
+    """Highest price in the trailing `days`. None if the window holds no points."""
+    if not history:
+        return None
+    now = now or datetime.now()
+    cutoff = now - timedelta(days=days)
+    prices = [r["price"] for r in history if r["timestamp"] >= cutoff and r["price"]]
+    return max(prices) if prices else None
+
+
+def compute_position_trends(open_positions, all_history, cfg):
+    """Per-position price trend: where each holding has been going *recently*,
+    independent of when it was bought.
+
+    This exists because every other per-position return here is anchored to the
+    purchase (`gain_pct`, `xirr_pct`) or to a single session (`movers`), and
+    neither describes the current trajectory. Cost-basis return is an accident
+    of entry timing: on 2026-07-27 ARM showed +25.9% since buy and a +177% XIRR
+    while being down 35% over eight weeks and 40% off its own 52-week high. Both
+    figures were correct; only one of them said where the position was heading.
+
+    `drawdown_from_high_pct` is per-ticker, against that ticker's own trailing
+    high - not the portfolio-level high-water mark in compute_drawdown, which
+    answers a different question.
+    """
+    now = datetime.now()
+    short_d, medium_d = cfg["trend_short_days"], cfg["trend_medium_days"]
+    high_d = cfg["trend_high_window_days"]
+    trends = {}
+    for pos in open_positions:
+        hist = all_history.get(pos["Ticker"], [])
+        high = window_high(hist, high_d, now)
+        current = hist[-1]["price"] if hist else None
+        trends[pos["Ticker"]] = {
+            f"trend_{short_d}d_pct": price_return_pct(hist, short_d, now),
+            f"trend_{medium_d}d_pct": price_return_pct(hist, medium_d, now),
+            "high_eur": round(high, 2) if high else None,
+            "drawdown_from_high_pct": (
+                round((current / high - 1) * 100, 2) if high and current else None
+            ),
+        }
+    return trends
+
+
+def compute_trend_movers(positions, trends, cfg):
+    """Positions whose *medium-window* move is large - "something has been
+    happening for two months", as distinct from compute_movers' "something
+    happened today". Derived from compute_position_trends' output rather than
+    recomputed, so the two can never disagree.
+    """
+    key = f"trend_{cfg['trend_medium_days']}d_pct"
+    flagged = [
+        {"ticker": p["ticker"], "company": p["company"],
+         "change_pct": trends[p["ticker"]][key],
+         "drawdown_from_high_pct": trends[p["ticker"]]["drawdown_from_high_pct"]}
+        for p in positions
+        if trends.get(p["ticker"], {}).get(key) is not None
+        and abs(trends[p["ticker"]][key]) >= cfg["trend_notable_pct"]
+    ]
+    flagged.sort(key=lambda m: abs(m["change_pct"]), reverse=True)
+    return flagged[:cfg["trend_movers_top_n"]]
+
+
+def compute_positions(open_positions, prices, trends=None):
     """Cost basis is all-in: shares * execution price + the entry fees still
     attached to the open lots. `fees_eur` is reported separately as well, so a
-    position's fee drag is visible rather than buried inside its cost."""
+    position's fee drag is visible rather than buried inside its cost.
+
+    `trends` (from compute_position_trends) is merged onto each position so a
+    reader gets since-buy return and recent trajectory in one place - they
+    routinely disagree, and seeing only one of them is how a position in a
+    two-month slide reads as a winner."""
+    trends = trends or {}
     positions = []
     for pos in open_positions:
         ticker = pos["Ticker"]
@@ -294,7 +381,8 @@ def compute_positions(open_positions, prices):
             positions.append({"ticker": ticker, "company": pos["Company"], "sector": pos["Sector"],
                                "shares": pos["Shares"], "price": None, "value": None,
                                "cost": round(cost, 2), "fees_eur": round(fees, 2),
-                               "gain_eur": None, "gain_pct": None, "fee_drag_pct": None})
+                               "gain_eur": None, "gain_pct": None, "fee_drag_pct": None,
+                               **trends.get(ticker, {})})
             continue
         value = pos["Shares"] * price
         gain_eur = value - cost
@@ -308,6 +396,7 @@ def compute_positions(open_positions, prices):
             # Entry fees as a share of what the position is worth now - the number
             # that says whether a small position can still pay for its own exit.
             "fee_drag_pct": round(fees / value * 100, 2) if value else None,
+            **trends.get(ticker, {}),
         })
     return positions
 
@@ -480,13 +569,15 @@ def main():
     prices = latest_prices_from_history(all_history)
     stale = stale_tickers(all_history, th["stale_price_max_age_days"])
 
-    positions = compute_positions(open_positions, prices)
+    position_trends = compute_position_trends(open_positions, all_history, th)
+    positions = compute_positions(open_positions, prices, position_trends)
     totals = compute_portfolio_totals(positions)
     sectors = compute_sector_breakdown(positions, totals["total_value"])
     largest = compute_largest_positions(positions, th["largest_positions_top_n"])
     full_value_series = compute_portfolio_value_series(open_positions, all_history)
     drawdown = compute_drawdown(full_value_series, totals["total_value"])
     movers = compute_movers(open_positions, all_history, th["movers_top_n"])
+    trend_movers = compute_trend_movers(positions, position_trends, th)
     trend = compute_trend(full_value_series, lots)
     annualized = compute_annualized_returns(open_positions, prices, lots)
     corporate_actions = compute_corporate_actions(lots)
@@ -544,6 +635,7 @@ def main():
         "movers": movers,
         "trend": trend,
         "annualized_returns": annualized,
+        "trend_movers": trend_movers,
         "corporate_actions": corporate_actions,
         "stale_prices": stale,
         "caveats": caveats,
