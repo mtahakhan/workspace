@@ -8,10 +8,9 @@ talking to this server and wherever it happens to be running. Full pipeline
 rationale: see AGENT_NOTES.md.
 """
 
-from ..paths import MANUAL_DIR
+from ..paths import PERSONAL_DIR, TRANSACTIONS_FILE, TRANSACTIONS_BACKUP_FILE
 
-TRANSACTIONS_FILE = MANUAL_DIR / "transactions.csv"
-BACKUP_FILE = MANUAL_DIR / "transactions.csv.bak"
+BACKUP_FILE = TRANSACTIONS_BACKUP_FILE
 
 # Scalable Capital's export format - see AGENT_NOTES.md / lots.py's load_transactions().
 EXPECTED_HEADER_COLUMNS = (
@@ -36,7 +35,7 @@ def save(csv_content: str) -> str:
             "see pipeline/lots.py's load_transactions() to adapt it."
         )
 
-    MANUAL_DIR.mkdir(parents=True, exist_ok=True)
+    PERSONAL_DIR.mkdir(parents=True, exist_ok=True)
     backed_up = False
     if TRANSACTIONS_FILE.exists():
         BACKUP_FILE.write_text(TRANSACTIONS_FILE.read_text())

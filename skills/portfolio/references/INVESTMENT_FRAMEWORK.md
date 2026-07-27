@@ -100,13 +100,11 @@ improving/positive profitability trend, a clear moat. If not met, the answer
 is "reject or watchlist," not a deep analysis.
 
 **Persist meaningful sources.** Whenever a fetched piece of news/research text
-actually informs an opinion here (not just the daily task's news digest),
-save it under `data/news/{TICKER}/` using the same convention as
-`tasks/daily-analysis.md`'s research step - one file per source, filename
-`YYYY-MM-DD_HHMMSS_short-slug.txt`, metadata header (Ticker, Company, Source
-URL, Title, Fetched At, Fetch Method) then a blank line then the fetched
-text. Set `Retrieved For:` to what actually triggered the fetch (e.g. "ad-hoc
-chat analysis" or the mode name) instead of the daily task's name.
+actually informs an opinion here (not just the daily task's news digest), save
+it with the `save_news_source` MCP tool - one call per source. Set
+`retrieved_for` to what actually triggered the fetch (e.g. "ad-hoc chat
+analysis" or the mode name) instead of the daily task's name. Never write the
+file yourself; the server owns the location, filename and header.
 
 ## Portfolio & risk framework
 

@@ -18,10 +18,8 @@ from datetime import datetime
 import requests
 import yfinance as yf
 
-from ..paths import DATA_DIR, ENV_FILE
+from ..paths import TRANSACTION_LOTS_FILE, PRICE_HISTORY_DIR, ENV_FILE
 
-TRANSACTION_LOTS_FILE = DATA_DIR / "transaction_lots.csv"
-PRICE_HISTORY_DIR = DATA_DIR / "price_history"  # one price_history/{TICKER}.jsonl per stock
 
 FX_SOURCE_NAME = "exchangerate-api.com"
 FX_SOURCE_URL = "https://api.exchangerate-api.com/v4/latest/EUR"

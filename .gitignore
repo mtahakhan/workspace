@@ -2,16 +2,21 @@
 # This project is designed to be cloned with none of this present;
 # skills/portfolio/references/BOOTSTRAP.md rebuilds it all from a
 # user-provided transactions.csv on first run.
+#
+# These paths are the DEFAULT data location (<repo>/data/). If PORTFOLIO_DATA_DIR
+# points somewhere else, the data lives outside the repo entirely and none of
+# this applies - see mcp_servers/portfolio_tools/paths.py.
 mcp_servers/portfolio_tools/.env
-mcp_servers/portfolio_tools/data/manual/transactions.csv
-mcp_servers/portfolio_tools/data/manual/transactions.csv.bak
-mcp_servers/portfolio_tools/data/transaction_lots.csv
-mcp_servers/portfolio_tools/data/daily-analysis/*.md
-mcp_servers/portfolio_tools/data/analysis_history.jsonl
+data/personal/
 
-# NOTE: data/ticker_map.csv (ISIN, Ticker, Company, Sector) is deliberately NOT
-# listed here - it's a shared, committed, ever-growing lookup table, not
-# personal data. Don't add it back to this file.
+# The split is mechanical, with no per-file exceptions: everything under
+# data/personal/ is ignored, everything under data/impersonal/ is committed.
+# The line is ownership, not subject matter - data/impersonal/ (ticker_map.csv,
+# company_overrides.csv, price_history/, news/) is factual data about securities
+# that is identical for everyone, so it's shared and ever-growing: resolving a
+# ticker or fetching a day's close is work nobody should repeat. What you hold
+# and what it's worth lives in data/personal/. Don't add impersonal paths here,
+# and don't put anything position-specific there.
 
 # OS cruft
 .DS_Store
@@ -24,6 +29,6 @@ __pycache__/
 **/__pycache__/
 
 # Server runtime state - process metadata, not source or data
-mcp_servers/portfolio_tools/data/.pipeline.lock
+data/.pipeline.lock
 mcp_servers/portfolio_tools/.server.pid
 mcp_servers/portfolio_tools/.server.log

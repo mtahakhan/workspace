@@ -1,8 +1,8 @@
 # First-run setup
 
 This file is instructions for Claude, not the human user - follow it
-whenever `upload_transactions` hasn't been called yet (no
-`portfolio_tools/data/manual/transactions.csv` present). Unlike a
+whenever `upload_transactions` hasn't been called yet (no transaction
+history uploaded). Unlike a
 typical onboarding doc, this one stays around permanently - it's generic
 setup instructions, not personalized content, so future re-clones (by this
 user or anyone else) need it too. Each step below checks its own precondition
@@ -80,10 +80,10 @@ exist. None of that is hypothetical - it already happened once.
 Call these two MCP tools, in order:
 
 1. **`compute_lots`** - reports which ISINs have an open position but no
-   `data/ticker_map.csv` row yet.
+   `ticker_map` row yet.
 2. **`resolve_tickers`** - looks each one up via a real `yfinance` search
    (not a guess), checks its actual currency and price, and APPENDS a
-   proposed row to `data/ticker_map.csv` (a shared file - it never overwrites
+   proposed row to the ticker map (a shared table - it never overwrites
    existing rows). Returns a review table like this:
 
 ```
@@ -97,25 +97,25 @@ For every line in that table:
    the same company? (A price that's wildly different from what you'd expect,
    or a currency you didn't expect, usually means it's the wrong company or
    wrong listing - that's the point of showing you the price.)
-2. If a line has a `⚠` warning, it needs a manual fix in `data/ticker_map.csv`:
-   open the file, replace that ticker with a better one, and verify the new
-   one with the source repo's venv - never a system interpreter - e.g.
-   `mcp_servers/portfolio_tools/.venv/bin/python3 -c "import yfinance as yf; print(yf.Ticker('TICKER').fast_info)"`
-   run from the source repo root - before trusting it, check `currency` is
+2. If a line has a `⚠` warning, fix that row with **`set_ticker_mapping`**
+   (`isin` plus the corrected `ticker`) - never by editing a file. Confirm the
+   replacement first: `resolve_tickers` is the only sanctioned way to determine
+   a ticker, and its output shows the actual currency and price, which is how
+   you tell a wrong company or wrong listing from a right one. Currency must be
    one of EUR/USD/GBP/GBp.
 3. If you are not fully sure a pick is right, ask the user to confirm before
    moving on - don't silently accept an uncertain pick.
 
-Once every row looks right, fill in the blank Sector column directly in
-`data/ticker_map.csv` for each new row (it's `ISIN,Ticker,Company,Sector` - one
-file, all four columns, shared and committed) - ask the user what taxonomy
+Once every row looks right, fill in each new row's blank Sector with
+**`set_ticker_mapping`** (`isin` + `sector`; the other fields stay as they are).
+Use **`read_ticker_map`** to see the current state. Ask the user what taxonomy
 they want (Technology, Healthcare, Commodities, etc; there's no fixed list,
 this one's just their preference).
 
 Call **`compute_lots`** again after all of this. It will now report two
 separate things if anything is still missing: ISINs with no
-`data/ticker_map.csv` row at all (call `resolve_tickers` again, or fix
-manually), and rows that have a Ticker but a blank Sector (fill it in).
+`ticker_map` row at all (call `resolve_tickers` again, or fix it with
+`set_ticker_mapping`), and rows that have a Ticker but a blank Sector (fill it in).
 Repeat until neither list has entries, and the reported position share
 counts look sane to the user.
 
@@ -125,7 +125,7 @@ Call **`fetch_prices`** (live prices) then **`backfill_history`** (full
 historical backfill per ticker, needed for accurate drawdown/trend - takes a
 little longer, uses `period="max"` by default). Report any tickers that
 failed to resolve and work through them the same way as Step 4 (usually
-means the ticker in `data/ticker_map.csv` isn't quite right, or is in a
+means the ticker in the ticker map isn't quite right, or is in a
 currency the pipeline doesn't support - supported currencies are EUR, USD,
 GBP, and GBp).
 

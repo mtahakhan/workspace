@@ -24,7 +24,7 @@ it will:
   return (XIRR) - all deterministic Python, not estimated by an LLM
 - Write a daily markdown report, researching every holding's news in a single
   parallel batch, with deeper context on notable movers, and archive every
-  meaningful source fetched as its own file under `data/news/{TICKER}/`
+  meaningful source fetched as its own file under `data/impersonal/news/{TICKER}/`
 
 **Currently supports Scalable Capital's transaction export format.** Other
 brokers' CSV exports have different columns/formats and aren't parsed yet -
@@ -54,6 +54,21 @@ its own script under `scripts/`) - you can also run any step individually:
 | `make server-start` | Starts the HTTP server in the background (`nohup` + PID file) - **not** a login/boot service, re-run after a reboot or crash |
 | `make mcp-register` | Registers with `claude mcp add --scope user --transport http`, available in every Claude Code session on the machine |
 | `make skill-install` | Copies `skills/portfolio/` to `~/.claude/skills/portfolio/`, replacing whatever was there - self-contained, no dependency on this repo's location surviving afterward |
+
+On a first run (no `.env` yet), bootstrap starts by asking two things: your
+Finnhub API key (optional - press Enter to skip) and **where to keep your
+data**. Press Enter for the default, `<repo>/data/`, or give any absolute
+path - a synced folder, an encrypted volume, anywhere with its own backups.
+It's written to the server's `.env` as `PORTFOLIO_DATA_DIR`.
+
+The directory gets two subdirectories: `personal/` (your transactions,
+positions and reports - never committed) and `impersonal/` (ticker lookup
+tables, price history and fetched news - committed, since those are the same
+facts for everyone).
+
+To change either value later, run `make setup-env` and restart the server.
+**Changing the path does not move existing data** - move the contents
+yourself, keeping `personal/` and `impersonal/` intact.
 
 ## 2. Start a new Claude Code session
 

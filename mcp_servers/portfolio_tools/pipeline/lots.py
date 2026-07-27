@@ -17,12 +17,9 @@ import csv
 from collections import defaultdict
 from datetime import datetime
 
-from ..paths import DATA_DIR
+from ..paths import TRANSACTIONS_FILE, TICKER_MAP_FILE, COMPANY_OVERRIDES_FILE, TRANSACTION_LOTS_FILE
 
-TRANSACTIONS_FILE = DATA_DIR / "manual" / "transactions.csv"
-TICKER_MAP_FILE = DATA_DIR / "ticker_map.csv"  # shared, committed - ISIN,Ticker,Company,Sector
-COMPANY_OVERRIDES_FILE = DATA_DIR / "company_overrides.csv"  # shared, committed - ISIN,Company,Note
-OUTPUT_FILE = DATA_DIR / "transaction_lots.csv"
+OUTPUT_FILE = TRANSACTION_LOTS_FILE
 
 def load_ticker_metadata():
     """ISIN -> {ticker, sector} from the shared ticker_map.csv."""

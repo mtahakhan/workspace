@@ -43,7 +43,7 @@ exports differently, you'll need to adapt `portfolio_tools/pipeline/lots.py`'s
 `load_transactions()` function, or convert your export to match this format
 first.
 
-Save the export as `mcp_servers/portfolio_tools/data/manual/transactions.csv`
+Save the export as `data/personal/transactions.csv`
 (create the `manual/` directory if it doesn't exist yet - normally the
 `upload_transactions` MCP tool creates it, but you're bypassing that here).
 
@@ -69,8 +69,8 @@ cd mcp_servers/portfolio_tools
 Reconstructs exactly which shares you still hold, and when/at what price you
 bought them, from your full transaction history (handles partial sells,
 corporate actions, and broker-migration artifacts automatically). Writes
-`data/transaction_lots.csv`, including a blank `Ticker`/`Sector`
-for any ISIN `data/ticker_map.csv` doesn't have yet - that's
+`data/personal/transaction_lots.csv`, including a blank `Ticker`/`Sector`
+for any ISIN `data/impersonal/ticker_map.csv` doesn't have yet - that's
 expected on a first run and is exactly what the next step resolves.
 
 ## 4. Resolve tickers for your holdings
@@ -79,7 +79,7 @@ expected on a first run and is exactly what the next step resolves.
 .venv/bin/python3 -m portfolio_tools.pipeline.tickers
 ```
 
-Reads `data/transaction_lots.csv` for any open position with a
+Reads `data/personal/transaction_lots.csv` for any open position with a
 blank `Ticker`, looks each one up via a real `yfinance` search, and prints a
 review table like:
 
@@ -94,7 +94,7 @@ human judgment replaces what an LLM would otherwise help verify. For each row:
 - Does the picked ticker match the company name? A wildly-off price or
   unexpected currency usually means it's the wrong company or listing.
 - Any row with a `⚠` warning needs a manual fix: open
-  `data/ticker_map.csv` in a text editor and replace that
+  `data/impersonal/ticker_map.csv` in a text editor and replace that
   ticker with a better one. You can check any candidate yourself (still
   through the venv):
   ```bash
@@ -105,7 +105,7 @@ human judgment replaces what an LLM would otherwise help verify. For each row:
   /100 to GBP). Anything else isn't supported - find a different EUR/USD/GBP
   listing for that same ISIN rather than trying to add a new currency yourself.
 
-Then open `data/ticker_map.csv` and fill in the blank `Sector`
+Then open `data/impersonal/ticker_map.csv` and fill in the blank `Sector`
 column for each new row (any taxonomy you like - Technology, Healthcare,
 Commodities, etc; it's just used for the sector-concentration breakdown).
 
@@ -123,7 +123,7 @@ missing tickers or sectors, you're done with this step.
 
 Gets live prices for every ticker in `transaction_lots.csv` (Finnhub first if
 you set up a key, yfinance otherwise), and appends one line per ticker to its
-own history file at `data/price_history/{TICKER}.jsonl`.
+own history file at `data/impersonal/price_history/{TICKER}.jsonl`.
 
 ## 6. (One-time) Backfill historical prices
 
@@ -156,7 +156,7 @@ Redirect it to a file or pipe it into `json.tool` for readability:
 ```
 
 It also appends `{generated_at, total_value, xirr_pct}` to
-`data/analysis_history.jsonl` each run, and adds a `caveats`
+`data/personal/analysis_history.jsonl` each run, and adds a `caveats`
 entry if `total_value` swung more than 20% (configurable in
 `config.json`) since the previous run - a real incident (a bad
 ticker mapping doubled the reported value) is what this guards against; see
@@ -186,7 +186,7 @@ path and time - note it still always calls the venv's own interpreter, never
 a bare `python3`):
 ```
 7 7 * * *  cd /path/to/mcp_servers/portfolio_tools && .venv/bin/python3 -m portfolio_tools.pipeline.prices
-25 7 * * *  cd /path/to/mcp_servers/portfolio_tools && .venv/bin/python3 -m portfolio_tools.pipeline.analysis | .venv/bin/python3 -m portfolio_tools.pipeline.report > data/daily-analysis/$(date +\%Y-\%m-\%d).md
+25 7 * * *  cd /path/to/mcp_servers/portfolio_tools && .venv/bin/python3 -m portfolio_tools.pipeline.analysis | .venv/bin/python3 -m portfolio_tools.pipeline.report > data/personal/daily-analysis/$(date +\%Y-\%m-\%d).md
 ```
 This is a genuine alternative to running the MCP server for the
 deterministic half of the pipeline - it just means you're maintaining your
@@ -205,7 +205,7 @@ without one:
   positions in parallel (one-line digest each) plus deeper context on
   whatever `analyze_portfolio` flags as a significant mover, filling in
   the Movers table's Context column, and archives each meaningful source as
-  its own file under `data/news/{TICKER}/`; running the
+  its own file under `data/impersonal/news/{TICKER}/`; running the
   pipeline yourself just gives you numbers and flagged tickers/percentages,
   not the "why" behind any of it or a record of where it came from
 - **Investment analysis/advice grounded in this data** - if you ask Claude

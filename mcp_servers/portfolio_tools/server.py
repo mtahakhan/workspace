@@ -31,7 +31,8 @@ import os
 from mcp.server.fastmcp import FastMCP
 
 from .lock import locked
-from .paths import DATA_DIR
+from .paths import LOCK_FILE
+from .pipeline import storage as _storage
 from .pipeline.analysis import main as _analyze_portfolio
 from .pipeline.backfill import main as _backfill_history
 from .pipeline.config import load_config
@@ -44,7 +45,6 @@ from .pipeline.uploads import save as _save_transactions
 HOST = "127.0.0.1"  # localhost only - this serves personal financial data, never bind wider than this
 PORT = int(os.environ.get("PORTFOLIO_MCP_PORT", "8420"))
 
-LOCK_FILE = DATA_DIR / ".pipeline.lock"
 
 mcp = FastMCP("portfolio", host=HOST, port=PORT)
 
@@ -135,6 +135,80 @@ def render_report(analysis: dict) -> str:
     hand-transcribe a figure out of it yourself; if a section needs to look different, that's a
     change to make here, not a one-off rewrite."""
     return _locked(_render_report, analysis, load_config())
+
+
+@mcp.tool()
+def save_news_source(ticker: str, company: str, source_url: str, title: str, text: str,
+                     fetch_method: str = "WebSearch",
+                     retrieved_for: str = "portfolio-daily-analysis") -> str:
+    """Persist one fetched news source for a ticker. Call this instead of writing a file
+    yourself - you don't need to know where data lives, and the server generates the
+    timestamp, filename slug and metadata header so they can't drift between runs.
+
+    One call per distinct source that actually informed a note (skip near-duplicate
+    coverage of the same story, and skip tickers where nothing notable turned up).
+    Pass `text` as the article text/snippet you actually used, and `fetch_method` as the
+    real query you ran, e.g. 'WebSearch (query: "AMD stock news")'."""
+    return _locked(_storage.save_news_source, ticker, company, source_url, title, text,
+                   fetch_method=fetch_method, retrieved_for=retrieved_for)
+
+
+@mcp.tool()
+def save_report(markdown: str, report_date: str = "") -> str:
+    """Save the daily analysis report. Defaults to today; pass report_date (YYYY-MM-DD)
+    only to backfill or correct a specific day. Re-saving replaces that day's report
+    rather than adding a duplicate.
+
+    Pass the complete report: your Executive Summary, then render_report's markdown with
+    the Movers Context column filled in, then the Holdings News Digest."""
+    return _locked(_storage.save_report, markdown, report_date or None)
+
+
+@mcp.tool()
+def get_report(report_date: str = "") -> str:
+    """Return a previously saved report's markdown - the most recent one by default, or a
+    specific day with report_date (YYYY-MM-DD). Use this to compare against yesterday
+    instead of trying to open the file."""
+    return _locked(_storage.get_report, report_date or None)
+
+
+@mcp.tool()
+def list_reports(limit: int = 30) -> str:
+    """Dates of saved reports, newest first."""
+    return _locked(_storage.list_reports, limit)
+
+
+@mcp.tool()
+def list_news(ticker: str, limit: int = 20) -> str:
+    """Filenames of news sources already stored for a ticker, newest first - useful to
+    check what's been captured before re-fetching the same story."""
+    return _locked(_storage.list_news, ticker, limit)
+
+
+@mcp.tool()
+def get_news_source(ticker: str, filename: str) -> str:
+    """Full text of one stored news source, by a filename from list_news."""
+    return _locked(_storage.get_news_source, ticker, filename)
+
+
+@mcp.tool()
+def read_ticker_map() -> str:
+    """The ISIN -> Ticker/Company/Sector table as text. Use this to review a blank
+    Sector or a suspect ticker instead of opening the file."""
+    return _locked(_storage.read_ticker_map)
+
+
+@mcp.tool()
+def set_ticker_mapping(isin: str, ticker: str = "", company: str = "", sector: str = "") -> str:
+    """Create or update one ISIN's row in the ticker map. Only the fields you pass are
+    changed, so you can fill in a Sector without restating the ticker.
+
+    Needed because resolve_tickers deliberately leaves Sector blank for a human
+    judgment call, and a mis-resolved listing occasionally needs correcting. Never
+    guess a ticker here - resolve_tickers is the only sanctioned way to determine one
+    (see the skill's rule 1). Run compute_lots afterwards to apply the change."""
+    return _locked(_storage.set_ticker_mapping, isin,
+                   ticker or None, company or None, sector or None)
 
 
 if __name__ == "__main__":

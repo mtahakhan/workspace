@@ -20,11 +20,8 @@ import sys
 from datetime import datetime, timedelta
 
 from .config import load_config
-from ..paths import DATA_DIR
+from ..paths import PRICE_HISTORY_DIR, TRANSACTION_LOTS_FILE, ANALYSIS_HISTORY_FILE
 
-PRICE_HISTORY_DIR = DATA_DIR / "price_history"
-TRANSACTION_LOTS_FILE = DATA_DIR / "transaction_lots.csv"
-ANALYSIS_HISTORY_FILE = DATA_DIR / "analysis_history.jsonl"
 
 def load_transaction_lots():
     """Return {ticker: [{"date", "shares", "price", "company", "sector"}, ...]}

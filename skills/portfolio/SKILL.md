@@ -67,6 +67,10 @@ here in the skill bundle (in the source repo at
 | Backfill full price history (rare/one-off) | `backfill_history` | `pipeline/backfill.py` |
 | Compute portfolio value/gain/XIRR/movers/etc. | `analyze_portfolio` | `pipeline/analysis.py` |
 | Render that JSON as report markdown | `render_report` | `pipeline/report.py` |
+| Persist a news source you fetched | `save_news_source` | `pipeline/storage.py` |
+| Save today's finished report | `save_report` | `pipeline/storage.py` |
+| Read a past report / list report dates | `get_report` / `list_reports` | `pipeline/storage.py` |
+| See or read already-stored news | `list_news` / `get_news_source` | `pipeline/storage.py` |
 
 These tools call the exact same functions direct module invocation would -
 same computation, same output, just typed and reachable over HTTP instead of
@@ -77,6 +81,24 @@ Standard daily flow: `fetch_prices` → `analyze_portfolio` → `render_report`
 (pass `render_report` the exact dict `analyze_portfolio` returned) → then
 research news and write the Executive Summary yourself - see
 `references/tasks/daily-analysis.md` for the full, current step-by-step.
+
+## Never touch the filesystem
+
+**Every read and write of portfolio data goes through an MCP tool - including
+the news sources and the report, which you author.** Don't use file tools,
+don't use Bash, and don't try to work out where the data is: it lives outside
+the server package, its location is configurable per machine
+(`PORTFOLIO_DATA_DIR`), and it may not be inside any repo you can see. A path
+that looks right in one project would be wrong or absent in another.
+
+This is why `save_news_source`, `save_report`, `get_report`, `list_reports`,
+`list_news` and `get_news_source` exist. They take content and facts, never
+paths, and the server decides filenames, timestamps and metadata headers so
+they stay identical across runs instead of depending on what you remembered
+to type.
+
+The one exception is this skill's own `references/tasks/*.md` (see rule 7) -
+skill files, not portfolio data.
 
 ## Absolute rules (apply every time, not just when debugging)
 

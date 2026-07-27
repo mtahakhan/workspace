@@ -13,13 +13,43 @@ the `portfolio` MCP server and the Claude Skill **globally**
 process (`portfolio_tools/server.py`, `mcp.run(transport="streamable-http")`,
 bound to `127.0.0.1` only) that every Claude Code session on the machine
 talks to, in every project, not just this repo. There is no
-`${CLAUDE_PROJECT_DIR}`-relative anything in this codebase - every path is
-computed from `portfolio_tools/paths.py`'s `PACKAGE_ROOT =
-Path(__file__).resolve().parent`, i.e. relative to wherever this package's
-own source happens to live on disk, never from cwd or "the current project."
+`${CLAUDE_PROJECT_DIR}`-relative anything in this codebase - every path comes
+from `portfolio_tools/paths.py`, never from cwd or "the current project."
 **Concretely: if you're working in some unrelated project and the `portfolio`
-MCP tools are available, they still operate on this one repo's data** - that
-is by design, not a bug.
+MCP tools are available, they still operate on the same one portfolio's data**
+- that is by design, not a bug.
+
+**Code lives in the package; data does not.** `paths.py` resolves the data
+root in this order: the `PORTFOLIO_DATA_DIR` environment variable, then
+`PORTFOLIO_DATA_DIR=` in the package's `.env` (written by `setup-env.sh`, so
+the value holds however the server is launched), then `<repo>/data/` as the
+default. Data is external and relocatable so it can sit on a synced,
+encrypted or separately-backed-up volume without any code change - and so
+that the location is a deployment decision rather than something baked into
+the source tree.
+
+Inside the data root there are exactly two subdirectories, and which one a
+file belongs in is what decides whether it can be committed:
+
+| | Holds | Committed? |
+|---|---|---|
+| `personal/` | transactions, derived FIFO lots, analysis history, generated reports | No - all of it gitignored |
+| `impersonal/` | `ticker_map.csv`, `company_overrides.csv`, `price_history/`, `news/` | Yes - all of it committed |
+
+The line is **ownership, not subject matter**: a market close for AMD is the
+same number whoever looks it up, and so is a news article about it - but how
+many shares you hold is not. Price history and news are therefore shared and
+ever-growing, so resolving a ticker or fetching a day's close is work nobody
+using this project has to repeat. That also makes the `.gitignore` rule
+mechanical - one ignored directory, no per-file exceptions.
+
+**Callers never see any of this.** Agents don't construct data paths, and
+don't read or write data files directly - every read and write goes through
+an MCP tool, including the news sources and the report, which the LLM
+authors (`pipeline/storage.py`, exposed as `save_news_source`, `save_report`,
+`get_report`, `list_reports`, `list_news`, `get_news_source`,
+`read_ticker_map`, `set_ticker_mapping`). That is what makes the location
+free to change: nothing outside the server depends on it.
 
 Because it's one shared server reachable from potentially-concurrent
 sessions/projects, `portfolio_tools/server.py` wraps **every** tool call in a
@@ -61,15 +91,23 @@ mcp_servers/
   portfolio_tools/             <- the whole distributable unit
     server.py                    FastMCP server, HTTP-only, the locking wrapper
     lock.py                      fcntl.flock-based cross-request/cross-process lock
-    paths.py                     PACKAGE_ROOT/DATA_DIR/CONFIG_FILE/ENV_FILE - single source of truth
+    paths.py                     every path in one place: resolves the data root
+                                (PORTFOLIO_DATA_DIR / .env / <repo>/data) and names
+                                every file under it - no other module builds a path
     config.json, .env            config/secrets, not data
     pipeline/                    the deterministic computation
       lots.py, tickers.py, prices.py, backfill.py, analysis.py, report.py, config.py, uploads.py
-    data/                        internal default location - see "Deployment model" above
-      manual/transactions.csv, ticker_map.csv, transaction_lots.csv,
-      price_history/*.jsonl, analysis_history.jsonl, news/, daily-analysis/
+      storage.py                 the agent-authored artifacts (news, reports) + ticker-map
+                                edits - the only way anything outside the server reads
+                                or writes data
     requirements.txt, .venv/     one venv for the whole package (needs Python >=3.10) -
                                 the ONLY interpreter ever used to run this code
+data/                        <- DEFAULT data root, outside the package (relocatable
+                                via PORTFOLIO_DATA_DIR - see "Deployment model")
+  personal/                    transactions.csv, transaction_lots.csv,
+                                analysis_history.jsonl, daily-analysis/          (not committed)
+  impersonal/                  ticker_map.csv, company_overrides.csv,
+                                price_history/*.jsonl, news/                     (committed)
 bootstrap.sh                 <- repo root - full bootstrap orchestrator (delegates to scripts/)
 setup-env.sh                 <- interactive prompt to write the Finnhub API key to .env
 Makefile                     <- make bootstrap / make venv-setup / make server-start /
@@ -100,17 +138,17 @@ invocation being the primary path.
 See the diagram below for the same information visually. Every step is
 exposed as an MCP tool - that's the sanctioned way to invoke it.
 
-1. **`upload_transactions`** → **`data/manual/transactions.csv`** - the one
+1. **`upload_transactions`** → **`data/personal/transactions.csv`** - the one
    file with no automated source. The complete raw CSV text (Scalable
    Capital's export format), always a full re-export, never incremental; the
    tool keeps one `.bak` of whatever was there before.
-2. **`compute_lots`** → **`data/transaction_lots.csv`** - FIFO cost-basis
+2. **`compute_lots`** → **`data/personal/transaction_lots.csv`** - FIFO cost-basis
    engine. Reconstructs exactly which shares are still held, when, and at
    what price, from the real transaction history (handles partial sells,
    ISIN-swap corporate actions, and broker-migration transfer rows). This is
    the sole source of current open positions (ticker, company, shares,
    weighted-average cost) - there is no separate positions file.
-3. **`data/ticker_map.csv`** (ISIN, Ticker, Company, Sector) - the resolved
+3. **`data/impersonal/ticker_map.csv`** (ISIN, Ticker, Company, Sector) - the resolved
    ticker symbol and sector, the two things broker exports can't provide.
    Shared and committed - an ever-growing lookup table, because resolving a
    ticker correctly once means nobody using this project ever has to
@@ -119,8 +157,8 @@ exposed as an MCP tool - that's the sanctioned way to invoke it.
    as unmapped; Sector still needs a quick human judgment call afterward.
    Note the `Company` column here is *not* what reports display - that comes
    from the broker's own description in `transactions.csv` (see
-   `data/company_overrides.csv` below to correct a wrong one).
-4. **`fetch_prices`** → **`data/price_history/{TICKER}.jsonl`** - fetches the
+   `data/impersonal/company_overrides.csv` below to correct a wrong one).
+4. **`fetch_prices`** → **`data/impersonal/price_history/{TICKER}.jsonl`** - fetches the
    ticker list from `transaction_lots.csv`, gets live prices (Finnhub
    primary, yfinance fallback), and appends one fully-sourced record per
    ticker (original currency, source name/URL, FX rate + source) to its own
@@ -172,9 +210,9 @@ flowchart TD
     subgraph SETUP["① MANUAL - whenever you trade"]
         direction TB
         UPLOAD["upload_transactions tool<br/>raw CSV text argument<br/>(only external input)"]:::script
-        TXN[("data/manual/transactions.csv")]:::data
-        TMAP[("data/ticker_map.csv<br/>ISIN, Ticker, Company, Sector<br/>shared / committed")]:::data
-        LOTS[("data/transaction_lots.csv<br/>FIFO open lots<br/>ISIN, Ticker, Shares, dates, cost")]:::data
+        TXN[("data/personal/transactions.csv")]:::data
+        TMAP[("data/impersonal/ticker_map.csv<br/>ISIN, Ticker, Company, Sector<br/>shared / committed")]:::data
+        LOTS[("data/personal/transaction_lots.csv<br/>FIFO open lots<br/>ISIN, Ticker, Shares, dates, cost")]:::data
 
         CL1["pipeline.lots<br/>FIFO engine"]:::script
         SCAFF["pipeline.tickers<br/>yfinance resolve<br/>(only if new ISIN)"]:::script
@@ -193,12 +231,12 @@ flowchart TD
 
     subgraph DAILY["② SCHEDULED - Claude Code tasks, daily"]
         direction TB
-        PRICES[("data/price_history/{TICKER}.jsonl<br/>one file per ticker")]:::data
+        PRICES[("data/impersonal/price_history/{TICKER}.jsonl<br/>one file per ticker")]:::data
         JSONOUT[("pipeline.analysis output<br/>value, gain/loss, XIRR,<br/>drawdown, movers, trend, caveats,<br/>notable/notify_reasons")]:::data
-        HIST[("data/analysis_history.jsonl<br/>generated_at, total_value, xirr_pct<br/>one line per run")]:::data
+        HIST[("data/personal/analysis_history.jsonl<br/>generated_at, total_value, xirr_pct<br/>one line per run")]:::data
         MDOUT[("pipeline.report output<br/>deterministic markdown sections")]:::data
-        REPORT[("data/daily-analysis/YYYY-MM-DD.md")]:::data
-        NEWS[("data/news/{TICKER}/*.txt<br/>one file per meaningful source<br/>URL + fetched-at + method + text")]:::data
+        REPORT[("data/personal/daily-analysis/YYYY-MM-DD.md")]:::data
+        NEWS[("data/impersonal/news/{TICKER}/*.txt<br/>one file per meaningful source<br/>URL + fetched-at + method + text")]:::data
 
         CONFIG[("config.json<br/>thresholds + caveat/notify<br/>message templates")]:::data
 
@@ -245,15 +283,15 @@ diagram.
 
 | File | Holds | Produced by |
 |---|---|---|
-| `data/manual/transactions.csv` | Raw broker export - the only external input | `upload_transactions` tool (keeps one `.bak`) |
-| `data/ticker_map.csv` | ISIN, Ticker, Company, Sector - shared, committed | `resolve_tickers` (Ticker/Company) + you (Sector) |
-| `data/company_overrides.csv` | ISIN, Company, Note - shared, committed. Corrects the handful of broker descriptions that name the wrong company; everything unlisted keeps the broker's own label | You (hand-edited); `pipeline/lots.py` applies it |
+| `data/personal/transactions.csv` | Raw broker export - the only external input | `upload_transactions` tool (keeps one `.bak`) |
+| `data/impersonal/ticker_map.csv` | ISIN, Ticker, Company, Sector - shared, committed | `resolve_tickers` (Ticker/Company) + `set_ticker_mapping` (Sector, corrections) |
+| `data/impersonal/company_overrides.csv` | ISIN, Company, Note - shared, committed. Corrects the handful of broker descriptions that name the wrong company; everything unlisted keeps the broker's own label | You (hand-edited in the repo); `pipeline/lots.py` applies it |
 | `config.json` | All tunable thresholds and every caveat/notify-reason message template - shared, committed, not personal data | You (hand-edited); `pipeline/config.py` just loads it |
-| `data/transaction_lots.csv` | Current open positions - FIFO lots, real dates/prices | `compute_lots` |
-| `data/price_history/{TICKER}.jsonl` | Full sourced price history, one file per ticker. May hold several records for one day (one per `fetch_prices` run); readers collapse to one per day, last wins | `fetch_prices` (appends, no same-day check) / `backfill_history` (one-off, rewrites at one record per day) |
-| `data/analysis_history.jsonl` | One line per `analyze_portfolio` run: `generated_at`, `total_value`, `xirr_pct` - append-only, powers the value-divergence caveat | `analyze_portfolio` |
-| `data/daily-analysis/*.md` | Generated reports | `portfolio-daily-analysis` task |
-| `data/news/{TICKER}/*.txt` | One file per fetched news source deemed meaningful (metadata header + fetched text) | `portfolio-daily-analysis` task + any ad-hoc analysis that fetches news |
+| `data/personal/transaction_lots.csv` | Current open positions - FIFO lots, real dates/prices | `compute_lots` |
+| `data/impersonal/price_history/{TICKER}.jsonl` | Full sourced price history, one file per ticker. May hold several records for one day (one per `fetch_prices` run); readers collapse to one per day, last wins | `fetch_prices` (appends, no same-day check) / `backfill_history` (one-off, rewrites at one record per day) |
+| `data/personal/analysis_history.jsonl` | One line per `analyze_portfolio` run: `generated_at`, `total_value`, `xirr_pct` - append-only, powers the value-divergence caveat | `analyze_portfolio` |
+| `data/personal/daily-analysis/*.md` | Generated reports | `portfolio-daily-analysis` task |
+| `data/impersonal/news/{TICKER}/*.txt` | One file per fetched news source deemed meaningful (metadata header + fetched text) | `portfolio-daily-analysis` task + any ad-hoc analysis that fetches news |
 
 ## MCP tools
 
@@ -262,14 +300,18 @@ serialized through the global lock:
 
 | Tool | Wraps | Uses | Produces | Run order |
 |---|---|---|---|---|
-| `upload_transactions` | `pipeline/uploads.py` | Raw CSV text (tool argument) | `data/manual/transactions.csv` (+ `.bak` of previous) | whenever the user has a new export |
-| `compute_lots` | `pipeline/lots.py` | `data/manual/transactions.csv` + `data/ticker_map.csv` | `data/transaction_lots.csv` | 1st (works even if ticker_map.csv is empty/missing) |
-| `resolve_tickers` | `pipeline/tickers.py` | `data/transaction_lots.csv` (blank-Ticker rows, by ISIN) + `yfinance` search/currency/history checks | Appends rows to `data/ticker_map.csv` (Sector blank) | 2nd, only when needed |
-| `compute_lots` (re-run) | same | same | fresh `data/transaction_lots.csv` with resolved tickers | 3rd, after resolve_tickers |
-| `fetch_prices` | `pipeline/prices.py` | `data/transaction_lots.csv` + Finnhub/yfinance | Appends to `data/price_history/*.jsonl` | daily |
-| `backfill_history` | `pipeline/backfill.py` | `data/transaction_lots.csv` + yfinance historical | Rewrites `data/price_history/*.jsonl` (full history) | one-off/rare |
-| `analyze_portfolio` | `pipeline/analysis.py` (+ `pipeline/config.py`) | `data/transaction_lots.csv` + `data/price_history/*.jsonl` + last line of `data/analysis_history.jsonl` + `config.json` | JSON: value, gain/loss, drawdown, XIRR, movers, trend, `stale_prices`, `caveats`, `notable`/`notify_reasons`; appends a new line to `data/analysis_history.jsonl` | after fetch_prices |
+| `upload_transactions` | `pipeline/uploads.py` | Raw CSV text (tool argument) | `data/personal/transactions.csv` (+ `.bak` of previous) | whenever the user has a new export |
+| `compute_lots` | `pipeline/lots.py` | `data/personal/transactions.csv` + `data/impersonal/ticker_map.csv` | `data/personal/transaction_lots.csv` | 1st (works even if ticker_map.csv is empty/missing) |
+| `resolve_tickers` | `pipeline/tickers.py` | `data/personal/transaction_lots.csv` (blank-Ticker rows, by ISIN) + `yfinance` search/currency/history checks | Appends rows to `data/impersonal/ticker_map.csv` (Sector blank) | 2nd, only when needed |
+| `compute_lots` (re-run) | same | same | fresh `data/personal/transaction_lots.csv` with resolved tickers | 3rd, after resolve_tickers |
+| `fetch_prices` | `pipeline/prices.py` | `data/personal/transaction_lots.csv` + Finnhub/yfinance | Appends to `data/impersonal/price_history/*.jsonl` | daily |
+| `backfill_history` | `pipeline/backfill.py` | `data/personal/transaction_lots.csv` + yfinance historical | Rewrites `data/impersonal/price_history/*.jsonl` (full history) | one-off/rare |
+| `analyze_portfolio` | `pipeline/analysis.py` (+ `pipeline/config.py`) | `data/personal/transaction_lots.csv` + `data/impersonal/price_history/*.jsonl` + last line of `data/personal/analysis_history.jsonl` + `config.json` | JSON: value, gain/loss, drawdown, XIRR, movers, trend, `stale_prices`, `caveats`, `notable`/`notify_reasons`; appends a new line to `data/personal/analysis_history.jsonl` | after fetch_prices |
 | `render_report` | `pipeline/report.py` | `analyze_portfolio`'s JSON + `config.json` (`short_hold_days_threshold`) | Markdown: Portfolio Overview, Trend, Sector Breakdown, Largest Positions, Movers, Complete Holdings Table, XIRR Context, Data Notes | after analyze_portfolio, before the report is written |
+| `save_news_source` | `pipeline/storage.py` | Ticker + source facts + fetched text (tool arguments) | One file under `data/impersonal/news/{TICKER}/`; server generates timestamp, slug, metadata header | during news research |
+| `save_report` / `get_report` / `list_reports` | `pipeline/storage.py` | Report markdown (tool argument) / a date | `data/personal/daily-analysis/YYYY-MM-DD.md` (re-saving replaces) | end of the daily task |
+| `list_news` / `get_news_source` | `pipeline/storage.py` | Ticker (+ filename) | Filenames / full stored text | when checking what's already captured |
+| `read_ticker_map` / `set_ticker_mapping` | `pipeline/storage.py` | ISIN + any of Ticker/Company/Sector | Rewrites `data/impersonal/ticker_map.csv` in place, preserving unset fields | filling in a blank Sector, or correcting a mis-resolved listing |
 
 ## Scheduled tasks
 
@@ -344,7 +386,7 @@ becomes a real problem.
   worst-case value swing of my current holdings," not a claim about the
   portfolio's real historical value.
 - **`trend.since_inception`** is anchored to the EARLIEST actual purchase
-  date in `data/transaction_lots.csv`, NOT the earliest available
+  date in `data/personal/transaction_lots.csv`, NOT the earliest available
   price-history point - using full history here produced a confirmed bug
   (see `AGENT_NOTES.md`'s "Notable incidents"). Don't "fix" this back to
   using full history; the discrepancy between these two methodologies is the
@@ -353,7 +395,7 @@ becomes a real problem.
 ## Annualized return (XIRR)
 
 `annualized_returns` is a real money-weighted XIRR computed from
-`data/transaction_lots.csv`'s actual purchase dates/prices - not
+`data/personal/transaction_lots.csv`'s actual purchase dates/prices - not
 `total_return / years_held`. Check `weighted_avg_holding_days` before
 treating any single position's XIRR as meaningful: annualizing a short real
 holding period produces mathematically extreme numbers (e.g. a genuine 37%
@@ -391,7 +433,7 @@ both `analysis.py` and `report.py` - it does NOT duplicate `config.json`'s
 values as Python defaults, so there's exactly one place thresholds live. A
 missing or invalid `config.json` is therefore a hard error (`SystemExit` with
 a clear message), not a silent fallback. `config.json` is committed
-(shared/non-personal, like `data/ticker_map.csv`), so "missing" should only
+(shared/non-personal, like `data/impersonal/ticker_map.csv`), so "missing" should only
 happen from local file damage, never a fresh clone.
 
 Message templates use Python `str.format()` placeholders (e.g. `{tickers}`,
@@ -401,7 +443,7 @@ keep its placeholder names intact or the corresponding `.format(...)` call in
 
 ## Data provenance / secrets
 
-Every `data/price_history/{TICKER}.jsonl` record for a non-EUR ticker carries
+Every `data/impersonal/price_history/{TICKER}.jsonl` record for a non-EUR ticker carries
 its original currency, raw price, exact source URL (API token redacted
 before persisting), and the FX rate + source used. EUR-native records omit
 all of this (would just be no-op restatements). Never persist an API

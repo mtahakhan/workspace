@@ -25,7 +25,7 @@ editing:
 | Human setup | [`README.md`](README.md) / [`docs/SETUP.md`](docs/SETUP.md) / [`docs/QUICKSTART.md`](docs/QUICKSTART.md) | Cloning, running `bootstrap.sh`, getting a Finnhub key, or running the pipeline with no LLM at all. |
 
 **First run?** If `upload_transactions` hasn't been called yet (no
-`portfolio_tools/data/manual/transactions.csv`), this is a fresh setup with no
+`data/personal/transactions.csv`), this is a fresh setup with no
 personal data yet - follow `skills/portfolio/references/BOOTSTRAP.md` (the
 same flow the skill uses when triggered fresh in any project). Don't assume
 default/example data; there is none by design (see `.gitignore`).
@@ -82,7 +82,8 @@ a known-good run rather than eyeballing it.
 (the deterministic computation - `lots.py`, `tickers.py`, `prices.py`,
 `backfill.py`, `analysis.py`, `report.py`, `config.py`, `uploads.py`),
 `paths.py` (single source of truth for every path, never cwd-relative),
-`data/` (everything the pipeline reads/writes). Full breakdown in
+`pipeline/storage.py` (the news/report/ticker-map I/O the MCP tools expose,
+so an agent never writes a data file itself). Full breakdown in
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 **`skills/portfolio/`** is the Claude Skill source - `SKILL.md` + a
@@ -92,6 +93,15 @@ it wholesale to `~/.claude/skills/portfolio/`. See
 [`docs/AGENT_NOTES.md`](docs/AGENT_NOTES.md)'s "Skill bundle vs. this repo"
 before editing anything under it - it must stay self-contained (no
 references out to `docs/`).
+
+**Data lives outside the package**, at `<repo>/data/` by default or wherever
+`PORTFOLIO_DATA_DIR` points (set via `make setup-env`, stored in the server's
+`.env`). It splits into `personal/` (transactions, lots, analysis history, reports -
+all gitignored) and `impersonal/` (`ticker_map.csv`, `company_overrides.csv`,
+`price_history/`, `news/` - all committed). The line is ownership, not subject
+matter: a price or an article is the same for everyone; your share count isn't. **Read and write
+it only through MCP tools** - never with file tools or Bash, and don't hardcode
+a data path anywhere; `paths.py` is the only module that knows the layout.
 
 **`docs/`** - everything for developing in and understanding this repo:
 `AGENT_NOTES.md` (rules/lessons), `ARCHITECTURE.md` (how it works),

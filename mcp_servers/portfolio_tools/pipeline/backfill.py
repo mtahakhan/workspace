@@ -16,10 +16,8 @@ import json
 import pandas as pd
 import yfinance as yf
 
-from ..paths import DATA_DIR
+from ..paths import TRANSACTION_LOTS_FILE, PRICE_HISTORY_DIR
 
-TRANSACTION_LOTS_FILE = DATA_DIR / "transaction_lots.csv"
-PRICE_HISTORY_DIR = DATA_DIR / "price_history"
 
 YFINANCE_SOURCE_NAME = "yfinance (Yahoo Finance chart endpoint)"
 

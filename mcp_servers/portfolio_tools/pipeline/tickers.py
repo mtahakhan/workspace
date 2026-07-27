@@ -16,10 +16,8 @@ import sys
 
 import yfinance as yf
 
-from ..paths import DATA_DIR
+from ..paths import TICKER_MAP_FILE, TRANSACTION_LOTS_FILE
 
-TICKER_MAP_FILE = DATA_DIR / "ticker_map.csv"
-TRANSACTION_LOTS_FILE = DATA_DIR / "transaction_lots.csv"
 
 # Currency preference for picking among a security's listings. Lower = better.
 # EUR first (pipeline is EUR-native, matches the broker exactly, no FX hop);

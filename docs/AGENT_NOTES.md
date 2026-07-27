@@ -57,7 +57,17 @@ workflow, and lessons already learned the hard way.
    in that file's tables, or the actual code - must land alongside a matching
    edit to the diagram in the same change. An out-of-date diagram is worse
    than no diagram.
-4. **Never duplicate information that already lives in one place.** This
+4. **Never hardcode a data path, and never read or write data outside an MCP
+   tool.** The data root is external and configurable (`PORTFOLIO_DATA_DIR`,
+   else `<repo>/data/`), so a literal path is wrong on any machine configured
+   differently. `paths.py` is the only module that knows the layout - every
+   other module imports named constants from it and builds nothing itself.
+   The same applies to agents *using* the pipeline: news sources, reports and
+   ticker-map edits all go through `pipeline/storage.py`'s tools
+   (`save_news_source`, `save_report`, `set_ticker_mapping`, …), never a file
+   tool. This is what lets the data move without touching code, and it's why
+   the metadata headers on stored news are generated rather than typed.
+5. **Never duplicate information that already lives in one place.** This
    project has hit "two copies silently drifting apart" more than once (the
    Mermaid diagram vs. the prose it illustrates; `config.json`'s values
    almost got a second hardcoded copy in `pipeline/config.py`). When adding
@@ -129,7 +139,7 @@ the real number, €16,113.58 (-3.53%, XIRR -12.64%) - roughly half the
 reported value. Nothing in the pipeline had flagged the first number as
 suspicious even though a portfolio doubling in hours is implausible. Fix:
 `analyze_portfolio` now records each run's `total_value` to
-`data/analysis_history.jsonl` and adds a `caveats` entry
+`data/personal/analysis_history.jsonl` and adds a `caveats` entry
 (`check_value_divergence`) if it moved >20% since the previous run.
 
 **2026-07-27: the displayed company name does not come from `ticker_map.csv`.**
@@ -139,7 +149,7 @@ cloud / data-center operator. Editing `ticker_map.csv`'s `Company` column
 changed nothing, because `lots.py` sources `Company` from the broker's own
 `description` field in `transactions.csv` - `ticker_map.csv`'s `Company` is
 only ever written and read by `resolve_tickers`, and never reaches a report.
-Fix: `data/company_overrides.csv` (ISIN, Company, Note), applied by
+Fix: `data/impersonal/company_overrides.csv` (ISIN, Company, Note), applied by
 `lots.py`'s `load_company_overrides()`. Deliberately an opt-in table rather
 than "prefer ticker_map everywhere": the broker's description stays the
 default, only listed ISINs are overridden, each entry carries a Note, and
