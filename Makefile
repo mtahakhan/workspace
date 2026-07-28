@@ -1,4 +1,4 @@
-.PHONY: bootstrap setup-data-and-backfill bootstrap-with-schedule venv-setup server-start mcp-register skill-install setup-env fetch-prices refresh run-once
+.PHONY: bootstrap setup-data-and-backfill bootstrap-with-schedule venv-setup server-start mcp-register skill-install setup-env fetch-prices refresh backfill
 
 ## === MAIN ENTRY POINTS ===
 
@@ -7,23 +7,23 @@
 bootstrap:
 	./bootstrap.sh
 
-## Setup for pure-Python use: venv + server + backfilled historical prices
-## Then use 'make refresh' daily to run the pipeline, no Claude Code needed
+## Setup for pure-Python use: venv + server, ready for manual data import
+## Then follow docs/QUICKSTART.md steps 1-4 (transactions + tickers), then
+## 'make backfill' once, then 'make refresh' daily - no Claude Code needed
 setup-data-and-backfill:
 	./bootstrap.sh
 	@echo ""
-	@echo "Backfilling historical prices for analysis (this takes a minute or two)..."
-	@cd mcp_servers && portfolio_tools/.venv/bin/python3 -m portfolio_tools.pipeline.backfill
-	@echo "Done. Now upload your transactions.csv via 'make refresh' or the upload_transactions tool."
+	@echo "Next: place data/personal/transactions.csv, then run pipeline.lots and"
+	@echo "pipeline.tickers to resolve your positions - see docs/QUICKSTART.md steps 1-4."
+	@echo "Once tickers are resolved: 'make backfill' (one-time), then 'make refresh' daily."
 
-## Setup + schedule daily tasks in Claude Code (requires active Claude Code session)
+## Setup + prompt to schedule daily Claude Code tasks (requires an active session)
 bootstrap-with-schedule:
 	./bootstrap.sh
 	@echo ""
-	@echo "Setting up scheduled tasks in Claude Code..."
-	@echo "Run this in a Claude Code session to enable daily automation:"
-	@echo "  ask Claude to 'schedule portfolio refresh' or create daily-refresh and daily-analysis tasks"
-	@echo "See docs/SETUP.md for details."
+	@echo "In a Claude Code session, ask it to create two scheduled tasks:"
+	@echo "  portfolio-daily-refresh  and  portfolio-daily-analysis"
+	@echo "See docs/SETUP.md#setting-up-daily-automation for details."
 
 ## === PIPELINE COMMANDS ===
 
@@ -37,6 +37,11 @@ refresh:
 ## Fails loudly if any ticker can't be priced.
 fetch-prices:
 	./scripts/fetch-prices.sh
+
+## (One-time per ticker) backfill full historical prices - requires tickers
+## already resolved (docs/QUICKSTART.md steps 1-4); see docs/QUICKSTART.md step 6
+backfill:
+	cd mcp_servers && portfolio_tools/.venv/bin/python3 -m portfolio_tools.pipeline.backfill
 
 ## === SETUP STEPS (can also be run individually) ===
 
