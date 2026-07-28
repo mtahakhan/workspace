@@ -1,0 +1,9 @@
+Ticker: 3BRS.MI
+Company: WisdomTree Brent Crude Oil 3x Daily Short
+Source URL: https://www.vantagemarkets.com/market-analysis/crude-oil-prices-today-brent-wti-july-28-2026/
+Title: Brent, WTI Crude Oil Prices Today: Why the Rally Reversed
+Fetched At: 2026-07-28T17:34:05+02:00
+Fetch Method: WebSearch (query: "Brent crude oil price today July 28 2026")
+Retrieved For: portfolio-daily-analysis
+
+Brent continued falling on July 28, 2026 to roughly $87-89/barrel (various intraday reads: $86.58-$89.08), down further from the ~$97 level reported July 24, as easing Middle East conflict signals continued removing the geopolitical risk premium built up during July's near-40% spike. This is a continuation of the same de-escalation move already covered (Pakistan/China-backed US-Iran talks revival reports), not a new catalyst. Context: 3BRS.MI (3x inverse Brent) is up +10.3% today, mechanically amplifying the continued Brent decline - the same structural dynamic, not a change in the exit thesis.

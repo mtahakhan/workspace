@@ -1,0 +1,9 @@
+Ticker: ARM
+Company: Arm Holdings ADR
+Source URL: https://en.cryptonomist.ch/2026/07/28/arm-holdings-stock-faces-make-or-break-earnings-after-28-selloff/
+Title: Arm Holdings Stock Analysis: July 29 Earnings Could Shift Trend
+Fetched At: 2026-07-28T17:33:37+02:00
+Fetch Method: WebSearch (query: "Arm Holdings ARM stock today July 28 2026 news")
+Retrieved For: portfolio-daily-analysis
+
+ARM closed at $266.33 on July 27 (down ~28% over the past month), below its EMA20/EMA50 near $295, with RSI14 at 40.28 (not yet oversold) and MACD momentum accelerating downward - a technical continuation of the valuation de-rating already flagged by HSBC/Wells Fargo/UBS, not a new fundamental catalyst. FQ1 FY2027 earnings due July 29, 2026 are described as a binary, high-stakes event: over $2bn of AGI data-center CPU demand already booked across FY2027-28, and data-center royalty revenue reportedly more than doubled year-over-year again, with Arm-based compute near 50% share at top hyperscalers. Today's continued slide is pre-earnings positioning, not fresh negative news.
