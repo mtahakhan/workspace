@@ -19,7 +19,7 @@ if [ ! -f "$PY" ]; then
   exit 1
 fi
 
-cd "$MCP_DIR"
+cd "$REPO_DIR/mcp_servers"
 
 TRANSACTIONS_FILE="$("$PY" -c 'from portfolio_tools.paths import TRANSACTIONS_FILE; print(TRANSACTIONS_FILE)')"
 if [ ! -f "$TRANSACTIONS_FILE" ]; then
