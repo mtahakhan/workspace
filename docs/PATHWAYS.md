@@ -28,7 +28,7 @@ This does everything: creates a Python venv, starts the MCP server in the backgr
 - Ask Claude for specific analysis: "Should I rebalance?", "How's my sector concentration?", etc.
 
 ### See also
-- [`docs/SETUP.md`](SETUP.md) — full walkthrough with screenshots and API key instructions
+- [`docs/SETUP.md`](SETUP.md) — full walkthrough, including the Finnhub API key
 
 ---
 
@@ -36,17 +36,17 @@ This does everything: creates a Python venv, starts the MCP server in the backgr
 
 **Best for:** You want deterministic portfolio math (positions, XIRR, drawdown, etc.) but prefer to analyze it yourself or with your own tools.
 
-### Setup (5 min, includes backfilling)
+### Setup (5 min setup + first-time data import)
 ```bash
 make setup-data-and-backfill
 ```
 
-This creates the venv and server, then backfills historical price data so your analysis has real history (not just today's prices). No Claude Code session needed — you run this once and you're ready.
+Creates the venv and server. No Claude Code session needed. Then:
 
-### First-time data import
-1. Export your transactions from Scalable Capital → save as `data/personal/transactions.csv`
-2. Run: `make refresh`
-3. The pipeline will ask you to review ticker ISINs (one human step, one command to fix)
+1. Follow [`QUICKSTART.md`](QUICKSTART.md#first-time-setup-steps-0-4) steps 1-4: place `transactions.csv`, run `pipeline.lots`, then `pipeline.tickers` (the one step where you review the ticker matches yourself)
+2. `make backfill` — pulls each ticker's full price history so drawdown/trend analysis has real history, not just today's price (one-time)
+
+After that, `make refresh` works.
 
 ### Daily workflow
 ```bash
@@ -70,18 +70,10 @@ Runs once: fetches prices → computes analysis → checks compliance → render
 **Best for:** You run the numbers yourself daily, but want Claude's analysis on top when you ask.
 
 ### Setup
-1. **First: set up the pipeline**
-   ```bash
-   make setup-data-and-backfill
-   ```
-
-2. **Then: register the MCP server and Skill with Claude**
-   ```bash
-   make mcp-register
-   make skill-install
-   ```
-
-3. **Start a Claude Code session** and ask about your portfolio — the Skill will have access to your existing analysis data
+```bash
+make bootstrap
+```
+Same setup as Path 1 (venv, server, MCP registration, Skill install) — the only difference is what you do next. When Claude's first-run flow offers to set up scheduled tasks, decline and run `make refresh` yourself instead (see Path 2's daily workflow).
 
 ### Daily workflow
 1. Run the pipeline yourself: `make refresh`
@@ -98,23 +90,12 @@ Runs once: fetches prices → computes analysis → checks compliance → render
 ```bash
 make bootstrap-with-schedule
 ```
-
-Then in a Claude Code session:
-```
-Ask Claude to "set up daily portfolio tasks"
-```
-
-This creates two scheduled tasks that run automatically every morning:
-- **portfolio-daily-refresh** — fetches prices
-- **portfolio-daily-analysis** — computes analysis, researches news, writes report
+Same setup as Path 1, plus a prompt to ask Claude to create the two scheduled tasks (`portfolio-daily-refresh` and `portfolio-daily-analysis`) — see [`SETUP.md`](SETUP.md#setting-up-daily-automation) for what each task does and how to check they're still running.
 
 ### Daily workflow
 - Nothing — Claude does it automatically
 - Check your daily reports in the data directory
 - Ask Claude follow-up questions about yesterday's report anytime
-
-### See also
-- [`docs/SETUP.md`](SETUP.md#setting-up-daily-automation) — scheduling details
 
 ---
 
@@ -122,7 +103,7 @@ This creates two scheduled tasks that run automatically every morning:
 
 | Need | Path 1 (Claude) | Path 2 (Python) | Path 3 (Hybrid) | Path 4 (Automated) |
 |---|---|---|---|---|
-| **Setup command** | `make bootstrap` | `make setup-data-and-backfill` | Both setups | `make bootstrap-with-schedule` |
+| **Setup command** | `make bootstrap` | `make setup-data-and-backfill` | `make bootstrap` | `make bootstrap-with-schedule` |
 | **Run pipeline** | Claude daily (scheduled) | `make refresh` manually | You, daily: `make refresh` | Claude daily (scheduled) |
 | **Analysis** | Claude writes reports | Read markdown yourself | Claude on demand | Claude daily reports |
 | **Time commitment** | ~10 min setup, ask Claude anytime | 10 min setup + 2 min daily | 10 min setup + 2 min daily | ~10 min setup, nothing after |

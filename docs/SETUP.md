@@ -1,40 +1,10 @@
 # Setup - Claude Code Path
 
-Instructions for getting this repo running with Claude Code (MCP server + Skill). This is one of four usage pathways:
+Instructions for getting this repo running with Claude Code (MCP server + Skill) - one of four usage pathways compared in [`PATHWAYS.md`](PATHWAYS.md). For what the system actually does once it's running, see [`ARCHITECTURE.md`](ARCHITECTURE.md); for running it without Claude Code at all, see [`QUICKSTART.md`](QUICKSTART.md).
 
-| Path | Best for | Command |
-|---|---|---|
-| **This guide (Claude Code)** | Interactive analysis, news research, daily reports | `make bootstrap` |
-| Pure Python pipeline | Numbers only, no LLM | [`docs/QUICKSTART.md`](QUICKSTART.md) or `make setup-data-and-backfill` |
-| Hybrid | You run pipeline, Claude analyzes | `make bootstrap` + maintain your own `make refresh` schedule |
-| Fully automated | Hands-off daily updates | `make bootstrap-with-schedule` |
-
-See [`PATHWAYS.md`](PATHWAYS.md) for detailed comparison of all four. This guide covers the Claude Code path; the others are either manual (Python only) or minimal CLI. For what the system actually does once it's running, see [`ARCHITECTURE.md`](ARCHITECTURE.md).
-
-## What this is
-
-A portfolio tracker and daily analysis pipeline, exposed as a globally
-registered MCP server (`portfolio`) that Claude Code talks to over HTTP -
-not tied to any particular project. Upload a broker transaction export and
-it will:
-
-- Reconstruct your real, current positions (shares, cost basis, purchase
-  dates) from actual buy/sell history via FIFO - not a manually maintained
-  spreadsheet that can drift out of sync
-- Fetch live prices daily (Finnhub primary, yfinance backup) in EUR, fully
-  sourced (original currency, API used, FX rate applied - all persisted, not
-  just the final number)
-- Compute portfolio value, gain/loss, sector concentration, largest positions,
-  high-water-mark/drawdown, daily movers, and a real money-weighted annualized
-  return (XIRR) - all deterministic Python, not estimated by an LLM
-- Write a daily markdown report, researching every holding's news in a single
-  parallel batch, with deeper context on notable movers, and archive every
-  meaningful source fetched as its own file under `data/impersonal/news/{TICKER}/`
-
-**Currently supports Scalable Capital's transaction export format.** Other
-brokers' CSV exports have different columns/formats and aren't parsed yet -
-see `portfolio_tools/pipeline/lots.py`'s `load_transactions()` if you need to
-adapt it for a different broker.
+**Currently supports Scalable Capital's transaction export format only.** Other
+brokers' CSV exports have different columns/formats - see `portfolio_tools/pipeline/lots.py`'s
+`load_transactions()` if you need to adapt it for a different broker.
 
 ## Prerequisites
 
@@ -101,9 +71,8 @@ Finnhub is just a faster/more-reliable primary source for plain US tickers
 (free tier: 60 req/min, 30k/month; doesn't cover non-US exchanges, which is
 why `yfinance` is the fallback there too).
 
-**Supported currencies**: EUR, USD, GBP, and GBp (British pence, e.g. London
-`.L`-suffixed listings). Anything else is rejected rather than silently
-mispriced - see [`ARCHITECTURE.md`](ARCHITECTURE.md)'s "Currency handling".
+Only EUR/USD/GBP/GBp holdings are priced - see [`ARCHITECTURE.md`](ARCHITECTURE.md#currency-handling)
+for the full rule and why.
 
 ## Setting up daily automation
 
@@ -131,6 +100,7 @@ not running.
 
 ## Further reading
 
+- [`PATHWAYS.md`](PATHWAYS.md) - the other three usage paths (Python-only, hybrid, fully automated)
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) - how the system actually works
 - [`AGENT_NOTES.md`](AGENT_NOTES.md) - rules and lessons learned, for anyone
   developing in this repo

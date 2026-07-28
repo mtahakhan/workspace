@@ -64,13 +64,7 @@ mkdir -p data/personal
 
 ### Step 2. (Optional) Finnhub API key
 
-The pipeline works fully without this — `yfinance` alone covers everything. Finnhub is just faster/more-reliable for plain US tickers.
-
-```bash
-cp mcp_servers/portfolio_tools/.env.example mcp_servers/portfolio_tools/.env
-```
-
-Then edit `mcp_servers/portfolio_tools/.env` and replace the placeholder with a real key from https://finnhub.io/register (free, no card required).
+The pipeline works fully without this — `yfinance` alone covers everything. See [`SETUP.md`](SETUP.md#getting-a-finnhub-api-key-optional) for how to get one and wire it into `.env`.
 
 ### Step 3. Build your current positions
 
@@ -102,7 +96,7 @@ Looks up each blank ticker via `yfinance` and prints a review table:
 - Is the price reasonable?
 - Any `⚠` warnings? Fix them in `data/impersonal/ticker_map.csv`
 
-**Supported currencies:** EUR, USD, GBP, GBp (British pence). Anything else needs a different listing.
+**Only EUR/USD/GBP/GBp are supported** - see [`ARCHITECTURE.md`](ARCHITECTURE.md#currency-handling) for the full rule. Anything else needs a different listing.
 
 Then fill in the blank `Sector` column in `ticker_map.csv` for each new row (Technology, Healthcare, etc.).
 
@@ -130,8 +124,9 @@ Gets live prices for every ticker (Finnhub first if you set up a key, yfinance o
 ```bash
 portfolio_tools/.venv/bin/python3 -m portfolio_tools.pipeline.backfill
 ```
+(or, from the repo root: `make backfill`)
 
-Pulls each ticker's full available price history (as far back as `yfinance` has) so drawdown/trend analysis has real history instead of just today's prices.
+Pulls each ticker's full available price history (as far back as `yfinance` has) so drawdown/trend analysis has real history instead of just today's prices. Requires tickers already resolved (steps 3-4) - it reads `enriched_lots.csv`.
 
 **Run this only once per ticker** — step 5 keeps appending to the same files daily after that. Takes a bit longer than step 5 (a few minutes depending on your portfolio size).
 

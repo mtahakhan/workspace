@@ -2,47 +2,24 @@
 
 A portfolio tracker and daily analysis pipeline for Scalable Capital, packaged
 as a Claude Skill + a globally-registered MCP server. Clone this repo, run
-one script, and it's available in every Claude Code session on the machine -
-not just this project.
+one command, and it's available in every Claude Code session on the machine -
+not just this project. Upload a transaction export and it reconstructs your
+real positions, fetches prices, computes value/gain/XIRR/drawdown/sector
+concentration, and writes a daily report - see
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full description.
 
-## Quick start (choose your path)
+## Quick start
 
-**Recommended: Guided setup + Claude-powered analysis**
 ```bash
 make bootstrap
 ```
-Then start a **new** Claude Code session and ask about your portfolio - it will walk
-you through first-time setup (transactions, tickers, optional API key).
+Then start a **new** Claude Code session and ask about your portfolio - it
+will walk you through first-time setup (transactions, tickers, optional API
+key).
 
-**Just want to run the numbers yourself, no Claude involved?**
-```bash
-make setup-data-and-backfill
-```
-Sets up the pipeline and backfills historical prices for analysis. Then use `make refresh`
-to run it daily without any Claude Code or LLM.
-
-**Already set up, just run today's numbers:**
-```bash
-make refresh
-```
-
-**Advanced: run individual steps manually for debugging**
-See [`docs/QUICKSTART.md`](docs/QUICKSTART.md)
-
----
-
-## Usage modes
-
-Pick the path that matches your workflow:
-
-| Path | Command | What you get | LLM involved? |
-|---|---|---|---|
-| **Full setup + daily Claude analysis** | `make bootstrap` | MCP server + Claude Skill globally registered; Claude handles setup flow, fetches news, writes daily reports | ✅ Yes |
-| **Setup + manual deterministic pipeline** | `make setup-data-and-backfill` | Just the Python pipeline; you run `make refresh` daily from terminal | ❌ No |
-| **Already set up, daily automation** | `make bootstrap-with-schedule` | Adds scheduled daily tasks to Claude Code (fetching + analysis) | ✅ Yes |
-| **One-time manual run** | `make refresh` (after first-time setup) | Deterministic pipeline only - prices, analysis, compliance, report | ❌ No |
-
-Full walkthrough with optional Finnhub API key: [`docs/SETUP.md`](docs/SETUP.md)
+**Want something else** - just the numbers with no LLM, a hybrid of both, or
+full automation? See [`docs/PATHWAYS.md`](docs/PATHWAYS.md) for all four
+setup paths and their trade-offs.
 
 ## What's in this repo
 
@@ -64,14 +41,3 @@ Full walkthrough with optional Finnhub API key: [`docs/SETUP.md`](docs/SETUP.md)
 | [`bootstrap.sh`](bootstrap.sh) | Full bootstrap orchestrator — delegates to `scripts/` in order |
 | [`scripts/`](scripts/) | Bootstrap steps + manual pipeline runners (`fetch-prices.sh`, `run-pipeline.sh`) |
 | [`setup-env.sh`](setup-env.sh) | Interactive prompt for Finnhub API key and data directory |
-
-## What it does
-
-Upload a Scalable Capital transaction export and it reconstructs your real
-positions (FIFO cost basis), fetches live/historical prices, computes
-value/gain/XIRR/drawdown/sector concentration/movers, and writes a daily
-markdown report with news research on every holding - all deterministic
-Python for the numbers, an LLM only for the prose and research on top.
-
-See [`docs/SETUP.md`](docs/SETUP.md) for the full description and
-[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for how it's built.
