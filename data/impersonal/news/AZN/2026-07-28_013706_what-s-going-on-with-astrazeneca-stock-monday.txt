@@ -1,0 +1,9 @@
+Ticker: AZN
+Company: AstraZeneca
+Source URL: https://www.benzinga.com/markets/earnings/26/07/60693188/pipeline-speed-bump-doesnt-shake-astrazenecas-80-billion-revenue-ambition
+Title: What's Going on With AstraZeneca Stock Monday?
+Fetched At: 2026-07-28T01:37:06+02:00
+Fetch Method: WebSearch (query: "AstraZeneca stock news July 2026")
+Retrieved For: portfolio-daily-analysis
+
+AstraZeneca's Q2 results beat profit expectations - core EPS $2.63 (+18% cc), revenue +5% to $15.38B - and the company held its 2026 guidance and $80B 2030 revenue target. Positive: exclusive license deals for Zegfrovy (Dizal) and a PDE3/4 inhibitor (CTTQ). Negative: Phase 3 Ultomiris trial missed its primary endpoint, and China revenue fell 13% on generic competition/policy shifts.

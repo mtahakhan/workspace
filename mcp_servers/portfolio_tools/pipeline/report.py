@@ -145,6 +145,41 @@ def render_trend_movers(data, cfg):
         )
     return "\n".join(lines)
 
+def render_underwater_positions(data, threshold_pct):
+    """Positions that are simply bad investments by total return since purchase -
+    deliberately independent of the Trend Movers window above (see
+    analysis.py's compute_underwater_positions): a whipsaw can net a 56-day
+    trend out to mild even when the total return has been bad the whole time,
+    which is exactly how 3BRS.MI went unflagged on 2026-07-28 despite being
+    the single worst-performing position in the book. Empty when nothing
+    breaches the threshold.
+    """
+    flagged = data.get("underwater_positions") or []
+    if not flagged:
+        return ""
+    lines = [
+        "## Underwater Positions",
+        "",
+        f"Positions down {threshold_pct:.0f}%+ since purchase (total return, "
+        f"not annualized) - independent of the Trend Movers window above, so a "
+        f"position that whipsawed back within the last 56 days still shows up "
+        f"here if its overall return is this bad. `Why` needs the same "
+        f"targeted WebSearch treatment as Trend Movers - and check whether the "
+        f"instrument itself is structurally unsuited to a buy-and-hold "
+        f"framework (leveraged/inverse daily-reset products decay regardless "
+        f"of direction) before treating this as ordinary volatility.",
+        "",
+        "| Ticker | Company | Total Return | Gain € | Δ vs High | Why |",
+        "|--------|---------|-------------|--------|-----------|----|",
+    ]
+    for p in flagged:
+        drawdown = f"{p['drawdown_from_high_pct']:+.1f}%" if p.get("drawdown_from_high_pct") is not None else "n/a"
+        lines.append(
+            f"| **{p['ticker']}** | {p['company']} | **{pct(p['gain_pct'])}** | "
+            f"{p['gain_eur']:+,.2f} | {drawdown} | _fill in_ |"
+        )
+    return "\n".join(lines)
+
 def render_holdings_table(data):
     """Complete Holdings Table with per-position trend columns.
 
@@ -309,6 +344,7 @@ def render(data, config):
         render_largest_positions(data),
         render_movers(data),
         render_trend_movers(data, config),
+        render_underwater_positions(data, config["thresholds"]["underwater_notable_pct"]),
         render_holdings_table(data),
         render_corporate_actions(data),
         render_fee_drag(data, config["thresholds"]["fee_drag_notable_pct"]),

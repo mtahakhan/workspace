@@ -388,3 +388,55 @@ appending whatever *did* succeed, so a partial fetch isn't lost but the tool
 call surfaces as a real error - the caller is expected to stop and report it
 rather than proceed to `create_refresh` on an incomplete price set (same
 "report and stop" rule as everywhere else in this pipeline).
+
+**2026-07-28: 3BRS.MI (a 3x leveraged inverse Brent ETP) was the single
+worst-performing position in the book - down 42.7% total return, the worst
+XIRR of any holding - and nothing in the report flagged it.** Root cause:
+every "something's wrong here" mechanism in `analysis.py` was gated on the
+56-day `trend_movers` window (`compute_trend_movers`, and the `deep_drawdown`
+notify check that reads from it). 3BRS.MI's 56-day return was **+12.37%** -
+it fell sharply on a Brent spike, then partly recovered as oil eased, and
+that whipsaw netted the medium window out to a number nowhere near the
+notable threshold. The position's *total* return since purchase was still
+terrible; the window-based checks simply never looked at that number. A
+second, independent gap made it worse: `roles.csv` already carried a note on
+this exact ticker - *"Fits no role in a 2-5yr framework; 3x daily-reset
+decays structurally. Placed here by default."* - written by a prior session,
+but nothing in the pipeline or the report task ever read `Note` back into
+automated output; it just sat in the CSV waiting for someone to remember to
+call `read_roles`.
+
+Two fixes, deliberately independent of each other and of the existing
+window-based checks (see AGENT_NOTES.md rule 5 - the fix is a new
+orthogonal check, not a patch to the window logic, precisely because
+patching the window would just move the blind spot rather than removing
+it):
+
+1. **`compute_underwater_positions()` in `analysis.py`** flags any position
+   whose `gain_pct` (total, non-annualized return - anchored to the
+   purchase price, immune to whipsaws by construction) is `<=
+   -thresholds.underwater_notable_pct` (25% by default). Returned as
+   `underwater_positions`, rendered as its own `## Underwater Positions`
+   section in `report.py` (parallel to, not a replacement for, Trend
+   Movers), and wired into `notify_reasons`/`notable` on its own - it does
+   not depend on `trend_movers` membership at all.
+2. **`role_notes` in `compliance.py`** - `_load_roles()` now captures
+   `Note` alongside `Role`, and `check_compliance` returns every position
+   whose role carries one, unconditionally. `daily-analysis.md` now
+   requires treating a role note describing a real framework-fit problem
+   (as opposed to just a rationale for the role label) as a strong prior
+   toward escalating in `## Signals & Actions` - see also
+   `INVESTMENT_FRAMEWORK.md`'s Sell Discipline, which now has an explicit
+   bullet for "the instrument itself is structurally unsuited to being held
+   at all," independent of whether its underlying thesis is fine.
+
+**The rule this generalizes to:** a windowed/threshold check (movers,
+trend_movers, any future one) only catches a problem whose *shape* matches
+the window - a slow bleed, a whipsaw, or a problem that predates the
+window's start can all hide from it by construction. When a position turns
+out to be a bad investment that nothing flagged, the fix is essentially
+never "widen the window" (that just relocates the blind spot); it's asking
+whether a *different, window-independent* signal (total return since
+purchase, a structural property of the instrument itself, a human-authored
+annotation already sitting in the data) would have caught it, and adding
+that as its own check rather than retrofitting the existing one.

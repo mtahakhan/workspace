@@ -1,0 +1,9 @@
+Ticker: MSFT
+Company: Microsoft
+Source URL: https://www.fool.com/investing/2026/07/26/microsofts-next-earnings-report-on-july-29-could-send-the-stock-soaring-heres-why/
+Title: Microsoft's Next Earnings Report on July 29 Could Send the Stock Soaring
+Fetched At: 2026-07-28T01:37:09+02:00
+Fetch Method: WebSearch (query: "Microsoft stock news July 2026")
+Retrieved For: portfolio-daily-analysis
+
+Microsoft shares are down 18% YTD as of July 20, 2026, the clear laggard among the "Magnificent Seven" despite strong underlying business momentum, weighed down by investor skepticism over ~$190B 2026 AI capex guidance. Fiscal Q2 beat expectations ($81.3B revenue, +17% YoY; EPS $4.14). Next earnings July 29 is seen as a potential turning point.

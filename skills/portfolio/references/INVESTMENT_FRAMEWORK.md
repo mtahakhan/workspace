@@ -259,6 +259,14 @@ already gained:
 - A better risk/reward opportunity exists
 - Position now exceeds the portfolio constraints above
 - Management or capital allocation has deteriorated
+- **The instrument itself is structurally unsuited to being held at all** -
+  a leveraged/inverse daily-reset product decays from volatility drag
+  regardless of which direction the underlying moves, so "the thesis on the
+  underlying is fine" does not make it a defensible hold; time is working
+  against it in a way it isn't for an ordinary position. `check_compliance`'s
+  `role_notes` output flags exactly this when a position's role assignment
+  already carries that annotation - treat it as a strong prior toward
+  closing rather than something to re-litigate from scratch each day.
 - **Tactical sleeve only:** the horizon is up. A tactical position approaching
   a year without its thesis playing out should be closed or explicitly
   re-underwritten as a core holding - not left to drift into a long-term

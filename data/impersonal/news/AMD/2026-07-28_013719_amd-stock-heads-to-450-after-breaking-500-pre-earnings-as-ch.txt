@@ -1,0 +1,9 @@
+Ticker: AMD
+Company: Advanced Micro Devices
+Source URL: https://www.fxleaders.com/news/2026/07/27/amd-stock-heads-to-450-after-breaking-500-pre-earnings-as-chip-competition-intensifies/
+Title: AMD Stock Heads to $450 after Breaking $500 Pre-Earnings as Chip Competition Intensifies
+Fetched At: 2026-07-28T01:37:19+02:00
+Fetch Method: WebSearch (query: "AMD stock news July 2026")
+Retrieved For: portfolio-daily-analysis
+
+AMD is +131% YTD in H1 2026 but reversed sharply, falling ~8.2% to $479 on July 27 amid AI-spending-concern selling pressure across the sector. Held its Advancing AI event July 22-23 launching 2nm Zen 6 "Venice" server CPUs and the Helios rack-scale platform, with Meta adopting Helios for H2 2026 deployment. Goldman/Stifel maintain $600-640 price targets.

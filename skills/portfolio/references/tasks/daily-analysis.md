@@ -28,9 +28,14 @@ Steps:
    largest positions, high-water-mark/drawdown, daily movers, trend
    (since-inception/30d/90d/365d), `annualized_returns` (real XIRR, not an
    estimate), `trend_movers` (positions whose medium-window move breaches
-   the notable threshold), per-position `trend_30d_pct`/`trend_56d_pct`/
-   `drawdown_from_high_pct`, `stale_prices`, `caveats`, and
-   `notable`/`notify_reasons`. Do NOT recompute any of these numbers
+   the notable threshold), `underwater_positions` (positions down 25%+ on
+   total return since purchase - a *different* check from `trend_movers`,
+   deliberately not gated on the 56-day window: a position can whipsaw back
+   to a mild-looking medium-window number while still having been a bad
+   investment overall, which is exactly how 3BRS.MI went unflagged on
+   2026-07-28 - see `docs/AGENT_NOTES.md`'s entry of that date), per-position
+   `trend_30d_pct`/`trend_56d_pct`/`drawdown_from_high_pct`, `stale_prices`,
+   `caveats`, and `notable`/`notify_reasons`. Do NOT recompute any of these numbers
    yourself by reasoning over the raw data - use exactly what's in this
    JSON. If a number looks wrong, that's a bug to fix in
    `portfolio_tools/pipeline/analysis.py` (confirm with the user first, see
@@ -38,7 +43,8 @@ Steps:
 2. Call `get_refresh` with `kind="render"` (no `refresh_id`) - the markdown
    `render_report` already produced from the same refresh: Portfolio
    Overview, Trend, Sector Breakdown, Largest Positions, Movers (numbers
-   only), Trend Movers, Complete Holdings Table, Corporate Actions, Fee
+   only), Trend Movers, Underwater Positions (empty section if nothing
+   breaches the threshold), Complete Holdings Table, Corporate Actions, Fee
    Drag, XIRR Context, and Data Notes. Do NOT hand-transcribe numbers out of
    step 1's JSON into your own tables/prose - every figure in those
    sections must come from this markdown, not from you retyping the JSON.
@@ -74,7 +80,15 @@ Steps:
    only fees still attached to open lots; the gap between the two is what
    churn cost). If `missing_roles` is non-empty the sleeve check is partial
    - say so rather than reporting the split as authoritative, and use
-   `set_position_role` to fill gaps.
+   `set_position_role` to fill gaps. Also check `role_notes` - a
+   human-authored note on a position's role assignment (e.g. flagging an
+   instrument that structurally doesn't fit the framework at all, like a
+   leveraged/inverse daily-reset product). This is surfaced unconditionally
+   precisely so it can't be missed the way it was on 2026-07-28 (the note
+   existed in `roles.csv` the whole time, but nothing had ever read it back
+   into an actual report) - if any note describes a real framework-fit
+   concern (not just a rationale for the role label itself), it belongs in
+   `## Signals & Actions`, not silently skipped.
 5. Call `get_refresh` with `kind="exit_report"` (no `refresh_id`). It
    answers "if I sold everything today and exited Scalable Capital, what's
    my net gain/loss?" - capital flows, realized FIFO gain on closed
@@ -140,18 +154,27 @@ Steps:
      (also the Movers table in step 2's markdown): query for today's news
      as usual (e.g. `"QBTS stock news [month year]"`). Fill the context
      note into the Movers table's `Context` column.
-   - **6b. Trend movers** — the tickers in step 1's `trend_movers` output
-     (also the Trend Movers table): query with the trend direction as
-     context, not today's headlines. Use a query like `"why is Arm
-     Holdings down since May 2026"` or `"IONQ stock decline 2026"` — this
-     returns cause, not just news. Also call `list_news` for each of these
-     tickers and, for any stored sources within the last 14 days, call
-     `get_news_source` to read the prior coverage: if today's research
-     repeats the same narrative as two weeks ago, say "third week of the
-     same de-rating" rather than re-discovering it. Fill the `Why` column
-     in the Trend Movers table with a one-to-two sentence cause summary. If
-     a ticker appears in both movers and trend_movers, give it a combined
-     note covering both timeframes.
+   - **6b. Trend movers and underwater positions** — the tickers in step
+     1's `trend_movers` *and* `underwater_positions` output (also the Trend
+     Movers and Underwater Positions tables): query with the trend/overall
+     performance as context, not today's headlines. Use a query like `"why
+     is Arm Holdings down since May 2026"`, `"IONQ stock decline 2026"`, or
+     for an underwater-only ticker, `"why has X been a bad investment
+     2026"` — this returns cause, not just news. For an underwater
+     position, also check whether the instrument itself explains the loss
+     independent of any news (a leveraged/inverse daily-reset product decays
+     from volatility drag regardless of direction - that's a structural
+     fact about the product, not something a news search will surface, so
+     say so directly if `role_notes` from step 4 already flagged it). Also
+     call `list_news` for each of these tickers and, for any stored sources
+     within the last 14 days, call `get_news_source` to read the prior
+     coverage: if today's research repeats the same narrative as two weeks
+     ago, say "third week of the same de-rating" rather than re-discovering
+     it. Fill the `Why` column in both tables with a one-to-two sentence
+     cause summary. If a ticker appears in more than one of movers /
+     trend_movers / underwater_positions, give it one combined note
+     covering all the timeframes it appears under rather than repeating
+     yourself across tables.
    - **6c. All other holdings** — a short one-line note per ticker in a new
      **Holdings News Digest** section. If nothing notable turns up, write
      "No News" rather than omitting it — every holding should appear.
@@ -168,8 +191,9 @@ Steps:
 7. Save the report with the `save_report` MCP tool (no date argument - it
    defaults to today), in this order: a `## Signals & Actions` section **if
    and only if** step 8 produced anything, then your own Executive Summary
-   prose, then step 2's rendered markdown (with the Movers Context and
-   Trend Movers Why columns filled in), then the `## Exit Summary` section
+   prose, then step 2's rendered markdown (with the Movers Context, Trend
+   Movers Why, and Underwater Positions Why columns filled in), then the
+   `## Exit Summary` section
    from step 5, then the Holdings News Digest section appended after it.
    Re-saving replaces that day's report rather than duplicating it, so a
    corrected re-run is safe. Use `get_report` if you need to compare
@@ -207,9 +231,24 @@ Steps:
      flag if the hedge is correlating with the rest of the book.
    - Use step 4's `missing_roles` output to identify positions without a
      sleeve assignment — those cannot be interpreted this way, and the gap
-     should be noted. On a day with nothing to act on, omit the section
-     entirely rather than emitting an empty one - its presence is itself
-     the signal that something needs attention.
+     should be noted.
+
+   **`underwater_positions` and `role_notes` need their own judgment call,
+   separate from the trend-based escalation above** - a position can be
+   underwater without being a `trend_movers` entry at all (that's the
+   entire point of the check - see step 1), so don't assume it's already
+   covered. For each `underwater_positions` entry: apply the same
+   sleeve-aware reasoning as above (thesis break vs. noise), but also ask a
+   question the trend-based rule doesn't: *is the instrument itself
+   structurally unsuited to being held at all*, independent of any thesis?
+   A leveraged/inverse daily-reset product decaying from volatility drag is
+   not "noise to ride out" the way an ordinary drawdown can be for a Core
+   position - time is not on its side the way it is for a normal equity.
+   If step 4's `role_notes` already flags this for a ticker, treat that as
+   a strong prior toward escalating rather than holding through it. On a
+   day with nothing to act on, omit the section entirely rather than
+   emitting an empty one - its presence is itself the signal that
+   something needs attention.
 9. Send a push notification only if step 1's JSON has `"notable": true` -
    use `notify_reasons` as the notification content. This is a fixed rule
    evaluated by `analyze_portfolio` itself when it ran earlier as part of

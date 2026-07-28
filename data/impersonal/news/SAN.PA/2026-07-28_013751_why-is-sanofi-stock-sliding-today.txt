@@ -1,0 +1,9 @@
+Ticker: SAN.PA
+Company: Sanofi
+Source URL: https://www.investing.com/news/stock-market-news/why-is-sanofi-stock-sliding-today-93CH-4811711
+Title: Why is Sanofi stock sliding today?
+Fetched At: 2026-07-28T01:37:51+02:00
+Fetch Method: WebSearch (query: "Sanofi stock news July 2026")
+Retrieved For: portfolio-daily-analysis
+
+Sanofi fell 1.7% to €75.04 after halting all clinical development of amlitelimab (atopic dermatitis), an asset from the $1.1B Kymab acquisition that had been seen as a potential Dupixent successor. Executive leadership reshuffle effective September 1. Full Q2 earnings due July 30. Analyst consensus remains Buy, ~31% upside to target.

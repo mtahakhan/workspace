@@ -1,0 +1,9 @@
+Ticker: IBM
+Company: IBM
+Source URL: https://www.cnbc.com/2026/07/14/ibm-warns-second-quarter-earnings-fell-short-of-expectations.html
+Title: IBM stock craters 25%, the worst day on record, after earnings warning
+Fetched At: 2026-07-28T01:37:36+02:00
+Fetch Method: WebSearch (query: "IBM stock news July 2026")
+Retrieved For: portfolio-daily-analysis
+
+IBM shares crashed 25% on July 14 (worst day on record, surpassing Oct 1987) after a surprise Q2 warning. CEO Arvind Krishna cited clients shifting capex toward servers/storage/memory ahead of expected price increases, hurting software/infrastructure. Q2 revenue came in at $17.2B (+~1% YoY, far below double-digit growth estimates); 2026 forecast lowered.

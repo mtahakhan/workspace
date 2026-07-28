@@ -207,9 +207,13 @@ exposed as an MCP tool - that's the sanctioned way to invoke it.
      and a real money-weighted XIRR (annualized return) from
      `enriched_lots.csv`'s actual purchase dates. Flags stale prices and a
      run-over-run value divergence (see "Notable incidents" in
-     `AGENT_NOTES.md`). Every threshold lives in `config.json` (see
-     "Configurable thresholds" below). Also appends to
-     `analysis_history.jsonl` as a side effect.
+     `AGENT_NOTES.md`). Also computes `underwater_positions` - positions
+     down `underwater_notable_pct`+ on **total** return since purchase,
+     independent of `trend_movers`' 56-day window (a whipsaw can net that
+     window out to mild even when the position has been a bad investment
+     the whole time - see "Notable incidents", 2026-07-28). Every threshold
+     lives in `config.json` (see "Configurable thresholds" below). Also
+     appends to `analysis_history.jsonl` as a side effect.
    - **compliance** (`compliance.json`) - evaluates the analysis step's
      output against every hard limit in the investment framework (sleeve
      split, single-position and hedge caps, top-3 and per-sector
@@ -218,11 +222,18 @@ exposed as an MCP tool - that's the sanctioned way to invoke it.
      step returns numbers: an agent restating a limit from memory against a
      hand-copied percentage is exactly how a wrong "within limits" gets
      published. Sleeve checks depend on `roles.csv`, so anything in
-     `missing_roles` makes that check partial.
+     `missing_roles` makes that check partial. Also returns `role_notes` -
+     any position whose role assignment carries a human-authored note (e.g.
+     flagging an instrument, like a leveraged/inverse daily-reset product,
+     as structurally unsuited to the framework at all) - surfaced
+     unconditionally so a note already sitting in `roles.csv` is never
+     missed for lack of an agent thinking to call `read_roles` separately.
    - **render** (`render.md`) - renders the analysis step's numbers as
-     every table/figure the daily report uses, so the LLM writing the
-     report never hand-transcribes a number out of the JSON - it only
-     writes the Executive Summary and Movers research prose.
+     every table/figure the daily report uses (including an "Underwater
+     Positions" section when `underwater_positions` is non-empty), so the
+     LLM writing the report never hand-transcribes a number out of the
+     JSON - it only writes the Executive Summary and Movers/Trend
+     Movers/Underwater Positions research prose.
    - **exit_report** (`exit-report.json`) - the full exit P&L: capital
      flows, realized FIFO gain, taxes, all-time fees, hypothetical exit
      value (see "On-demand" below for what this answers).
@@ -551,11 +562,16 @@ Whether the daily task sends a push notification is a fixed rule evaluated by
 `analyze_portfolio`, not a judgment call made fresh each run. `notable` is
 `true` if any of: a mover's `|change_pct|` is >= `config.json`'s
 `thresholds.mover_notable_pct` (5% by default, percentage move, not EUR
-size), `stale_prices` is non-empty, the value-divergence check fired, or any
+size), `stale_prices` is non-empty, the value-divergence check fired, any
 `trend_movers` entry's `drawdown_from_high_pct` is <= `-thresholds.drawdown_notable_pct`
 (30% by default — fires regardless of whether anything moved today, so a
 position that has been sliding for weeks without a single big daily session
-will still trigger). `notify_reasons` lists which, rendered from `config.json`'s
+will still trigger), or `underwater_positions` is non-empty (any position
+down `thresholds.underwater_notable_pct`+ on total return since purchase -
+deliberately independent of the `trend_movers` 56-day window above, so a
+position whose medium-window return whipsawed back to looking mild still
+triggers this if its overall return is still bad; see "Notable incidents",
+2026-07-28). `notify_reasons` lists which, rendered from `config.json`'s
 `notify_reasons` templates.
 
 ## Configurable thresholds and caveats (`config.json`)
@@ -567,9 +583,10 @@ hardcoded in the modules - `stale_price_max_age_days`, `mover_notable_pct`,
 `full_year_holding_days`, `short_hold_days_threshold`, `movers_top_n`,
 `largest_positions_top_n`, `trend_short_days`, `trend_medium_days`,
 `trend_high_window_days`, `trend_notable_pct`, `trend_movers_top_n`,
-`drawdown_notable_pct` under `thresholds`; the boilerplate methodology
+`drawdown_notable_pct`, `underwater_notable_pct`,
+`underwater_positions_top_n` under `thresholds`; the boilerplate methodology
 notes plus the templated tickers-without-lot-data/stale-prices/short-holding/
-value-divergence messages under `caveats`; the four notification message
+value-divergence messages under `caveats`; the five notification message
 templates under `notify_reasons`. To change a number or wording, edit
 `config.json` directly - no code change needed, and it takes effect on the
 next call to either tool (the server reads the file fresh every call - no

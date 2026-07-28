@@ -362,6 +362,31 @@ def compute_trend_movers(positions, trends, cfg):
     return flagged[:cfg["trend_movers_top_n"]]
 
 
+def compute_underwater_positions(positions, threshold_pct, top_n):
+    """Positions that are simply bad investments by total return since purchase -
+    deliberately independent of trend_movers' 56-day window, which catches
+    "something happened over the last two months" but can hide "this has just
+    been bad the whole time" if the medium window happens to net out mild.
+
+    Confirmed gap (2026-07-28): 3BRS.MI was down -42.7% total return
+    (worst in the book) but its 56-day trend read +12.4% after a whipsaw -
+    down sharply on a Brent spike, then partly recovering as oil eased - so
+    it never appeared in trend_movers or the deep-drawdown notify check,
+    despite being the single worst-performing position. gain_pct (total,
+    non-annualized return) doesn't have that blind spot: it's anchored to
+    the purchase price throughout, not a rolling window, so a whipsaw can't
+    hide it. See AGENT_NOTES.md's "Notable incidents" for the full incident.
+    """
+    flagged = [
+        {"ticker": p["ticker"], "company": p["company"], "gain_pct": p["gain_pct"],
+         "gain_eur": p["gain_eur"], "drawdown_from_high_pct": p.get("drawdown_from_high_pct")}
+        for p in positions
+        if p.get("gain_pct") is not None and p["gain_pct"] <= -threshold_pct
+    ]
+    flagged.sort(key=lambda p: p["gain_pct"])
+    return flagged[:top_n]
+
+
 def compute_positions(open_positions, prices, trends=None):
     """Cost basis is all-in: shares * execution price + the entry fees still
     attached to the open lots. `fees_eur` is reported separately as well, so a
@@ -579,6 +604,9 @@ def main():
     drawdown = compute_drawdown(full_value_series, totals["total_value"])
     movers = compute_movers(open_positions, all_history, th["movers_top_n"])
     trend_movers = compute_trend_movers(positions, position_trends, th)
+    underwater_positions = compute_underwater_positions(
+        positions, th["underwater_notable_pct"], th["underwater_positions_top_n"]
+    )
     trend = compute_trend(full_value_series, lots)
     annualized = compute_annualized_returns(open_positions, prices, lots)
     corporate_actions = compute_corporate_actions(lots)
@@ -639,6 +667,16 @@ def main():
                 for m in deep_drawdown
             ),
         ))
+    # Independent of trend_movers/deep_drawdown above - those both gate on the
+    # 56-day window, which a whipsaw can net out to mild even when the total
+    # return has been bad the whole time (see compute_underwater_positions).
+    if underwater_positions:
+        notify_reasons.append(nr["underwater_positions"].format(
+            threshold_pct=th["underwater_notable_pct"],
+            positions_desc=", ".join(
+                f"{p['ticker']} {p['gain_pct']:+.1f}%" for p in underwater_positions
+            ),
+        ))
 
     generated_at = datetime.now().isoformat()
     result = {
@@ -653,6 +691,7 @@ def main():
         "trend": trend,
         "annualized_returns": annualized,
         "trend_movers": trend_movers,
+        "underwater_positions": underwater_positions,
         "corporate_actions": corporate_actions,
         "stale_prices": stale,
         "caveats": caveats,

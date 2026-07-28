@@ -1,0 +1,9 @@
+Ticker: SAP.DE
+Company: SAP SE
+Source URL: https://stockstotrade.com/news/sap-se-ads-sap-news-2026_07_24/
+Title: SAP Stock Rises As Cloud Backlog And AI Momentum Accelerate
+Fetched At: 2026-07-28T01:37:54+02:00
+Fetch Method: WebSearch (query: "SAP SE stock news July 2026")
+Retrieved For: portfolio-daily-analysis
+
+Q2 2026 (reported July 23): EPS €1.59 (up from €1.50), revenue €9.88B (from €9.03B). Cloud revenue +22-24% cc, cloud backlog €22.9B (+27%). Stock up ~7-9% over the following days on the cloud/AI momentum, though the company trimmed its profit outlook slightly citing recent-acquisition margin impacts.

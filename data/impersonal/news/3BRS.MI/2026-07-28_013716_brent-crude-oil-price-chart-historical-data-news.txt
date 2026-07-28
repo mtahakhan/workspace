@@ -1,0 +1,9 @@
+Ticker: 3BRS.MI
+Company: WisdomTree Brent Crude Oil 3x Daily Short
+Source URL: https://tradingeconomics.com/commodity/brent-crude-oil
+Title: Brent crude oil - Price - Chart - Historical Data - News
+Fetched At: 2026-07-28T01:37:16+02:00
+Fetch Method: WebSearch (query: "WisdomTree Brent Crude Oil 3x oil price news July 2026")
+Retrieved For: portfolio-daily-analysis
+
+Brent crude has surged roughly 40% this month as supply disruptions expanded from the Strait of Hormuz to the Red Sea, though it eased back toward $90/barrel and then ~$96.8 on reports the US and Iran halted strikes and Pakistan/China sought to revive talks. As a 3x SHORT Brent product, this position loses value precisely when oil spikes on the Hormuz/Red Sea disruption - explaining the -42.7% return since purchase.

@@ -1,0 +1,9 @@
+Ticker: ISLN.L
+Company: iShares Physical Silver ETC (Acc)
+Source URL: https://goldsilver.com/industry-news/article/silver-price-outlook-july-2026/
+Title: Silver Price Outlook July 2026: Two Catalysts, One Setup
+Fetched At: 2026-07-28T01:37:45+02:00
+Fetch Method: WebSearch (query: "silver price news July 2026")
+Retrieved For: portfolio-daily-analysis
+
+Silver trades ~$58.67/oz (July 23), still roughly 52% below January's record $121.62 despite being up >$19 y/y. Softer-than-expected June CPI (released July 14) has shifted Fed-policy expectations; the Silver Institute confirmed a sixth consecutive annual supply deficit (46.3M oz), supporting the longer-term structural case even amid the correction from 2026's highs.

@@ -1,0 +1,9 @@
+Ticker: SIE.DE
+Company: Siemens
+Source URL: https://kalkinemedia.com/uk/news/announcements/siemens-aktiengesellschaft-provides-third-interim-update-on-share-buyback-program-purchasing-305750-shares-in-week-ending-19-july-2026
+Title: Siemens Provides Third Interim Update on Share Buyback Program
+Fetched At: 2026-07-28T01:38:01+02:00
+Fetch Method: WebSearch (query: "Siemens stock news July 2026")
+Retrieved For: portfolio-daily-analysis
+
+Siemens agreed to acquire DeFacTo Technologies (EDA software) on July 21; continuing its buyback (815,350 shares repurchased cumulatively since July 1). Trading around €268-273 in late July. Next earnings July 31, 2026 will update fiscal 2026 performance and order intake guidance.

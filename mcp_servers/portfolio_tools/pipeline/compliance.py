@@ -43,16 +43,27 @@ ROLE_TO_SLEEVE = {
 
 
 def _load_roles() -> dict:
-    """Ticker -> role string.  Empty dict if file absent."""
+    """Ticker -> {"role", "note"}.  Empty dict if file absent.
+
+    `note` is a free-text human annotation on the role assignment (e.g.
+    flagging an instrument that structurally doesn't fit the framework at
+    all) - captured here, not just `role`, so it can be surfaced
+    automatically by `_role_notes()` below rather than requiring an agent to
+    remember to call `read_roles` separately to see it. See AGENT_NOTES.md's
+    2026-07-28 entry: 3BRS.MI's note ("decays structurally, placed here by
+    default") existed the whole time but nothing wired it into automated
+    output until this was added.
+    """
     if not ROLES_FILE.exists():
         return {}
     with open(ROLES_FILE, newline="") as f:
-        return {r["Ticker"].strip(): r.get("Role", "").strip()
+        return {r["Ticker"].strip(): {"role": r.get("Role", "").strip(),
+                                      "note": r.get("Note", "").strip()}
                 for r in csv.DictReader(f) if r.get("Ticker", "").strip()}
 
 
 def _load_positions_with_value(analysis_positions: list) -> list:
-    """Filter to priced positions only and attach their role/sleeve."""
+    """Filter to priced positions only and attach their role/sleeve/role_note."""
     roles = _load_roles()
     instrument_rules = load_fee_rules()
     hedge_isins = set(instrument_rules.get("hedge_isins", []))
@@ -62,7 +73,9 @@ def _load_positions_with_value(analysis_positions: list) -> list:
         if p.get("value") is None:
             continue
         ticker = p["ticker"]
-        role = roles.get(ticker, "")
+        role_info = roles.get(ticker, {})
+        role = role_info.get("role", "")
+        role_note = role_info.get("note", "")
         sleeve = ROLE_TO_SLEEVE.get(role, "Unknown")
         # Determine hedge status by ISIN (requires the position to carry ISIN,
         # which analysis.py doesn't include).  Fall back to description match.
@@ -71,8 +84,21 @@ def _load_positions_with_value(analysis_positions: list) -> list:
         if not is_hedge and instrument_rules.get("hedge_descriptions"):
             dl = p.get("company", "").lower()
             is_hedge = any(h.lower() in dl for h in instrument_rules["hedge_descriptions"])
-        positions.append({**p, "role": role, "sleeve": sleeve, "is_hedge": is_hedge})
+        positions.append({**p, "role": role, "sleeve": sleeve, "is_hedge": is_hedge,
+                          "role_note": role_note})
     return positions
+
+
+def _role_notes(positions: list) -> list:
+    """Positions whose role carries a human-authored note - typically flagging
+    an instrument that structurally doesn't fit the framework (e.g. a
+    leveraged/inverse daily-reset product that decays regardless of
+    direction). These pre-existing annotations in roles.csv should never
+    require an agent to remember to call read_roles separately to notice
+    them - see the module docstring on `_load_roles`."""
+    return [{"ticker": p["ticker"], "company": p["company"], "role": p["role"],
+             "note": p["role_note"]}
+            for p in positions if p.get("role_note")]
 
 
 def _check_sleeve_split(positions: list, total_value: float, cfg: dict) -> dict:
@@ -260,6 +286,8 @@ def main(
       - fee_drag_by_ticker: lifetime fees per ticker, including closed positions
       - prime_status: current PRIME subscription status
       - missing_roles: tickers with no role (compliance is partial for these)
+      - role_notes: positions whose role has a human-authored note (e.g. an
+        instrument flagged as structurally not fitting the framework)
     """
     config = load_config()
     cfg = config["compliance"]
@@ -274,6 +302,7 @@ def main(
     cash = _check_cash(cash_balance_eur, cfg)
     small = _check_small_positions(positions, prime["active"], cfg, fee_cfg)
     missing = _missing_roles(positions)
+    role_notes = _role_notes(positions)
 
     all_breaches = []
     if sleeve["breach"]:
@@ -303,6 +332,12 @@ def main(
             f"- sleeve split and some concentration checks are partial until assigned"
             if missing else "All positions have roles assigned"
         ),
+        # Human-authored notes on role assignments - e.g. flagging an instrument
+        # that structurally doesn't fit the framework at all (leveraged/inverse
+        # decay products). Surfaced unconditionally so a pre-existing annotation
+        # in roles.csv is never missed just because nobody thought to call
+        # read_roles separately - see _role_notes()'s docstring.
+        "role_notes": role_notes,
     }
 
 

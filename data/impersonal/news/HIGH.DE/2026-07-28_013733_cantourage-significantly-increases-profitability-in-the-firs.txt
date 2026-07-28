@@ -1,0 +1,9 @@
+Ticker: HIGH.DE
+Company: Cantourage Group
+Source URL: https://www.eqs-news.com/news/corporate/cantourage-group-se-cantourage-significantly-increases-profitability-in-the-first-quarter-of-2026/4a85886d-3630-4e6e-9dc7-7c8dfaaa192c_en
+Title: Cantourage Significantly Increases Profitability in the First Quarter of 2026
+Fetched At: 2026-07-28T01:37:33+02:00
+Fetch Method: WebSearch (query: "Cantourage Group stock news 2026")
+Retrieved For: portfolio-daily-analysis
+
+Medical-cannabis producer Cantourage improved Q1 2026 profitability; trading around €5.44 (July 20) vs an average 12-month analyst target of €10 (Strong Buy, 3 analysts). Next earnings September 2, 2026. No fresh negative catalyst found explaining the position's own -21.2% return - looks driven by entry timing/small-cap volatility rather than news.

@@ -1,0 +1,9 @@
+Ticker: QDVE.DE
+Company: iShares S&P 500 Information Technology Sector (Acc)
+Source URL: https://www.finanzen.net/nachricht/etf/ishares-s-p-500-information-technology-sector-etf-kursbewegung-24-07-2026-10689651
+Title: iShares S&P 500 Information Technology Sector ETF price movement, July 2026
+Fetched At: 2026-07-28T01:37:51+02:00
+Fetch Method: WebSearch (query: "iShares S&P 500 Information Technology sector ETF news 2026")
+Retrieved For: portfolio-daily-analysis
+
+ETF hit a 52-week high of 46.34 EUR on June 3, 2026, then traded in a 42-44 EUR range through July (e.g. 43.10 EUR intraday July 24) - a mild pullback from the June peak rather than a distinct negative event, consistent with the position's own -8.1% 56-day move against a strong +31.4% since-buy return.

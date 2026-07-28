@@ -1,0 +1,9 @@
+Ticker: SEC0.DE
+Company: iShares MSCI Global Semiconductors (Acc)
+Source URL: https://www.etf.com/sections/daily-etf-flows/semiconductor-etfs-roar-back-soxx-pulls-54-billion-single-day
+Title: Semiconductor ETFs Roar Back: SOXX Pulls In $5.4 Billion in a Single Day
+Fetched At: 2026-07-28T01:37:58+02:00
+Fetch Method: WebSearch (query: "semiconductor sector ETF news July 2026")
+Retrieved For: portfolio-daily-analysis
+
+Semiconductor ETFs had a record 2026 (SOXX +112.8% H1, SMH +82.1%) on AI-driven chip demand, with SOXX pulling in $5.4B in a single day (July 8). July itself has seen a pullback on profit-taking/valuation concerns after the outsized rally - consistent with this position's -10.8% 56-day move despite a still-positive +5.0% since-buy return.

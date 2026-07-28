@@ -1,0 +1,9 @@
+Ticker: DTE.DE
+Company: Deutsche Telekom
+Source URL: https://www.ad-hoc-news.de/boerse/news/ueberblick/deutsche-telekom-faces-a-tale-of-two-analyst-views-as-earnings-approach/69832284
+Title: Deutsche Telekom Faces a Tale of Two Analyst Views as Earnings Approach
+Fetched At: 2026-07-28T01:37:29+02:00
+Fetch Method: WebSearch (query: "Deutsche Telekom stock news July 2026")
+Retrieved For: portfolio-daily-analysis
+
+Stock down 17.4% over 30 days (26.82 EUR as of July 27) despite an active buyback (~3.67M shares repurchased this tranche, up to €560M planned). Barclays cut its target to €36.50 but kept Overweight; JPMorgan/UBS stay upbeat on T-Mobile US's stable cash generation. Next earnings August 6.
