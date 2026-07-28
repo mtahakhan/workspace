@@ -7,15 +7,13 @@
 bootstrap:
 	./bootstrap.sh
 
-## Setup for pure-Python use: venv + server, ready for manual data import
-## Then follow docs/QUICKSTART.md steps 1-4 (transactions + tickers), then
-## 'make backfill' once, then 'make refresh' daily - no Claude Code needed
+## Setup for pure-Python use: venv + server, then (assuming you've already
+## placed data/personal/transactions.csv) builds positions, resolves tickers,
+## and backfills history in one go. No Claude Code needed. Fails clearly if
+## transactions.csv isn't there yet - place it and re-run.
 setup-data-and-backfill:
 	./bootstrap.sh
-	@echo ""
-	@echo "Next: place data/personal/transactions.csv, then run pipeline.lots and"
-	@echo "pipeline.tickers to resolve your positions - see docs/QUICKSTART.md steps 1-4."
-	@echo "Once tickers are resolved: 'make backfill' (one-time), then 'make refresh' daily."
+	./scripts/setup-data.sh
 
 ## Setup + prompt to schedule daily Claude Code tasks (requires an active session)
 bootstrap-with-schedule:
@@ -27,16 +25,18 @@ bootstrap-with-schedule:
 
 ## === PIPELINE COMMANDS ===
 
+## Fetch today's live prices only (no analysis/compliance/report)
+## Fails loudly if any ticker can't be priced.
+fetch-prices:
+	./scripts/fetch-prices.sh
+
 ## Run the deterministic pipeline once: prices -> analysis -> compliance -> report
 ## No Claude Code or MCP server needed. Output saved + printed to stdout.
 ## See docs/QUICKSTART.md for step-by-step explanation.
 refresh:
 	./scripts/run-pipeline.sh
 
-## Fetch today's live prices only (no analysis/compliance/report)
-## Fails loudly if any ticker can't be priced.
-fetch-prices:
-	./scripts/fetch-prices.sh
+
 
 ## (One-time per ticker) backfill full historical prices - requires tickers
 ## already resolved (docs/QUICKSTART.md steps 1-4); see docs/QUICKSTART.md step 6
