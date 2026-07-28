@@ -267,6 +267,23 @@ already gained:
   `role_notes` output flags exactly this when a position's role assignment
   already carries that annotation - treat it as a strong prior toward
   closing rather than something to re-litigate from scratch each day.
+  Nuance for advice, not a contradiction of the rule above: decay is
+  path-dependent, not strictly direction-independent - daily-reset
+  compounding tracks realized volatility along the way, not just the net
+  move. A smooth, low-volatility trend in the favorable direction actually
+  compounds *in the holder's favor* (better than naive Nx math); a choppy or
+  reversing path destroys value even when the net move nets out mild or
+  favorable (real example: 3BRS.MI's 56-day return showed a mild-looking
+  +18.8% while its total return was -36.8%, because Brent spiked ~40% on
+  Hormuz/Red Sea disruption and then reversed - two legs that partly cancel
+  on a simple-return basis but compound into a real loss once tripled and
+  inverted on both legs). Practical takeaway: never treat a leveraged/
+  inverse daily-reset product as a passive multi-month hold on a
+  directional view, however correct that view turns out to be - a real
+  directional conviction on the underlying should be expressed as a short,
+  actively-managed tactical trade with a defined exit, not an open-ended
+  position left to ride. An unplanned multi-week-plus hold in one of these
+  is itself the red flag, independent of P&L.
 - **Tactical sleeve only:** the horizon is up. A tactical position approaching
   a year without its thesis playing out should be closed or explicitly
   re-underwritten as a core holding - not left to drift into a long-term

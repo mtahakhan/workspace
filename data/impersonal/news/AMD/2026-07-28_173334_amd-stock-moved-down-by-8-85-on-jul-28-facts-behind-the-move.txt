@@ -1,0 +1,9 @@
+Ticker: AMD
+Company: Advanced Micro Devices
+Source URL: https://www.tradingkey.com/news/market-movers/262059039-market-movers-amd-20260728
+Title: AMD Stock Moved Down by 8.85% on Jul 28: Facts Behind the Movement
+Fetched At: 2026-07-28T17:33:34+02:00
+Fetch Method: WebSearch (query: "AMD stock price today July 28 2026")
+Retrieved For: portfolio-daily-analysis
+
+AMD shares declined further on July 28, 2026 (trading around $494.95, day range $476.93-$528.00) on disappointing forward-looking guidance for AI accelerators, with investors worried about decelerating capital expenditure among major cloud service providers. Next earnings report due August 4, 2026. Analyst sentiment remains Strong Buy (41 buy, 0 sell) despite the pullback. This is a distinct, same-day catalyst - guidance-driven capex concern - layered on top of the broader July 27 sector-wide AI/chip de-rating already covered in prior coverage.

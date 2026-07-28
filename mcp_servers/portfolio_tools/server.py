@@ -44,6 +44,8 @@ from .pipeline.enrich import main as _enrich_lots
 from .pipeline.exit_report import generate as _generate_exit_report
 from .pipeline.lots import main as _compute_lots
 from .pipeline.prices import main as _fetch_prices
+from .pipeline.realized import generate as _generate_realized_gains
+from .pipeline.realized import render as _render_realized_gains
 from .pipeline.report import render as _render_report
 from .pipeline.tickers import main as _resolve_tickers
 from .pipeline.uploads import save as _save_transactions
@@ -103,13 +105,22 @@ def enrich_lots() -> str:
 
 
 @mcp.tool()
-def resolve_tickers() -> str:
-    """Resolve any ISIN in transaction_lots.csv that has no ticker_map.csv row yet, via a real
-    yfinance search (never a guess), and append the result to ticker_map.csv. Returns a review
-    table - eyeball every row before trusting it, especially any flagged with a warning (wrong
-    company, unsupported currency, multiple candidate listings). Sector is left blank for a
-    human to fill in afterward. Run enrich_lots after this to apply the resolved tickers."""
-    return _locked(_capture_stdout, _resolve_tickers)
+def resolve_tickers(include_historical: bool = False) -> str:
+    """Resolve any ISIN that has no ticker_map.csv row yet, via a real yfinance search
+    (never a guess), and append the result to ticker_map.csv. Returns a review table -
+    eyeball every row before trusting it, especially any flagged with a warning (wrong
+    company, unsupported currency, multiple candidate listings). Sector is left blank for
+    a human to fill in afterward. Run enrich_lots after this to apply the resolved tickers.
+
+    include_historical=False (default): only ISINs in currently-open positions - the
+    normal daily-pipeline case, unchanged from before.
+
+    include_historical=True: also resolves ISINs from positions that are FULLY CLOSED
+    today (no open lots), straight from transactions.csv - use this once to backfill
+    ticker names for realized_gains, which otherwise shows a bare ISIN for any position
+    closed out before it was ever resolved. Slower than the default (every historical
+    ISIN gets its own yfinance search) - not something to run as part of the daily cycle."""
+    return _locked(_capture_stdout, _resolve_tickers, include_historical=include_historical)
 
 
 @mcp.tool()
@@ -326,6 +337,29 @@ def list_lots(ticker: str = "") -> str:
     action. Never edit the underlying file to "fix" what this shows; lots are derived,
     so the fix is in transactions.csv or compute_lots."""
     return _locked(_storage.read_lots, ticker or None)
+
+
+@mcp.tool()
+def realized_gains(ticker: str = "", include_unrealized: bool = True) -> str:
+    """Realized (closed round-trip) gain/loss per ticker, optionally alongside each
+    ticker's current unrealized gain/loss - the one place both are available together
+    per ticker, so "did I ever realize a profit on X" can be answered directly instead
+    of inferred from analyze_portfolio's open-position figures (which say nothing about
+    a ticker that was fully bought and fully sold, with nothing open today) or
+    exit_report's realized total (which is portfolio-wide, not broken out by ticker).
+
+    Set include_unrealized=False for a realized-only view: every unrealized figure and
+    the combined total are omitted from the payload entirely (not zeroed), so the
+    answer can't be misread as accounting for open positions. Pass `ticker` to see just
+    one ticker's row instead of the full table (unknown ticker -> lists known ones).
+
+    Reads current prices/positions from whatever fetch_prices/create_refresh already
+    populated - does not fetch new prices itself, so it's safe to call standalone."""
+    def _run():
+        analysis = _analyze_portfolio() if include_unrealized else {}
+        report = _generate_realized_gains(analysis, include_unrealized=include_unrealized)
+        return _render_realized_gains(report, ticker=ticker or None)
+    return _locked(_run)
 
 
 @mcp.tool()

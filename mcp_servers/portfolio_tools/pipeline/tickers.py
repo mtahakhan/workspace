@@ -19,7 +19,7 @@ import sys
 
 import yfinance as yf
 
-from ..paths import TICKER_MAP_FILE, TRANSACTION_LOTS_FILE
+from ..paths import TICKER_MAP_FILE, TRANSACTION_LOTS_FILE, TRANSACTIONS_FILE
 
 
 # Currency preference for picking among a security's listings. Lower = better.
@@ -66,6 +66,62 @@ def load_positions():
             unmapped[isin] = (shares + float(row["Shares"]), company)
 
     unmapped = {isin: (round(shares, 6), company) for isin, (shares, company) in unmapped.items()}
+    return len(all_isins), unmapped
+
+def load_all_transacted_isins():
+    """(total_count, {isin: company}) for every ISIN ever transacted that has
+    no ticker_map.csv row yet - reads transactions.csv directly, not
+    transaction_lots.csv (which only ever carries CURRENTLY OPEN ISINs, by
+    construction of the FIFO engine that produces it), so a position that was
+    fully bought and fully sold before ticker resolution ever ran on it still
+    gets resolved.
+
+    Built for pipeline.realized's per-ticker realized-gain breakdown: a
+    fully-closed ISIN with no ticker_map row renders as a bare ISIN there
+    instead of a ticker/company name, because it was never in scope for
+    load_positions() above.
+
+    Deliberately a separate function rather than a change to load_positions():
+    this can be 1-2 orders of magnitude slower for a long-lived account (every
+    historical ISIN gets a yfinance search, not just today's open ones), and
+    the daily pipeline (fetch_prices, analyze_portfolio) never needs anything
+    beyond the open ISINs load_positions() already covers - see main()'s
+    include_historical parameter, which keeps this opt-in.
+
+    No share-count bookkeeping (unlike load_positions): the resolution loop
+    in main() only needs a company name to search with and an ISIN to key the
+    new ticker_map.csv row on, and share counts are otherwise never printed
+    or used.
+    """
+    if not TRANSACTIONS_FILE.exists():
+        print("transactions.csv not found - upload a transaction export first.", file=sys.stderr)
+        return 0, {}
+
+    mapped_isins = set()
+    if TICKER_MAP_FILE.exists():
+        with open(TICKER_MAP_FILE) as f:
+            for row in csv.DictReader(f):
+                if row.get("Ticker", "").strip():
+                    mapped_isins.add(row["ISIN"].strip())
+
+    all_isins = set()
+    unmapped = {}
+    with open(TRANSACTIONS_FILE, encoding="utf-8") as f:
+        for row in csv.DictReader(f, delimiter=";"):
+            if row.get("status") != "Executed" or row.get("assetType") != "Security":
+                continue
+            isin = (row.get("isin") or "").strip()
+            if not isin:
+                continue
+            all_isins.add(isin)
+            if isin in mapped_isins or isin in unmapped:
+                continue
+            description = (row.get("description") or "").strip('"')
+            # Same guard as lots.py: the broker sometimes puts the bare ISIN
+            # in the description field (seen on a corporate action's incoming
+            # leg) - that's an identifier, not a company name.
+            unmapped[isin] = description if description and description != isin else isin
+
     return len(all_isins), unmapped
 
 def candidate_symbols(isin):
@@ -119,14 +175,36 @@ def best_candidate(isin):
         return picked_sym, picked_ccy, picked_price, seen
     return None, None, None, []
 
-def main():
-    total_open, new_isins = load_positions()
+def main(include_historical: bool = False):
+    """Resolve unmapped ISINs into ticker_map.csv.
 
-    print(f"{total_open} open positions; {total_open - len(new_isins)} already "
+    include_historical=False (default, unchanged from before): only ISINs in
+    currently-open positions (transaction_lots.csv) - what the daily pipeline
+    needs, and what every existing caller of this tool relies on.
+
+    include_historical=True: also resolves ISINs from FULLY CLOSED positions
+    (ones with no open lots today), read straight from transactions.csv. Opt-in
+    and separate from the default because it can be 1-2 orders of magnitude
+    slower for a long-lived account - every historical ISIN gets its own
+    yfinance search, not just today's open ones. Use this to fill in tickers
+    for pipeline.realized's per-ticker breakdown, which otherwise falls back
+    to showing a bare ISIN for any position closed out before it was ever
+    resolved.
+    """
+    if include_historical:
+        total, new_isins_raw = load_all_transacted_isins()
+        new_isins = new_isins_raw  # already {isin: company}
+        scope_label = "ISIN(s) ever transacted (open + historical)"
+    else:
+        total, new_isins_raw = load_positions()
+        new_isins = {isin: company for isin, (_shares, company) in new_isins_raw.items()}
+        scope_label = "open position(s)"
+
+    print(f"{total} {scope_label}; {total - len(new_isins)} already "
           f"mapped, resolving {len(new_isins)} new ISIN(s)...\n")
 
     if not new_isins:
-        if total_open:
+        if total:
             print("Nothing new to resolve.")
         # Always re-enrich so enriched_lots.csv is fresh even when there was
         # nothing to resolve (e.g. after a set_ticker_mapping Sector fill).
@@ -135,7 +213,7 @@ def main():
 
     new_rows = []
     review = []
-    for isin, (shares, company) in sorted(new_isins.items(), key=lambda kv: kv[1][1].lower()):
+    for isin, company in sorted(new_isins.items(), key=lambda kv: kv[1].lower()):
         picked, currency, price, cands = best_candidate(isin)
         flags = []
         if picked is None:
@@ -147,7 +225,7 @@ def main():
         if len([c for c in cands if c[1] in SUPPORTED_CURRENCIES]) > 1:
             flags.append("multiple listings - verify the pick is the right one")
         new_rows.append({"ISIN": isin, "Ticker": picked or "", "Company": company, "Sector": ""})
-        review.append((company, isin, shares, picked, currency, price, cands, flags))
+        review.append((company, isin, picked, currency, price, cands, flags))
 
     # Append, don't overwrite - preserve every existing (possibly other-user-contributed) row.
     file_exists = TICKER_MAP_FILE.exists()
@@ -160,7 +238,7 @@ def main():
     print(f"Appended {len(new_rows)} new row(s) to {TICKER_MAP_FILE} "
           f"(existing rows untouched).\n")
     print("REVIEW EACH NEW PICK - confirm it's the right company at a sane price:\n")
-    for company, isin, shares, picked, currency, price, cands, flags in review:
+    for company, isin, picked, currency, price, cands, flags in review:
         price_str = f"{price:.2f} {currency}" if price is not None else "no price"
         print(f"  {company[:34]:34s} {isin}  ->  {picked or '???':10s} {price_str}")
         if len(cands) > 1:
