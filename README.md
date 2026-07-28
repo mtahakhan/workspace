@@ -5,65 +5,37 @@ as a Claude Skill + a globally-registered MCP server. Clone this repo, run
 one script, and it's available in every Claude Code session on the machine -
 not just this project.
 
-## Quick start (choose your path)
+## Quick start
 
-**Recommended: Guided setup + Claude-powered analysis**
 ```bash
-make bootstrap
+./bootstrap.sh
 ```
-Then start a **new** Claude Code session and ask about your portfolio - it will walk
-you through first-time setup (transactions, tickers, optional API key).
+Needs Python >=3.10 and the `claude` CLI. This sets up the server, starts it
+in the background, registers the `portfolio` MCP server and Claude Skill
+globally, and is safe to re-run any time. Then start a **new** Claude Code
+session (any project) and ask it about your portfolio - if nothing's been
+uploaded yet, it will walk you through first-run setup itself.
 
-**Just want to run the numbers yourself, no Claude involved?**
-```bash
-make setup-data-and-backfill
-```
-Sets up the pipeline and backfills historical prices for analysis. Then use `make refresh`
-to run it daily without any Claude Code or LLM.
+Full walkthrough, including getting a (free, optional) Finnhub API key: see
+[`docs/SETUP.md`](docs/SETUP.md).
 
-**Already set up, just run today's numbers:**
-```bash
-make refresh
-```
-
-**Advanced: run individual steps manually for debugging**
-See [`docs/QUICKSTART.md`](docs/QUICKSTART.md)
-
----
-
-## Usage modes
-
-Pick the path that matches your workflow:
-
-| Path | Command | What you get | LLM involved? |
-|---|---|---|---|
-| **Full setup + daily Claude analysis** | `make bootstrap` | MCP server + Claude Skill globally registered; Claude handles setup flow, fetches news, writes daily reports | ✅ Yes |
-| **Setup + manual deterministic pipeline** | `make setup-data-and-backfill` | Just the Python pipeline; you run `make refresh` daily from terminal | ❌ No |
-| **Already set up, daily automation** | `make bootstrap-with-schedule` | Adds scheduled daily tasks to Claude Code (fetching + analysis) | ✅ Yes |
-| **One-time manual run** | `make refresh` (after first-time setup) | Deterministic pipeline only - prices, analysis, compliance, report | ❌ No |
-
-Full walkthrough with optional Finnhub API key: [`docs/SETUP.md`](docs/SETUP.md)
+Want to run the pipeline yourself from a terminal, with no Claude Code or LLM
+involved at all? See [`docs/QUICKSTART.md`](docs/QUICKSTART.md).
 
 ## What's in this repo
 
-### Documentation
-| Doc | For |
-|---|---|
-| [`docs/PATHWAYS.md`](docs/PATHWAYS.md) | **Start here** — compares all four usage modes (Claude, Python-only, hybrid, automated) |
-| [`docs/SETUP.md`](docs/SETUP.md) | Full setup walkthrough for Claude Code path, Finnhub API key, daily automation |
-| [`docs/QUICKSTART.md`](docs/QUICKSTART.md) | Running the pipeline manually from terminal, step-by-step with explanations |
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | How the system works — data flow, file map, MCP tools, methodology |
-| [`docs/AGENT_NOTES.md`](docs/AGENT_NOTES.md) | Rules and lessons learned, for anyone developing in this repo |
-
-### Code & Scripts
 | Path | What |
 |---|---|
-| [`mcp_servers/portfolio_tools/`](mcp_servers/portfolio_tools/) | The MCP server + deterministic pipeline (FIFO cost basis, prices, XIRR, drawdown, compliance, etc.) |
-| [`skills/portfolio/`](skills/portfolio/SKILL.md) | The Claude Skill — self-contained, deployed globally by `bootstrap.sh` |
-| [`Makefile`](Makefile) | `make bootstrap` (setup), `make refresh` (run), `make setup-data-and-backfill` (Python-only), plus individual targets |
-| [`bootstrap.sh`](bootstrap.sh) | Full bootstrap orchestrator — delegates to `scripts/` in order |
-| [`scripts/`](scripts/) | Bootstrap steps + manual pipeline runners (`fetch-prices.sh`, `run-pipeline.sh`) |
-| [`setup-env.sh`](setup-env.sh) | Interactive prompt for Finnhub API key and data directory |
+| [`mcp_servers/portfolio_tools/`](mcp_servers/portfolio_tools/) | The MCP server + deterministic pipeline (FIFO cost basis, prices, XIRR, drawdown, etc.) |
+| [`skills/portfolio/`](skills/portfolio/SKILL.md) | The Claude Skill - self-contained, deployed globally by `bootstrap.sh` |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | How the system works - data flow, file map, MCP tools, methodology |
+| [`docs/AGENT_NOTES.md`](docs/AGENT_NOTES.md) | Rules and lessons learned, for anyone developing in this repo |
+| [`docs/SETUP.md`](docs/SETUP.md) | This README, expanded - full human setup walkthrough |
+| [`docs/QUICKSTART.md`](docs/QUICKSTART.md) | Running the pipeline manually, no Claude Code needed |
+| [`Makefile`](Makefile) | `make bootstrap` (all steps), `make fetch-prices` / `make refresh` (run the pipeline manually, no Claude Code needed), plus individual bootstrap targets and `make setup-env` |
+| [`bootstrap.sh`](bootstrap.sh) | Full bootstrap orchestrator - delegates to `scripts/` in order |
+| [`scripts/`](scripts/) | Bootstrap steps (`venv-setup.sh`, `server-start.sh`, `mcp-register.sh`, `skill-install.sh`) + manual pipeline runners (`fetch-prices.sh`, `run-pipeline.sh`) |
+| [`setup-env.sh`](setup-env.sh) | Interactive prompt to write the Finnhub API key to `.env` |
 
 ## What it does
 

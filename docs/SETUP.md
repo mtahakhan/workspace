@@ -1,15 +1,10 @@
-# Setup - Claude Code Path
+# Setup
 
-Instructions for getting this repo running with Claude Code (MCP server + Skill). This is one of four usage pathways:
-
-| Path | Best for | Command |
-|---|---|---|
-| **This guide (Claude Code)** | Interactive analysis, news research, daily reports | `make bootstrap` |
-| Pure Python pipeline | Numbers only, no LLM | [`docs/QUICKSTART.md`](QUICKSTART.md) or `make setup-data-and-backfill` |
-| Hybrid | You run pipeline, Claude analyzes | `make bootstrap` + maintain your own `make refresh` schedule |
-| Fully automated | Hands-off daily updates | `make bootstrap-with-schedule` |
-
-See [`PATHWAYS.md`](PATHWAYS.md) for detailed comparison of all four. This guide covers the Claude Code path; the others are either manual (Python only) or minimal CLI. For what the system actually does once it's running, see [`ARCHITECTURE.md`](ARCHITECTURE.md).
+Human-facing instructions for getting this repo running on a machine, via
+Claude Code (the sanctioned path). If you'd rather run the pipeline directly
+from a terminal with no LLM involved at all, see [`QUICKSTART.md`](QUICKSTART.md)
+instead. For what the system actually does once it's running, see
+[`ARCHITECTURE.md`](ARCHITECTURE.md).
 
 ## What this is
 
