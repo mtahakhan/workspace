@@ -34,7 +34,7 @@ file belongs in is what decides whether it can be committed:
 | | Holds | Committed? |
 |---|---|---|
 | `personal/` | transactions, derived FIFO lots, analysis history, generated reports | No - all of it gitignored |
-| `impersonal/` | `ticker_map.csv`, `company_overrides.csv`, `price_history/`, `news/` | Yes - all of it committed |
+| `impersonal/` | `ticker_map.csv`, `ticker_overrides.csv`, `company_overrides.csv`, `price_history/`, `news/` | Yes - all of it committed |
 
 The line is **ownership, not subject matter**: a market close for AMD is the
 same number whoever looks it up, and so is a news article about it - but how
@@ -116,8 +116,8 @@ data/                        <- DEFAULT data root, outside the package (relocata
                                 via PORTFOLIO_DATA_DIR - see "Deployment model")
   personal/                    transactions.csv, transaction_lots.csv, roles.csv,
                                 analysis_history.jsonl, daily-analysis/          (not committed)
-  impersonal/                  ticker_map.csv, company_overrides.csv, fee_rules.json,
-                                price_history/*.jsonl, news/                     (committed)
+  impersonal/                  ticker_map.csv, ticker_overrides.csv, company_overrides.csv,
+                                fee_rules.json, price_history/*.jsonl, news/     (committed)
 bootstrap.sh                 <- repo root - full bootstrap orchestrator (delegates to scripts/)
 setup-env.sh                 <- interactive prompt to write the Finnhub API key to .env
 Makefile                     <- make bootstrap / make venv-setup / make server-start /
@@ -165,15 +165,26 @@ exposed as an MCP tool - that's the sanctioned way to invoke it.
    re-solve it. `resolve_tickers` deterministically resolves any new ISIN via
    a real yfinance lookup (never a guess) whenever `enrich_lots` reports one
    as unmapped; Sector still needs a quick human judgment call afterward.
-   Note the `Company` column here is *not* what reports display - that comes
-   from the broker's own description in `transactions.csv` (see
+   This file is never hand-edited to fix a wrong pick - see
+   `data/impersonal/ticker_overrides.csv` below for that. Note the `Company`
+   column here is *not* what reports display - that comes from the broker's
+   own description in `transactions.csv` (see
    `data/impersonal/company_overrides.csv` below to correct a wrong one).
-3a. **`enrich_lots`** → **`data/personal/enriched_lots.csv`** - joins
-    `transaction_lots.csv` with `ticker_map.csv` and `company_overrides.csv`.
-    This is the file every downstream tool reads (prices, backfill, analysis,
-    fees, storage). Run it after `compute_lots`, after `resolve_tickers`, or
-    after `set_ticker_mapping`. Replaces the old pattern of running
-    `compute_lots` a second time.
+3a. **`data/impersonal/ticker_overrides.csv`** (ISIN, Ticker, Note) - explicit
+    correction of a `resolve_tickers` pick, without ever rewriting
+    `ticker_map.csv` in place. The typical case: the auto-picked listing
+    trades in an unsupported currency (`resolve_tickers` flags this with a
+    warning) and a cross-listed EUR/USD/GBP/DKK listing for the same company
+    needs to be substituted instead. Set via `set_ticker_override`, never a guess -
+    verify the substitute's currency and that it's the same company first,
+    same as `resolve_tickers` itself would.
+3b. **`enrich_lots`** → **`data/personal/enriched_lots.csv`** - joins
+    `transaction_lots.csv` with `ticker_map.csv`, `ticker_overrides.csv` and
+    `company_overrides.csv`. This is the file every downstream tool reads
+    (prices, backfill, analysis, fees, storage). Run it after `compute_lots`,
+    after `resolve_tickers`, or after `set_ticker_mapping` /
+    `set_ticker_override`. Replaces the old pattern of running `compute_lots`
+    a second time.
 4. **`fetch_prices`** → **`data/impersonal/price_history/{TICKER}.jsonl`** - fetches the
    ticker list from `enriched_lots.csv`, gets live prices (Finnhub
    primary, yfinance fallback), and appends one fully-sourced record per
@@ -280,8 +291,9 @@ task is ever an argument passed to a tool called by the other - see
 Run order: `compute_lots` FIRST (ISIN-only lots; works with no `ticker_map.csv`),
 THEN `resolve_tickers` if any ISINs are new (appends to `ticker_map.csv`, then
 **automatically calls `enrich_lots`** so `enriched_lots.csv` is immediately
-current). `set_ticker_mapping` also calls `enrich_lots` automatically after
-every write — so after correcting a flagged ticker or filling in a blank Sector,
+current). `set_ticker_mapping` and `set_ticker_override` also call `enrich_lots`
+automatically after every write — so after correcting a flagged ticker,
+substituting a currency-supported listing, or filling in a blank Sector,
 `enriched_lots.csv` is updated without an extra step.
 
 The only time `enrich_lots` needs to be called explicitly is immediately after
@@ -306,13 +318,14 @@ flowchart TD
         UPLOAD["upload_transactions tool<br/>raw CSV text argument<br/>(only external input)"]:::script
         TXN[("data/personal/transactions.csv")]:::data
         TMAP[("data/impersonal/ticker_map.csv<br/>ISIN, Ticker, Company, Sector<br/>shared / committed")]:::data
+        TOVR[("data/impersonal/ticker_overrides.csv<br/>ISIN, Ticker, Note<br/>shared / committed")]:::data
         COMAP[("data/impersonal/company_overrides.csv<br/>ISIN, Company, Note<br/>shared / committed")]:::data
         LOTS[("data/personal/transaction_lots.csv<br/>FIFO open lots, ISIN-keyed<br/>no Ticker/Sector/Company yet")]:::data
-        ENRICHED[("data/personal/enriched_lots.csv<br/>LOTS joined with TMAP + COMAP<br/>Ticker, Company, Sector filled in<br/>read by all downstream tools")]:::data
+        ENRICHED[("data/personal/enriched_lots.csv<br/>LOTS joined with TMAP + TOVR + COMAP<br/>Ticker, Company, Sector filled in<br/>read by all downstream tools")]:::data
 
         CL1["pipeline.lots<br/>FIFO engine"]:::script
         SCAFF["pipeline.tickers<br/>yfinance resolve<br/>(only if new ISIN)"]:::script
-        ENRICH["pipeline.enrich<br/>join lots + ticker_map<br/>+ company_overrides"]:::script
+        ENRICH["pipeline.enrich<br/>join lots + ticker_map<br/>+ ticker_overrides + company_overrides"]:::script
 
         UPLOAD --> TXN
         TXN --> CL1
@@ -321,6 +334,7 @@ flowchart TD
         SCAFF -- "appends new rows" --> TMAP
         LOTS --> ENRICH
         TMAP --> ENRICH
+        TOVR --> ENRICH
         COMAP --> ENRICH
         ENRICH --> ENRICHED
     end
@@ -417,11 +431,12 @@ diagram.
 | File | Holds | Produced by |
 |---|---|---|
 | `data/personal/transactions.csv` | Raw broker export - the only external input | `upload_transactions` tool (keeps one `.bak`) |
-| `data/impersonal/ticker_map.csv` | ISIN, Ticker, Company, Sector - shared, committed | `resolve_tickers` (Ticker/Company) + `set_ticker_mapping` (Sector, corrections) |
+| `data/impersonal/ticker_map.csv` | ISIN, Ticker, Company, Sector - shared, committed. Never hand-edited to fix a wrong pick - see `ticker_overrides.csv` below | `resolve_tickers` (Ticker/Company) + `set_ticker_mapping` (Sector, corrections) |
+| `data/impersonal/ticker_overrides.csv` | ISIN, Ticker, Note - shared, committed. Substitutes a different ticker for the handful of ISINs where `resolve_tickers`' pick trades in an unsupported currency; everything unlisted keeps `ticker_map.csv`'s pick | `set_ticker_override`; `pipeline/enrich.py` applies it |
 | `data/impersonal/company_overrides.csv` | ISIN, Company, Note - shared, committed. Corrects the handful of broker descriptions that name the wrong company; everything unlisted keeps the broker's own label | You (hand-edited in the repo); `pipeline/enrich.py` applies it |
 | `config.json` | All tunable thresholds and every caveat/notify-reason message template - shared, committed, not personal data | You (hand-edited); `pipeline/config.py` just loads it |
 | `data/personal/transaction_lots.csv` | FIFO open lots, ISIN-keyed — no Ticker/Company/Sector. Only `pipeline/tickers.py` (to find blank-Ticker ISINs) and `pipeline/enrich.py` read this directly; everything else reads `enriched_lots.csv` | `compute_lots` |
-| `data/personal/enriched_lots.csv` | FIFO lots joined with `ticker_map.csv` and `company_overrides.csv` — Ticker, Company, Sector filled in. This is the file every downstream tool reads (prices, backfill, analysis, fees, storage) | `enrich_lots` |
+| `data/personal/enriched_lots.csv` | FIFO lots joined with `ticker_map.csv`, `ticker_overrides.csv` and `company_overrides.csv` — Ticker, Company, Sector filled in. This is the file every downstream tool reads (prices, backfill, analysis, fees, storage) | `enrich_lots` |
 | `data/impersonal/price_history/{TICKER}.jsonl` | Full sourced price history, one file per ticker. May hold several records for one day (one per `fetch_prices` run); readers collapse to one per day, last wins | `fetch_prices` (appends, no same-day check) / `backfill_history` (one-off, rewrites at one record per day) |
 | `data/personal/analysis_history.jsonl` | One line per `analyze_portfolio` run: `generated_at`, `total_value`, `xirr_pct` - append-only, powers the value-divergence caveat | `analyze_portfolio` |
 | `data/personal/roles.csv` | Portfolio role per holding (Core Compounder / Growth / Opportunistic / Defensive) + when last confirmed. Personal, not impersonal: a role describes how a position functions in *this* portfolio, so the same ETF is Growth for one holder and Defensive for another | `set_position_role` (read via `read_roles`) |
@@ -443,7 +458,7 @@ serialized through the global lock:
 | `upload_transactions` | `pipeline/uploads.py` | Raw CSV text (tool argument) | `data/personal/transactions.csv` (+ `.bak` of previous) | whenever the user has a new export |
 | `compute_lots` | `pipeline/lots.py` | `data/personal/transactions.csv` | `data/personal/transaction_lots.csv` (ISIN-keyed, no Ticker/Sector/Company, incl. per-lot `Fee`) | 1st |
 | `resolve_tickers` | `pipeline/tickers.py` | `data/personal/transaction_lots.csv` (checks unmapped ISINs against `ticker_map.csv`) + `yfinance` search/currency/history checks | Appends rows to `data/impersonal/ticker_map.csv` (Sector blank); **automatically calls `enrich_lots`** at the end | 2nd, only when a new ISIN appears |
-| `enrich_lots` | `pipeline/enrich.py` | `data/personal/transaction_lots.csv` + `data/impersonal/ticker_map.csv` + `data/impersonal/company_overrides.csv` | `data/personal/enriched_lots.csv` (full join; Ticker, Company, Sector filled in) | after `compute_lots` (explicit); called automatically by `resolve_tickers` and `set_ticker_mapping` |
+| `enrich_lots` | `pipeline/enrich.py` | `data/personal/transaction_lots.csv` + `data/impersonal/ticker_map.csv` + `data/impersonal/ticker_overrides.csv` + `data/impersonal/company_overrides.csv` | `data/personal/enriched_lots.csv` (full join; Ticker, Company, Sector filled in) | after `compute_lots` (explicit); called automatically by `resolve_tickers`, `set_ticker_mapping` and `set_ticker_override` |
 | `fetch_prices` | `pipeline/prices.py` | `data/personal/enriched_lots.csv` + Finnhub/yfinance | Appends to `data/impersonal/price_history/*.jsonl`; **raises if any ticker fails on both sources** (successfully-fetched tickers are still appended first) | daily, before `create_refresh` |
 | `backfill_history` | `pipeline/backfill.py` | `data/personal/enriched_lots.csv` + yfinance historical | Rewrites `data/impersonal/price_history/*.jsonl` (full history) | one-off/rare |
 | `create_refresh` | `pipeline/analysis.py` + `compliance.py` + `report.py` + `exit_report.py`, via `pipeline/run_store.py` | No arguments. Runs analysis → compliance → render → exit_report in order, each step reading the previous one's result in-memory (all within one tool call) | Writes all four files into one new `data/personal/pipeline-runs/{date}/{time}/` directory and returns only that directory's id - never any payload. **Stops at the first step that fails**, which can leave fewer than four files (see "Refreshes" above) | after `fetch_prices` |
@@ -453,6 +468,7 @@ serialized through the global lock:
 | `save_report` / `get_report` / `list_reports` | `pipeline/storage.py` | Report markdown (tool argument) / a date | `data/personal/daily-analysis/YYYY-MM-DD.md` (re-saving replaces) | end of the daily task |
 | `list_news` / `get_news_source` | `pipeline/storage.py` | Ticker (+ filename) | Filenames / full stored text | when checking what's already captured |
 | `read_ticker_map` / `set_ticker_mapping` | `pipeline/storage.py` | ISIN + any of Ticker/Company/Sector | Rewrites `data/impersonal/ticker_map.csv` in place; **`set_ticker_mapping` automatically calls `enrich_lots`** so `enriched_lots.csv` is immediately current | filling in a blank Sector, or correcting a mis-resolved listing |
+| `read_ticker_overrides` / `set_ticker_override` | `pipeline/storage.py` | ISIN + Ticker (+ note) | Rewrites `data/impersonal/ticker_overrides.csv` in place, never `ticker_map.csv`; **`set_ticker_override` automatically calls `enrich_lots`** so `enriched_lots.csv` is immediately current | the auto-picked listing itself is wrong (most commonly an unsupported currency) and needs substituting, not just a blank Sector |
 | `list_lots` | `pipeline/storage.py` | optional ticker | `data/personal/enriched_lots.csv` as text (all lots, or one ticker's) - read-only | auditing what a cost basis or holding period is built from |
 | `read_roles` / `set_position_role` | `pipeline/storage.py` | Ticker + role (+ note) | Rewrites `data/personal/roles.csv`; roles drive the sleeve split, so a stale label quietly invalidates that check | when a position's thesis changes sleeve |
 
@@ -484,18 +500,26 @@ change task behavior.
 ## Currency handling
 
 Supported: **EUR** (no conversion), **USD**, **GBP**, **GBp** (British pence -
-divided by 100 to GBP before applying the EUR/GBP rate). Anything else is
-rejected (returns `None`/skipped), not silently mispriced. `price_eur` is the
-one field every downstream module reads; never read `price_original_currency`
-for computation, only for display/audit.
+divided by 100 to GBP before applying the EUR/GBP rate), **DKK**. Anything
+else is rejected (returns `None`/skipped), not silently mispriced. `price_eur`
+is the one field every downstream module reads; never read
+`price_original_currency` for computation, only for display/audit.
 
 `pipeline/prices.py` (live) and `pipeline/backfill.py` (historical) each
 implement this independently but must stay in sync - if you add a currency to
 one, add it to the other. Historical FX rates are used for backfill (not
 today's rate applied retroactively) - each FX pair's series only goes back so
-far (e.g. EUR/USD data starts 2003-12-01, since the Euro didn't exist before
-1999), so older ticker history is truncated rather than priced with a
-fabricated rate.
+far (e.g. EUR/USD and EUR/DKK data both start 2003-12-01 - a Yahoo Finance
+data-availability limit, not tied to either currency's actual origin), so
+older ticker history is truncated rather than priced with a fabricated rate.
+
+DKK was added deliberately as permanent support (same reasoning as GBp before
+it - see `AGENT_NOTES.md`'s "A currency-conversion near-miss"), not as a
+one-off workaround: it's pegged tightly to EUR under ERM II (~7.46 DKK/EUR,
+±2.25% band), so the FX risk it introduces is minimal, and Copenhagen-listed
+securities (e.g. Novo Nordisk's primary listing, `NOVO-B.CO`) are common
+enough to be worth a real listing rather than routing everyone to a
+secondary ADR.
 
 ## FIFO / transaction parsing rules (`pipeline/lots.py`)
 

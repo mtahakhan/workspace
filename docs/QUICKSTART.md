@@ -88,7 +88,7 @@ Looks up each blank ticker via `yfinance` and prints a review table:
 ```
   Deutsche Telekom                   DE0005557508  ->  DTE.DE     26.26 EUR
   Cameco                             CA13321L1085  ->  CCO.TO     122.74 CAD
-      ⚠ UNSUPPORTED CURRENCY CAD - find a EUR/USD/GBP listing
+      ⚠ UNSUPPORTED CURRENCY CAD - find a EUR/USD/GBP/DKK listing
 ```
 
 **Eyeball each row yourself** — this is where human judgment is essential:
@@ -96,7 +96,7 @@ Looks up each blank ticker via `yfinance` and prints a review table:
 - Is the price reasonable?
 - Any `⚠` warnings? Fix them in `data/impersonal/ticker_map.csv`
 
-**Only EUR/USD/GBP/GBp are supported** - see [`ARCHITECTURE.md`](ARCHITECTURE.md#currency-handling) for the full rule. Anything else needs a different listing.
+**Only EUR/USD/GBP/GBp/DKK are supported** - see [`ARCHITECTURE.md`](ARCHITECTURE.md#currency-handling) for the full rule. Anything else needs a different listing.
 
 Then fill in the blank `Sector` column in `ticker_map.csv` for each new row (Technology, Healthcare, etc.).
 

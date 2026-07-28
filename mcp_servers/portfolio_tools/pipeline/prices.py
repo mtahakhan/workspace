@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
 Fetch current prices for open portfolio positions: Finnhub (primary, registered
-API, USD only, US-listed symbols only) + yfinance (backup, covers EUR/USD/GBP
+API, USD only, US-listed symbols only) + yfinance (backup, covers EUR/USD/GBP/DKK
 directly). Appends a fully-sourced record per ticker to price_history/{TICKER}.jsonl.
 Full rationale/rules: see AGENT_NOTES.md (read that first, not this file, to
 understand the "why").
 
 Quick reference: ticker list comes from transaction_lots.csv. price_eur is the
 one field every downstream script should read. Supported currencies: EUR, USD,
-GBP, GBp - see AGENT_NOTES.md before adding another one.
+GBP, GBp, DKK - see AGENT_NOTES.md before adding another one.
 """
 
 import csv
@@ -26,19 +26,21 @@ FX_SOURCE_URL = "https://api.exchangerate-api.com/v4/latest/EUR"
 
 # Currencies the pipeline understands. GBp is British pence (1/100 GBP) - London
 # listings (yfinance symbols ending .L) quote in GBp, so it's common enough that
-# it's supported here permanently rather than being bolted on per-setup.
-FALLBACK_RATES = {"USD": 1.09, "GBP": 0.84}  # 1 EUR = X, only used if the live fetch fails
+# it's supported here permanently rather than being bolted on per-setup. DKK
+# (Danish Krone) added for Copenhagen-listed securities (e.g. Novo Nordisk's
+# primary listing, NOVO-B.CO) - same permanent-support reasoning as GBp.
+FALLBACK_RATES = {"USD": 1.09, "GBP": 0.84, "DKK": 7.46}  # 1 EUR = X, only used if the live fetch fails
 
 def fetch_exchange_rates():
-    """Fetch current EUR->{USD,GBP} rates. Returns (rates_dict, source_name, source_url).
+    """Fetch current EUR->{USD,GBP,DKK} rates. Returns (rates_dict, source_name, source_url).
     rates_dict maps currency -> units per 1 EUR."""
     try:
         resp = requests.get(FX_SOURCE_URL, timeout=10)
         if resp.status_code == 200:
             data = resp.json().get("rates", {})
-            rates = {c: data.get(c) for c in ("USD", "GBP")}
+            rates = {c: data.get(c) for c in ("USD", "GBP", "DKK")}
             if all(rates.values()):
-                print(f"Exchange rates (live): 1 EUR = {rates['USD']} USD, {rates['GBP']} GBP")
+                print(f"Exchange rates (live): 1 EUR = {rates['USD']} USD, {rates['GBP']} GBP, {rates['DKK']} DKK")
                 return rates, FX_SOURCE_NAME, FX_SOURCE_URL
     except Exception as e:
         print(f"Exchange rate fetch failed: {e}")
@@ -79,10 +81,11 @@ def _make_record(price_original, currency, source_name, source_url):
     tickers they'd just be redundant restatements of price_eur/"already EUR"/
     rate=1.0, so they're omitted entirely rather than stored as no-op data.
 
-    Supported currencies: EUR (no conversion), USD, GBP, and GBp (British
-    pence = GBP/100). Anything else returns None so the caller treats it as a
-    miss rather than silently mispricing it - a wrong currency almost always
-    means a wrong ticker was chosen (see scaffold_metadata.py / BOOTSTRAP.md)."""
+    Supported currencies: EUR (no conversion), USD, GBP, GBp (British
+    pence = GBP/100), and DKK. Anything else returns None so the caller
+    treats it as a miss rather than silently mispricing it - a wrong currency
+    almost always means a wrong ticker was chosen (see scaffold_metadata.py /
+    BOOTSTRAP.md)."""
     if currency == "EUR":
         return {"price_eur": round(price_original, 2)}
 

@@ -21,10 +21,14 @@ import re
 import unicodedata
 from datetime import datetime
 
-from ..paths import NEWS_DIR, REPORTS_DIR, ROLES_FILE, TICKER_MAP_FILE, ENRICHED_LOTS_FILE
+from ..paths import (
+    NEWS_DIR, REPORTS_DIR, ROLES_FILE, TICKER_MAP_FILE, TICKER_OVERRIDES_FILE,
+    ENRICHED_LOTS_FILE,
+)
 
 SLUG_MAX_LEN = 60
 TICKER_MAP_FIELDS = ["ISIN", "Ticker", "Company", "Sector"]
+TICKER_OVERRIDES_FIELDS = ["ISIN", "Ticker", "Note"]
 ROLES_FIELDS = ["Ticker", "Role", "Assigned", "Note"]
 
 # Valid role labels. Allocation is now governed by the two-sleeve model
@@ -157,6 +161,15 @@ def read_ticker_map():
     return TICKER_MAP_FILE.read_text(encoding="utf-8")
 
 
+def read_ticker_overrides():
+    """The whole ticker_overrides table as text - every ISIN where enrich_lots
+    is substituting a different ticker than ticker_map.csv's resolve_tickers
+    pick, and why."""
+    if not TICKER_OVERRIDES_FILE.exists():
+        return "ticker_overrides is empty - no ISIN has a substituted ticker."
+    return TICKER_OVERRIDES_FILE.read_text(encoding="utf-8")
+
+
 def read_lots(ticker=None):
     """Enriched lots as text - every lot, or just one ticker's.
 
@@ -234,6 +247,53 @@ def set_ticker_mapping(isin, ticker=None, company=None, sector=None):
     # Re-enrich immediately — ticker_map.csv changed, so enriched_lots.csv is
     # stale until this runs. Doing it here means the caller never has to
     # remember the extra step.
+    from .enrich import main as _enrich
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        _enrich()
+    enrich_out = buf.getvalue().strip()
+    return f"{msg}\n{enrich_out}"
+
+
+def set_ticker_override(isin, ticker, note=""):
+    """Create or update one ISIN's row in ticker_overrides.csv - a correction
+    that takes precedence over ticker_map.csv's resolve_tickers pick without
+    ever rewriting that file. Use this instead of set_ticker_mapping when the
+    auto-picked listing itself is wrong (e.g. an unsupported currency) and
+    you're substituting a different listing, as opposed to filling in a
+    missing Sector on the pick that's otherwise correct.
+
+    Rewrites ticker_overrides.csv in place, then immediately re-runs
+    enrich_lots so enriched_lots.csv is never stale after a correction — the
+    caller does not need to call enrich_lots separately.
+    """
+    isin = (isin or "").strip()
+    ticker = (ticker or "").strip()
+    if not isin:
+        raise ValueError("isin is required")
+    if not ticker:
+        raise ValueError("ticker is required")
+
+    rows, found = [], False
+    if TICKER_OVERRIDES_FILE.exists():
+        with open(TICKER_OVERRIDES_FILE, newline="") as f:
+            rows = list(csv.DictReader(f))
+    for row in rows:
+        if row.get("ISIN", "").strip() == isin:
+            found = True
+            row["Ticker"] = ticker
+            row["Note"] = note.strip()
+    if not found:
+        rows.append({"ISIN": isin, "Ticker": ticker, "Note": note.strip()})
+
+    TICKER_OVERRIDES_FILE.parent.mkdir(parents=True, exist_ok=True)
+    with open(TICKER_OVERRIDES_FILE, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=TICKER_OVERRIDES_FIELDS)
+        writer.writeheader()
+        writer.writerows({k: row.get(k, "") for k in TICKER_OVERRIDES_FIELDS} for row in rows)
+
+    msg = f"{'Updated' if found else 'Added'} ticker override for {isin}: Ticker={ticker!r}."
+
     from .enrich import main as _enrich
     buf = io.StringIO()
     with contextlib.redirect_stdout(buf):

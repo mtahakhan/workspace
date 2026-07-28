@@ -154,8 +154,15 @@ skill files, not portfolio data.
    is the deliberate exception (a threshold tweak is a config change, not a
    code change).
 4. **Never write ad-hoc currency-conversion code.** Supported: EUR, USD, GBP,
-   GBp. Anything else means the ticker/listing is wrong - resolve a different
-   listing via `resolve_tickers`, don't add a new conversion path.
+   GBp, DKK. Anything else means the ticker/listing is wrong - resolve a
+   different listing via `resolve_tickers`, don't add a new conversion path.
+   If a listing's currency genuinely needs supporting long-term, that's a
+   deliberate `pipeline/prices.py`/`pipeline/backfill.py` change for whoever
+   maintains this repo to make - not something to improvise mid-task even
+   when asked to "just add support for X", since it touches FX sourcing in
+   two files that must stay in sync (see `ARCHITECTURE.md`'s "Currency
+   handling"). If asked to add a currency, treat it as a real, reviewed code
+   change, not a quick patch.
 5. **Never ask the user to paste an API key, or their transactions CSV,
    directly into chat as prose.** For a new/updated transaction history,
    call `upload_transactions` with the file content - that's what it's for,
