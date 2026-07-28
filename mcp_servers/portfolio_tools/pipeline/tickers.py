@@ -164,7 +164,7 @@ def main():
         price_str = f"{price:.2f} {currency}" if price is not None else "no price"
         print(f"  {company[:34]:34s} {isin}  ->  {picked or '???':10s} {price_str}")
         if len(cands) > 1:
-            alts = ", ".join(f"{s}({c})" for s, c, _ in cands if s != picked)
+            alts = ", ".join(f"{s}({c})" for s, c, _, _ in cands if s != picked)
             if alts:
                 print(f"      other listings: {alts}")
         for fl in flags:
