@@ -1,13 +1,13 @@
 # Portfolio pipeline
 
 A portfolio tracker and daily analysis pipeline for Scalable Capital: a
-deterministic Python pipeline behind an MCP server, with an optional Claude
-Skill on top. The MCP server setup is Claude-free by design - the Claude Code
-integration is a separate, independent step, not baked into base setup.
-Upload a transaction export and it reconstructs your real positions, fetches
-prices, computes value/gain/XIRR/drawdown/sector concentration, and writes a
-daily report - see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the
-full description.
+deterministic Python pipeline behind an MCP server, with an optional Skill on
+top for Claude Code or Codex CLI. The MCP server setup is agent-CLI-free by
+design - hooking either one up is a separate, independent step, not baked
+into base setup. Upload a transaction export and it reconstructs your real
+positions, fetches prices, computes value/gain/XIRR/drawdown/sector
+concentration, and writes a daily report - see
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full description.
 
 ## Quick start
 
@@ -23,6 +23,14 @@ make claude-setup
 Registers the MCP server globally and installs the Skill. Then start a
 **new** Claude Code session and ask about your portfolio - it will walk you
 through first-time setup (transactions, tickers, optional API key).
+
+**Want Codex CLI instead?**
+```bash
+make codex-setup
+```
+Same idea, registered with Codex's own MCP config and skills directory
+instead - the two aren't mutually exclusive, and either (or both) can point
+at the same running server.
 
 **Want something else** - just the numbers with no LLM, a hybrid of both, or
 full automation? See [`docs/PATHWAYS.md`](docs/PATHWAYS.md) for all four
