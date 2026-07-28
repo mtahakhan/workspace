@@ -1,0 +1,9 @@
+Ticker: QBTS
+Company: D-Wave Quantum
+Source URL: https://finance.yahoo.com/markets/stocks/articles/d-wave-quantum-stock-slides-190000008.html
+Title: D-Wave Quantum Stock Slides 29% in July: Should You Buy the Dip?
+Fetched At: 2026-07-28T09:26:21+02:00
+Fetch Method: WebSearch (query: "D-Wave Quantum QBTS stock decline 2026")
+Retrieved For: portfolio-daily-analysis
+
+QBTS fell 29.4% month-to-date in July 2026, underperforming the Computer and Technology sector's -1.4% and the S&P 500's +1.2%, and is down 33.7% from its highs after a 211% surge in 2025. The decline is attributed not to business deterioration but to the broader quantum sector selling off as late-2025 enthusiasm cooled: profit-taking after outsized gains, valuation concerns across high-growth quantum names, and a macro backdrop of elevated Treasury yields and higher-for-longer Fed expectations. Additional pressure came from classical-simulation research in Science challenging D-Wave's published quantum-supremacy results, and a Form 144 filing signalling a potential supply overhang. Context: this is the same multi-week de-rating as IONQ, and it is the backdrop against which the July 27 AT&T expansion (+20.4% session, already stored) reads as the first real monetization counter-evidence.

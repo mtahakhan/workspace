@@ -1,0 +1,9 @@
+Ticker: IREN
+Company: IREN Limited
+Source URL: https://www.globenewswire.com/news-release/2026/07/20/3329624/0/en/IREN-Signs-2-8bn-in-New-Customer-Contracts-with-Leading-AI-Developers-Raises-2026-ARR-Target-to-over-4bn.html
+Title: IREN Signs $2.8bn in New Customer Contracts with Leading AI Developers, Raises 2026 ARR Target to over $4bn
+Fetched At: 2026-07-28T09:19:40+02:00
+Fetch Method: WebSearch (query: "IREN Limited stock news July 2026 AI datacenter contracts")
+Retrieved For: portfolio-daily-analysis
+
+Primary company release (July 20, 2026): IREN signed $2.8bn in new long-term AI cloud contracts with leading AI developers and raised its year-end 2026 annual revenue run-rate target to over $4bn from $3.7bn. The stock rose 20.66% on the announcement. Supporting developments: closed acquisition of Spain-based Nostrum Group adding ~490 MW of secured grid-connected AI data center power plus development pipeline; joined the Russell 1000 large-cap index at FTSE Russell reconstitution; Jefferies initiated Buy with a $79 price target. Contrast with price action: the stock still fell ~24% over the month, swinging from ~$52 in late June to the high $30s before recovering to ~$40 - i.e. the multi-week drawdown is a valuation/sentiment reset on AI-infrastructure and bitcoin-linked names, not deteriorating contracted revenue. The tactical catalyst is live and strengthening.

@@ -1,0 +1,9 @@
+Ticker: INTC
+Company: Intel Corp
+Source URL: https://www.fxleaders.com/news/2026/07/27/intc-rebounds-toward-95-after-8-earnings-selloff-as-ai-revenue-surges-but-capex-risks-grow/
+Title: INTC Rebounds Toward $95 After 8% Earnings Selloff as AI Revenue Surges but Capex Risks Grow
+Fetched At: 2026-07-28T09:26:40+02:00
+Fetch Method: WebSearch (query: "Intel INTC stock news July 2026")
+Retrieved For: portfolio-daily-analysis
+
+Intel's Q2 2026 revenue grew 25%, its fastest for any period in almost 15 years, with Data Center and AI revenue up 59% - but the stock sold off sharply on rising capital spending and foundry losses, with investors questioning the sustainability of the AI investment. As of July 27, 2026 the stock ranged $86.94-$94.98, last $90.95. Earlier in the month Intel fell 7.67% on July 8 extending a 21% weekly slide after an 18A yield delay and AMD taking its first-ever data-center revenue lead, following a Bank of America note on July 1 that the AI chip space was becoming overvalued; it then rebounded 4.50% to $107.76 on July 15 on AI chip demand. Context: INTC is the portfolio's second-largest position at -11.1% on cost with a -28.8% 30-day trend - the volatility is execution/capex-driven, and the Q2 top line does not support a thesis break, but the 18A yield question is the item to watch.

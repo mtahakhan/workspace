@@ -1,0 +1,9 @@
+Ticker: SEC0.DE
+Company: iShares MSCI Global Semiconductors (Acc)
+Source URL: https://www.bloomberg.com/news/articles/2026-07-28/korean-stocks-sink-as-chipmakers-plung-on-deepening-ai-fatigue
+Title: Chip Rout Deepens on Funding Worry, China Competition
+Fetched At: 2026-07-28T09:25:39+02:00
+Fetch Method: WebSearch (query: "semiconductor stocks news July 2026")
+Retrieved For: portfolio-daily-analysis
+
+The global semiconductor selloff deepened on Tuesday July 28, 2026 as sentiment worsened over the sustainability of the AI boom. South Korea's Kospi fell as much as 8.2%, triggering a 20-minute exchange trading suspension, with Samsung Electronics and SK Hynix each down at least 9%. Japan's Nikkei 225 and Taiwan's Taiex fell more than 4%. This follows earlier July weakness: the VanEck Semiconductor ETF (SMH) posted its third weekly decline in four, dropping almost 9%, after TSMC raised its capex forecast alongside a better-than-expected Q2. Investors are questioning whether AI-driven valuations have run ahead of fundamentals. Context for the portfolio: this is the direct cause of SEC0.DE's -1.6% session and its -12.2% 56-day move, and it is sector-wide rather than fund-specific.

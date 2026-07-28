@@ -1,0 +1,9 @@
+Ticker: 3BRS.MI
+Company: WisdomTree Brent Crude Oil 3x Daily Short
+Source URL: https://fortune.com/article/price-of-oil-07-24-2026/
+Title: Current price of oil as of July 24, 2026
+Fetched At: 2026-07-28T09:25:57+02:00
+Fetch Method: WebSearch (query: "Brent crude oil price news July 2026")
+Retrieved For: portfolio-daily-analysis
+
+Brent was priced at $97.04/barrel on July 24, 2026, after falling roughly 4% on Friday to settle near $97 - its biggest one-day drop since late June - on reports that Pakistan, with Chinese support, was seeking to revive US-Iran negotiations. Oil had surged nearly 40% during July as supply disruption expanded from the Strait of Hormuz to the Red Sea, where Iran-backed Houthi forces claimed attacks on Saudi Aramco facilities at Jizan and Yanbu. For broader context, Brent averaged $85/barrel in June, down $22 from May and $32 from the April 2026 peak. Context: 3BRS.MI is a 3x SHORT Brent ETP, so today's +5.5% session gain is roughly three times the inverse of Brent's de-escalation-driven fall. The move is mechanical and does not change the structural volatility-decay problem with the instrument.

@@ -1,0 +1,9 @@
+Ticker: ARM
+Company: Arm Holdings ADR
+Source URL: https://www.benzinga.com/analyst-stock-ratings/downgrades/26/07/60449878/arm-stock-tumbles-after-hsbc-sounds-valuation-alarm
+Title: Arm Stock Tumbles After HSBC Sounds Valuation Alarm
+Fetched At: 2026-07-28T09:19:52+02:00
+Fetch Method: WebSearch (query: "Arm Holdings ARM stock valuation downgrade July 2026 earnings")
+Retrieved For: portfolio-daily-analysis
+
+HSBC downgraded Arm to Hold from Buy on July 14, 2026 while raising its price forecast to $315 from $255, arguing the stock has run well ahead of fundamentals and citing foundry capacity bottlenecks. Wells Fargo cut its target to $350 from $410 and UBS to $360 from $470. At roughly 288x forward earnings (trailing P/E ~340x), Arm is more expensive than Nvidia, leaving no room for operational error or macro slowdown. The stock is down ~28-36% over the past month and sits ~33% below its 52-week high of $452.70, despite being up ~144% year-to-date on data-center royalty growth and the launch of its first production silicon. Arm has booked over $2bn in demand for its new AGI data center CPU across fiscal 2027-2028. Earnings due July 29, 2026 (est. EPS $0.36, revenue $1.27bn vs $1.05bn a year earlier). Cause is a valuation de-rating plus sector-wide profit-taking in AI/semis - not a thesis break.

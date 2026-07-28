@@ -1,0 +1,9 @@
+Ticker: ISLN.L
+Company: iShares Physical Silver ETC (Acc)
+Source URL: https://finance.yahoo.com/personal-finance/investing/article/silver-prices-today-friday-july-24-2026-silver-returns-above-58-as-markets-price-in-higher-rate-risks-152408436.html
+Title: Silver prices today, Friday, July 24, 2026: Silver returns above $58 as markets price in higher rate risks
+Fetched At: 2026-07-28T09:20:10+02:00
+Fetch Method: WebSearch (query: "silver price news July 2026")
+Retrieved For: portfolio-daily-analysis
+
+Silver traded $58-59/oz through late July 2026 ($58.67 on July 23, $59.12 on July 21, $58.87 on July 24). Dollar strength and persistent inflation risk are capping recovery, with the Fed consensus a hold at ~64% probability, down from 87% the prior week after better-than-expected jobless claims. The June CPI released July 14 showed headline CPI down 0.4% month-over-month, the largest monthly decline since April 2020, slowing to 3.5% year-over-year from 4.2% in May. Supply side remains supportive: the Silver Institute's World Silver Survey 2026 confirmed a sixth consecutive annual supply deficit of 46.3 million ounces. Same rate-driven correction affecting gold, with an intact structural supply story underneath.

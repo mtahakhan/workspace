@@ -1,0 +1,9 @@
+Ticker: ISLN.L
+Company: iShares Physical Silver ETC (Acc)
+Source URL: https://finance.yahoo.com/personal-finance/investing/article/silver-prices-today-monday-july-27-2026-silver-prices-trend-higher-as-iran-airatrikes-on-pause-125654584.html
+Title: Silver prices today, Monday, July 27, 2026: Silver trends higher as Iran airstrikes pause
+Fetched At: 2026-07-28T09:25:46+02:00
+Fetch Method: WebSearch (query: "silver price news July 2026")
+Retrieved For: portfolio-daily-analysis
+
+Silver September futures opened at $59.81/oz on Monday July 27, 2026, up 1.5% from Friday's close, after the US paused strikes over the weekend to restart peace talks - silver's first upward trend since May. The July outlook started at $58.55, roughly 52% below the all-time high of $121.62 set in January 2026. The Silver Institute's World Silver Survey 2026 confirmed a sixth consecutive annual supply deficit at 46.3 million ounces. CME FedWatch puts a 66.3% probability on the Fed holding rates at the meeting concluding Wednesday July 29; June CPI (released July 14) fell 0.4% month-over-month, the largest monthly decline since April 2020, slowing to 3.5% year-over-year from 4.2%. Context: ISLN.L's -1.8% session is a pullback within this Fed-driven repricing, not a change to the structural deficit case.

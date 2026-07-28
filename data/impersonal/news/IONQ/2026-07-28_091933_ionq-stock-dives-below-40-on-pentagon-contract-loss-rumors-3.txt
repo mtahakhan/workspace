@@ -1,0 +1,9 @@
+Ticker: IONQ
+Company: IonQ
+Source URL: https://www.fxleaders.com/news/2026/07/13/ionq-stock-dives-below-40-on-pentagon-contract-loss-rumors-30-support-comes-into-focus/
+Title: IonQ Stock Dives Below $40 on Pentagon Contract Loss Rumors, $30 Support Comes Into Focus
+Fetched At: 2026-07-28T09:19:33+02:00
+Fetch Method: WebSearch (query: "IonQ IONQ stock decline July 2026 quantum selloff")
+Retrieved For: portfolio-daily-analysis
+
+IonQ fell below $40 in mid-July 2026 on rumors of a lost Pentagon contract, with $30 identified as the next technical support level. This extends the July de-rating: IonQ fell 7.1% on July 7 amid quantum-sector valuation caution and the Nasdaq listing of European competitor IQM, then ran 8 consecutive red days for a cumulative -20.5%. Separately IonQ tumbled 8% on July 13 alongside D-Wave, Rigetti and Quantum Computing Inc. (-6% each) in a broad risk-off ripple through speculative quantum names. Company fundamentals remain strong on the top line - record quarterly revenue of $64.7M and raised full-year outlook - against projected full-year operating losses of $310-330M. This is the third consecutive week of the same valuation-reset narrative rather than a new development.

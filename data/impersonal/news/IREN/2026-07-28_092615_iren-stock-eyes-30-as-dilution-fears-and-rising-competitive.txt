@@ -1,0 +1,9 @@
+Ticker: IREN
+Company: IREN Limited
+Source URL: https://www.fxleaders.com/news/2026/07/02/iren-stock-eyes-30-as-dilution-fears-and-rising-competitive-intensity-in-cloud-market/
+Title: IREN Stock Eyes $30 as Dilution Fears and Rising Competitive Intensity in Cloud Market
+Fetched At: 2026-07-28T09:26:15+02:00
+Fetch Method: WebSearch (query: "IREN Limited stock decline 2026 why down")
+Retrieved For: portfolio-daily-analysis
+
+IREN's multi-week slide is attributed to a fiscal Q3 revenue miss ($144.8 million versus roughly $219.87 million consensus, a shortfall of more than 34%, which management blamed on lower Bitcoin prices and decommissioning older mining hardware for GPU installs), a $2 billion convertible notes offering, tabled Oklahoma tax incentives, and a governance dispute over an unusually large restricted stock unit grant of roughly $700-800 million to its co-CEOs. Competitive pressure increased as Meta Platforms shifted from purely consuming cloud compute to reselling excess AI capacity. Shares fell from $66.60 on June 2 to $38.83 by July 2, about -41.7%. Context: combined with the July 20 $2.8bn contract release already stored, the picture is a sentiment/dilution de-rating against improving contracted revenue - the tactical catalyst remains live.

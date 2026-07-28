@@ -1,0 +1,9 @@
+Ticker: AZN
+Company: AstraZeneca
+Source URL: https://qz.com/astrazeneca-earnings-profit-beat-cancer-drugs-072726
+Title: AstraZeneca Q2 2026 earnings beat on cancer drug sales
+Fetched At: 2026-07-28T09:26:27+02:00
+Fetch Method: WebSearch (query: "AstraZeneca stock news July 2026")
+Retrieved For: portfolio-daily-analysis
+
+AstraZeneca reported Q2 2026 results that topped profit expectations, holding 2026 guidance and the $80 billion 2030 revenue ambition. Core EPS was $2.63 for the quarter, +18% at constant currency, on revenue of $15.38 billion (+5%). First-half revenue was $30.7 billion, +6% at constant exchange rates, with core EPS +11% to $5.21. The shares rose 1.6% to 12,871p on the print. Separately in July, AstraZeneca signed an exclusive licence with Dizal Pharmaceutical for Zegfrovy (sunvozertinib) with a $900m upfront tied to milestones, and a licence with Chia Tai Tianqing for PDE3/4 inhibitor TQC3721 in respiratory. Pipeline is mixed: a CLARITY-Gastric01 Phase III win restored some confidence after the Ultomiris HSCT-TMA Phase III failure and the earlier Wainua CARDIO-TTRansform miss. Context: the position is a Core/Defensive holding and this print is consistent with the thesis.

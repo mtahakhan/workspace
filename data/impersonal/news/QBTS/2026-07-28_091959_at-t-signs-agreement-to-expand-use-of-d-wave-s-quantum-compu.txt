@@ -1,0 +1,9 @@
+Ticker: QBTS
+Company: D-Wave Quantum
+Source URL: https://www.businesswire.com/news/home/20260727804891/en/ATT-Signs-Agreement-to-Expand-Use-of-D-Waves-Quantum-Computing-Technology-Across-Network-Operations
+Title: AT&T Signs Agreement to Expand Use of D-Wave's Quantum Computing Technology Across Network Operations
+Fetched At: 2026-07-28T09:19:59+02:00
+Fetch Method: WebSearch (query: "D-Wave Quantum QBTS AT&T deal Nasdaq listing July 2026")
+Retrieved For: portfolio-daily-analysis
+
+Primary release (July 27, 2026): AT&T signed an agreement to expand use of D-Wave's annealing quantum computing technology across its network operations, initially layering it into tools already powering AT&T's agentic AI solutions, with a reported 240x network speedup. AT&T is also evaluating D-Wave's forthcoming gate-model systems for quantum security and quantum communications. Same day, D-Wave completed its voluntary listing transfer from NYSE to Nasdaq, with CEO Alan Baratz ringing the opening bell. QBTS closed at $19.51, up 20.4%, on volume ~54% above its three-month average, lifting IonQ and Rigetti in sympathy. Significance: a named commercial enterprise customer is the first real counter-evidence to the July quantum de-rating, which was driven by price-to-sales multiples rather than by any monetization failure.

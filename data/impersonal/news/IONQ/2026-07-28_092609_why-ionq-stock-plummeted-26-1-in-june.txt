@@ -1,0 +1,9 @@
+Ticker: IONQ
+Company: IonQ
+Source URL: https://www.fool.com/investing/2026/07/03/why-ionq-stock-plummeted-261-in-june/
+Title: Why IonQ Stock Plummeted 26.1% in June
+Fetched At: 2026-07-28T09:26:09+02:00
+Fetch Method: WebSearch (query: "IonQ stock decline 2026 why down")
+Retrieved For: portfolio-daily-analysis
+
+IonQ fell 26.1% in June 2026. The Motley Fool attributes the decline mainly to profit-taking rather than company news - "it's not uncommon for growth stocks to decline without any negative news" - compounded by caution over quantum-computing valuations at extreme price-to-sales multiples, the Nasdaq listing of European competitor IQM Quantum Computers drawing away investment capital, and insider selling. Fundamentally, IonQ posted record Q1 2026 revenue of $64.7 million, up 755% year-over-year, yet its operating margin is -443.3% against an S&P 500 median of 18.4%. Context for the portfolio: this is the fourth consecutive week the same valuation-reset narrative explains IonQ's decline (see stored sources of 2026-07-24, 07-25, 07-27 and 07-28) - a de-rating rather than a new event, but with the profitability gap widening, not closing.
