@@ -342,5 +342,27 @@ def set_ticker_mapping(isin: str, ticker: str = "", company: str = "", sector: s
                    ticker or None, company or None, sector or None)
 
 
+@mcp.tool()
+def set_ticker_override(isin: str, ticker: str, note: str = "") -> str:
+    """Substitute a different ticker for one ISIN, without touching ticker_map.csv's
+    own record of what resolve_tickers picked.
+
+    Use this instead of set_ticker_mapping when the auto-picked listing itself is
+    wrong - most commonly an unsupported currency (resolve_tickers flags these with
+    a warning) and you're substituting a different, currency-supported cross listing
+    for the same company. Never guess the substitute yourself - verify its currency
+    and that it's really the same company first (e.g. via a real yfinance lookup),
+    same as resolve_tickers would. enriched_lots.csv is updated automatically — no
+    separate enrich_lots call needed."""
+    return _locked(_storage.set_ticker_override, isin, ticker, note)
+
+
+@mcp.tool()
+def read_ticker_overrides() -> str:
+    """The ISIN -> substituted-ticker table as text - every case where
+    enriched_lots.csv uses a different ticker than ticker_map.csv's pick, and why."""
+    return _locked(_storage.read_ticker_overrides)
+
+
 if __name__ == "__main__":
     mcp.run(transport="streamable-http")

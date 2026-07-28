@@ -60,10 +60,10 @@ it happens on a trading day.
 
 ## A price looks off by ~100x, or in the wrong currency entirely
 
-- The pipeline supports EUR, USD, GBP, and GBp (British pence, converted
-  /100 first). Any other currency is rejected, not silently mispriced.
+- The pipeline supports EUR, USD, GBP, GBp (British pence, converted
+  /100 first), and DKK. Any other currency is rejected, not silently mispriced.
 - If the resolved ticker is in an unsupported currency (e.g. CAD, JPY),
-  `resolve_tickers` will flag it - find an EUR/USD/GBP-listed alternative
+  `resolve_tickers` will flag it - find an EUR/USD/GBP/DKK-listed alternative
   for that ISIN instead of inventing a new conversion.
 
 ## The MCP server isn't responding

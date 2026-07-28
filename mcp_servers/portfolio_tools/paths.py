@@ -100,6 +100,13 @@ ROLES_FILE = PERSONAL_DIR / "roles.csv"
 # --- impersonal: facts about securities, true for everyone, committed ---
 TICKER_MAP_FILE = IMPERSONAL_DIR / "ticker_map.csv"
 COMPANY_OVERRIDES_FILE = IMPERSONAL_DIR / "company_overrides.csv"
+# Explicit human correction of a resolve_tickers pick (ISIN match), same
+# opt-in pattern as COMPANY_OVERRIDES_FILE: kept separate so ticker_map.csv
+# stays a pure record of what the automated search picked, rather than being
+# hand-edited in place. Typical case: the auto-picked listing trades in an
+# unsupported currency (see pipeline/tickers.py's SUPPORTED_CURRENCIES) and a
+# cross-listed USD/EUR/GBP ADR needs to be substituted instead.
+TICKER_OVERRIDES_FILE = IMPERSONAL_DIR / "ticker_overrides.csv"
 # Fee schedule rules: PRIME ETF issuer list, hedge ISIN list, any other
 # hand-maintained exceptions to the programmatic fee logic.  Committed
 # (impersonal) because it describes the broker's public fee structure, not

@@ -257,7 +257,10 @@ instead of recognizing the real fix was a different, EUR-native listing.
 GBp support is now built into `pipeline/prices.py`/`pipeline/backfill.py`
 permanently, so this specific gap shouldn't recur - but the general
 principle (unsupported currency means the ticker/listing is wrong, not a
-missing conversion path) holds for any future currency.
+missing conversion path) holds for any future currency: adding one is a
+deliberate call by whoever maintains this repo (as DKK was, for
+Copenhagen-listed securities - see `ARCHITECTURE.md`'s "Currency handling"),
+never an agent's own workaround for a single flagged ISIN.
 
 **A split-adjustment data bug:** `yfinance`'s historical data for some
 thinly-traded/leveraged ETPs isn't retroactively adjusted for later reverse

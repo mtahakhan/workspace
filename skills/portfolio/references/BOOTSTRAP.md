@@ -90,7 +90,7 @@ Call these MCP tools, strictly in this order:
 ```
   Deutsche Telekom                   DE0005557508  ->  DTE.DE     26.26 EUR
   Cameco                             CA13321L1085  ->  CCO.TO     122.74 CAD
-      ⚠ UNSUPPORTED CURRENCY CAD - find a EUR/USD/GBP listing
+      ⚠ UNSUPPORTED CURRENCY CAD - find a EUR/USD/GBP/DKK listing
 ```
 
 For every line in that table:
@@ -98,11 +98,20 @@ For every line in that table:
    the same company? (A price that's wildly different from what you'd expect,
    or a currency you didn't expect, usually means it's the wrong company or
    wrong listing — that's the point of showing you the price.)
-2. If a line has a `⚠` warning, fix that row with **`set_ticker_mapping`**
-   (`isin` plus the corrected `ticker`). Confirm the replacement first:
-   `resolve_tickers` is the only sanctioned way to determine a ticker.
-   Currency must be one of EUR/USD/GBP/GBp. `set_ticker_mapping` also
-   **automatically re-runs `enrich_lots`**, so no extra step is needed.
+2. If a line has a `⚠ UNSUPPORTED CURRENCY` warning, don't guess a fix -
+   verify a candidate substitute listing yourself (real yfinance lookup:
+   currency must be one of EUR/USD/GBP/GBp/DKK, and confirm it's genuinely
+   the same company) and set it with **`set_ticker_override`**
+   (`isin` + the verified `ticker`, plus a `note` explaining the substitution -
+   e.g. "NOVO-B.CO trades in DKK; NVO is the USD NYSE ADR, 1:1 with the Class
+   B shares"). This writes to `ticker_overrides.csv`, not `ticker_map.csv` -
+   `resolve_tickers`' own pick stays on record, which is what makes it
+   possible to tell "what the search found" from "what a human corrected"
+   apart later. For any other kind of wrong pick (mismatched company, bad
+   listing for a reason other than currency), use **`set_ticker_mapping`**
+   instead (`isin` plus the corrected `ticker`) - that's the one that edits
+   `ticker_map.csv` directly. Either tool **automatically re-runs
+   `enrich_lots`**, so no extra step is needed.
 3. If you are not fully sure a pick is right, ask the user to confirm before
    moving on — don't silently accept an uncertain pick.
 
@@ -122,7 +131,7 @@ little longer, uses `period="max"` by default). Report any tickers that
 failed to resolve and work through them the same way as Step 4 (usually
 means the ticker in the ticker map isn't quite right, or is in a
 currency the pipeline doesn't support - supported currencies are EUR, USD,
-GBP, and GBp).
+GBP, GBp, and DKK).
 
 ## Step 6: Verify the numbers
 

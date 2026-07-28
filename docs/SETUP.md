@@ -71,7 +71,7 @@ Finnhub is just a faster/more-reliable primary source for plain US tickers
 (free tier: 60 req/min, 30k/month; doesn't cover non-US exchanges, which is
 why `yfinance` is the fallback there too).
 
-Only EUR/USD/GBP/GBp holdings are priced - see [`ARCHITECTURE.md`](ARCHITECTURE.md#currency-handling)
+Only EUR/USD/GBP/GBp/DKK holdings are priced - see [`ARCHITECTURE.md`](ARCHITECTURE.md#currency-handling)
 for the full rule and why.
 
 ## Setting up daily automation

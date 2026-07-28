@@ -7,7 +7,7 @@ rationale/rules: see AGENT_NOTES.md (read that first, not this file).
 
 Quick reference: one file per ticker, converted using each day's HISTORICAL FX
 rate (not today's rate). Must stay in sync with fetch_prices.py's currency
-support (EUR/USD/GBP/GBp) and write the same record schema.
+support (EUR/USD/GBP/GBp/DKK) and write the same record schema.
 """
 
 import csv
@@ -21,14 +21,15 @@ from ..paths import ENRICHED_LOTS_FILE, PRICE_HISTORY_DIR
 
 YFINANCE_SOURCE_NAME = "yfinance (Yahoo Finance chart endpoint)"
 
-# Currencies handled: EUR (no conversion), USD, GBP, GBp (British pence = GBP/100).
-# Each non-EUR currency has a yfinance FX pair whose historical series is used for
-# per-day conversion (never today's rate - see module docstring). Must stay in
+# Currencies handled: EUR (no conversion), USD, GBP, GBp (British pence = GBP/100),
+# DKK. Each non-EUR currency has a yfinance FX pair whose historical series is used
+# for per-day conversion (never today's rate - see module docstring). Must stay in
 # sync with fetch_prices.py's live-fetch currency support.
 FX_PAIRS = {
     "USD": "EURUSD=X",
     "GBP": "EURGBP=X",
     "GBp": "EURGBP=X",  # same pair; the pence price is /100'd to GBP before applying
+    "DKK": "EURDKK=X",
 }
 def _fx_source_name(pair):
     return f"yfinance ({pair}, Yahoo Finance chart endpoint)"

@@ -25,7 +25,7 @@ from ..paths import TICKER_MAP_FILE, TRANSACTION_LOTS_FILE
 # Currency preference for picking among a security's listings. Lower = better.
 # EUR first (pipeline is EUR-native, matches the broker exactly, no FX hop);
 # GBp/GBP last (London listings quote in pence and need an extra conversion).
-CURRENCY_RANK = {"EUR": 0, "USD": 1, "GBP": 2, "GBp": 2}
+CURRENCY_RANK = {"EUR": 0, "USD": 1, "GBP": 2, "GBp": 2, "DKK": 3}
 SUPPORTED_CURRENCIES = set(CURRENCY_RANK)  # anything else can't be priced by the pipeline
 
 def load_positions():
@@ -141,7 +141,7 @@ def main():
         if picked is None:
             flags.append("NO CANDIDATE - fill Ticker manually")
         elif currency not in SUPPORTED_CURRENCIES:
-            flags.append(f"UNSUPPORTED CURRENCY {currency} - find a EUR/USD/GBP listing")
+            flags.append(f"UNSUPPORTED CURRENCY {currency} - find a EUR/USD/GBP/DKK listing")
         elif currency != "EUR" and any(c[1] == "EUR" for c in cands):
             flags.append("EUR listing also exists - prefer it")
         if len([c for c in cands if c[1] in SUPPORTED_CURRENCIES]) > 1:
