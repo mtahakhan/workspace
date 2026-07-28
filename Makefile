@@ -1,4 +1,4 @@
-.PHONY: bootstrap claude-setup codex-setup setup-data-and-backfill bootstrap-with-schedule venv-setup server-start mcp-register skill-install codex-mcp-register codex-skill-install setup-env fetch-prices refresh backfill
+.PHONY: bootstrap claude-setup codex-setup copilot-setup setup-data-and-backfill bootstrap-with-schedule venv-setup server-start mcp-register skill-install codex-mcp-register codex-skill-install copilot-mcp-register copilot-skill-install setup-env fetch-prices refresh backfill
 
 ## === MAIN ENTRY POINTS ===
 
@@ -23,6 +23,16 @@ claude-setup: mcp-register skill-install
 codex-setup: codex-mcp-register codex-skill-install
 	@echo ""
 	@echo "Done. Codex detects the skill automatically - restart it if the"
+	@echo "MCP tools or skill don't show up right away."
+
+## Alternative to 'make claude-setup' / 'make codex-setup': register the MCP
+## server + install the Skill with GitHub Copilot CLI instead. Independent of
+## 'make bootstrap' and the other two - none are mutually exclusive, all can
+## be registered against the same running server. Requires the 'copilot' CLI
+## on PATH.
+copilot-setup: copilot-mcp-register copilot-skill-install
+	@echo ""
+	@echo "Done. Copilot detects the skill automatically - restart it if the"
 	@echo "MCP tools or skill don't show up right away."
 
 ## Setup for pure-Python use: venv + server, then (assuming you've already
@@ -90,3 +100,13 @@ codex-mcp-register:
 ## Codex's global skills directory ($HOME/.agents/skills/portfolio/)
 codex-skill-install:
 	./scripts/codex-skill-install.sh
+
+## Copilot equivalent of 'make mcp-register' - registers with the copilot
+## CLI (HTTP transport) instead of claude/codex
+copilot-mcp-register:
+	./scripts/copilot-mcp-register.sh
+
+## Copilot equivalent of 'make skill-install' - copies skills/portfolio/ to
+## Copilot's global skills directory (~/.copilot/skills/portfolio/)
+copilot-skill-install:
+	./scripts/copilot-skill-install.sh

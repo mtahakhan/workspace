@@ -2,12 +2,12 @@
 
 A portfolio tracker and daily analysis pipeline for Scalable Capital: a
 deterministic Python pipeline behind an MCP server, with an optional Skill on
-top for Claude Code or Codex CLI. The MCP server setup is agent-CLI-free by
-design - hooking either one up is a separate, independent step, not baked
-into base setup. Upload a transaction export and it reconstructs your real
-positions, fetches prices, computes value/gain/XIRR/drawdown/sector
-concentration, and writes a daily report - see
-[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full description.
+top for Claude Code, Codex CLI, or GitHub Copilot CLI. The MCP server setup
+is agent-CLI-free by design - hooking any of them up is a separate,
+independent step, not baked into base setup. Upload a transaction export and
+it reconstructs your real positions, fetches prices, computes
+value/gain/XIRR/drawdown/sector concentration, and writes a daily report -
+see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full description.
 
 ## Quick start
 
@@ -29,8 +29,15 @@ through first-time setup (transactions, tickers, optional API key).
 make codex-setup
 ```
 Same idea, registered with Codex's own MCP config and skills directory
-instead - the two aren't mutually exclusive, and either (or both) can point
+instead - none of these are mutually exclusive, and any combination can point
 at the same running server.
+
+**Want GitHub Copilot CLI instead?**
+```bash
+make copilot-setup
+```
+Same idea again, registered with Copilot's own MCP config and skills
+directory.
 
 **Want something else** - just the numbers with no LLM, a hybrid of both, or
 full automation? See [`docs/PATHWAYS.md`](docs/PATHWAYS.md) for all four
@@ -51,8 +58,8 @@ setup paths and their trade-offs.
 | Path | What |
 |---|---|
 | [`mcp_servers/portfolio_tools/`](mcp_servers/portfolio_tools/) | The MCP server + deterministic pipeline (FIFO cost basis, prices, XIRR, drawdown, compliance, etc.) |
-| [`skills/portfolio/`](skills/portfolio/SKILL.md) | The Claude Skill — self-contained, deployed globally by `make claude-setup` |
-| [`Makefile`](Makefile) | `make bootstrap` (venv + server, Claude-free), `make claude-setup` (Claude Code integration, independent), `make refresh` (run), `make setup-data-and-backfill` (Python-only), plus individual targets |
-| [`bootstrap.sh`](bootstrap.sh) | Base bootstrap orchestrator — venv + server only, never touches Claude Code's own config |
+| [`skills/portfolio/`](skills/portfolio/SKILL.md) | The Skill — self-contained, deployed globally by `make claude-setup` / `codex-setup` / `copilot-setup` (same bundle, three targets) |
+| [`Makefile`](Makefile) | `make bootstrap` (venv + server, agent-CLI-free), `make claude-setup` / `codex-setup` / `copilot-setup` (agent CLI integration, all independent), `make refresh` (run), `make setup-data-and-backfill` (Python-only), plus individual targets |
+| [`bootstrap.sh`](bootstrap.sh) | Base bootstrap orchestrator — venv + server only, never touches any agent CLI's own config |
 | [`scripts/`](scripts/) | Bootstrap steps + manual pipeline runners (`fetch-prices.sh`, `run-pipeline.sh`) |
 | [`setup-env.sh`](setup-env.sh) | Interactive prompt for Finnhub API key and data directory |
