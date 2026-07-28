@@ -38,7 +38,7 @@ regardless of which project triggered this skill:
 
 `references/INVESTMENT_FRAMEWORK.md`, `references/BOOTSTRAP.md`, and
 `references/TROUBLESHOOTING.md` are kept in sync with the source repo by
-re-running `bootstrap.sh` there - never hand-edit them from inside a
+re-running `make claude-setup` there - never hand-edit them from inside a
 deployed skill copy. `references/tasks/*.md` is
 the one exception: there is no separate source-repo copy of it - this
 bundled file *is* the source of truth for scheduled-task and on-demand-task
@@ -57,7 +57,7 @@ just because this skill triggered.
 `references/tasks/*.md` is the one exception: it's edited in place, right
 here in the skill bundle (in the source repo at
 `skills/portfolio/references/tasks/*.md`, then re-deployed via
-`bootstrap.sh`) - see rule 7 below.
+`make claude-setup`) - see rule 7 below.
 
 ## Use the `portfolio` MCP tools for every deterministic step - never Bash, never guess
 
@@ -176,4 +176,4 @@ skill files, not portfolio data.
    or on-demand-refresh behavior, never the schedule itself** - the
    schedule's prompt is just a pointer to the skill, which points at these
    files. Edit them in the source repo (`skills/portfolio/references/tasks/*.md`)
-   and re-run `bootstrap.sh` to redeploy - see "Reading vs. editing" above.
+   and re-run `make claude-setup` to redeploy - see "Reading vs. editing" above.

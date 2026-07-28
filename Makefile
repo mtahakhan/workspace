@@ -1,11 +1,20 @@
-.PHONY: bootstrap setup-data-and-backfill bootstrap-with-schedule venv-setup server-start mcp-register skill-install setup-env fetch-prices refresh backfill
+.PHONY: bootstrap claude-setup setup-data-and-backfill bootstrap-with-schedule venv-setup server-start mcp-register skill-install setup-env fetch-prices refresh backfill
 
 ## === MAIN ENTRY POINTS ===
 
-## Full setup with Claude + MCP server + Skill (recommended)
-## Walks you through first-run setup in Claude Code after this completes
+## Base setup: venv + MCP server only. Deliberately Claude-free - never
+## touches Claude Code's own config or ~/.claude/. See 'make claude-setup'
+## to hook Claude Code into the server this starts.
 bootstrap:
 	./bootstrap.sh
+
+## Register the MCP server + install the Skill with Claude Code. Independent
+## of 'make bootstrap' - run any time after the server's up to add (or
+## re-add) the Claude Code integration, without re-running venv/server setup.
+claude-setup: mcp-register skill-install
+	@echo ""
+	@echo "Done. Start a NEW Claude Code session (any project) to pick up"
+	@echo "the skill and MCP tools."
 
 ## Setup for pure-Python use: venv + server, then (assuming you've already
 ## placed data/personal/transactions.csv) builds positions, resolves tickers,
@@ -15,9 +24,9 @@ setup-data-and-backfill:
 	./bootstrap.sh
 	./scripts/setup-data.sh
 
-## Setup + prompt to schedule daily Claude Code tasks (requires an active session)
-bootstrap-with-schedule:
-	./bootstrap.sh
+## Full Claude setup (bootstrap + claude-setup) + prompt to schedule daily
+## Claude Code tasks (requires an active session)
+bootstrap-with-schedule: bootstrap claude-setup
 	@echo ""
 	@echo "In a Claude Code session, ask it to create two scheduled tasks:"
 	@echo "  portfolio-daily-refresh  and  portfolio-daily-analysis"
@@ -35,8 +44,6 @@ fetch-prices:
 ## See docs/QUICKSTART.md for step-by-step explanation.
 refresh:
 	./scripts/run-pipeline.sh
-
-
 
 ## (One-time per ticker) backfill full historical prices - requires tickers
 ## already resolved (docs/QUICKSTART.md steps 1-4); see docs/QUICKSTART.md step 6

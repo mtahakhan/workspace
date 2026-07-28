@@ -14,12 +14,20 @@ governs this setup's most error-prone step.
 
 ## Step 0: Confirm the server is actually running
 
-The `portfolio` MCP tools only exist if `bootstrap.sh` (repo root) has been
-run. If they're not available, tell the user to run `./bootstrap.sh` from a
-terminal first (it needs a Python >=3.10 interpreter on the machine, and the
-`claude` CLI) - you can't do this step for them, since it changes their local
-Claude Code configuration, not just this repo's files. Once it's done, a new
-Claude Code session will have the tools available.
+The `portfolio` MCP tools only appear as available at all if `make
+claude-setup` (repo root) has registered the server with Claude Code - if
+they're not available in this session, tell the user to run that from a
+terminal (it needs the `claude` CLI on `PATH`), then start a **new** Claude
+Code session to pick it up. You can't do this step for them, since it changes
+their local Claude Code configuration, not just this repo's files.
+
+If the tools ARE available but a call to one fails (connection refused, not
+just an error from the tool itself), the server process itself has likely
+died (common after a machine sleep/reboot - it's a background process, not a
+login service) even though the registration is still intact. Tell the user to
+run `make bootstrap` (repo root, needs a Python >=3.10 interpreter) to
+restart it - no new Claude Code session needed for this one, since the
+registration didn't change.
 
 ## Step 1: Brief the user
 

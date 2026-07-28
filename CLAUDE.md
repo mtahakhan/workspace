@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 One project: a portfolio price-tracking and analysis pipeline, packaged as a
 single MCP server (`mcp_servers/portfolio_tools/`) registered **globally** via
-`bootstrap.sh` - not project-scoped. All computation is deterministic Python
+`make claude-setup` - not project-scoped. All computation is deterministic Python
 (`portfolio_tools/pipeline/`, a subpackage of the server itself); Claude's role
 is orchestration, news research, and prose - it never computes a number
 itself. The server is reached over HTTP (`streamable-http`, localhost-only)
@@ -22,7 +22,7 @@ editing:
 | The Claude Skill | [`skills/portfolio/`](skills/portfolio/SKILL.md) | An agent *using* the deployed pipeline, in any project. Self-contained - deliberately not under `.claude/`, so it doesn't also trigger as a project skill while you develop here. |
 | Agent-dev rules | [`docs/AGENT_NOTES.md`](docs/AGENT_NOTES.md) | Rules and hard-won lessons for anyone (agent or human) modifying code in this repo. **Read before touching any pipeline module.** |
 | Architecture | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | How the system actually works - data flow, file map, MCP tools, methodology (currency handling, FIFO, XIRR, config schema). |
-| Human setup | [`README.md`](README.md) / [`docs/SETUP.md`](docs/SETUP.md) / [`docs/QUICKSTART.md`](docs/QUICKSTART.md) | Cloning, running `bootstrap.sh`, getting a Finnhub key, or running the pipeline with no LLM at all. |
+| Human setup | [`README.md`](README.md) / [`docs/SETUP.md`](docs/SETUP.md) / [`docs/QUICKSTART.md`](docs/QUICKSTART.md) | Cloning, running `make bootstrap` + `make claude-setup`, getting a Finnhub key, or running the pipeline with no LLM at all. |
 
 **First run?** If `upload_transactions` hasn't been called yet (no
 `data/personal/transactions.csv`), this is a fresh setup with no
@@ -40,21 +40,25 @@ won't auto-trigger in this repo.
 
 ## Commands
 
-**Setup / (re)deployment** - run the full bootstrap or individual steps via
-`make` (see [`Makefile`](Makefile)):
+**Setup / (re)deployment** - two independent targets, run via `make` (see
+[`Makefile`](Makefile)):
 ```bash
-make bootstrap      # all four steps in order (idempotent, safe to re-run)
-make venv-setup     # step 1 only: create .venv + install deps
-make server-start   # step 2 only: start server in background
-make mcp-register   # step 3 only: register with claude (user scope, HTTP)
-make skill-install  # step 4 only: copy skills/portfolio/ to ~/.claude/skills/
+make bootstrap      # venv + server only - deliberately Claude-free
+make claude-setup   # registers with Claude Code + deploys the Skill - independent of bootstrap
+make venv-setup     # bootstrap step 1 only: create .venv + install deps
+make server-start   # bootstrap step 2 only: start server in background
+make mcp-register   # claude-setup step 1 only: register with claude (user scope, HTTP)
+make skill-install  # claude-setup step 2 only: copy skills/portfolio/ to ~/.claude/skills/
 make setup-env      # interactive prompt to write the Finnhub API key to .env
 ```
-`make bootstrap` orchestrates all four steps via `bootstrap.sh`, which
-delegates to the individual scripts in `scripts/`. Each step is
-skip-if-already-done except MCP registration and skill copy, which always
-replace cleanly. See [`docs/SETUP.md`](docs/SETUP.md) for the full
-human-facing walkthrough.
+`make bootstrap` (`bootstrap.sh`, delegating to `scripts/`) never touches
+Claude Code's own config - it just gets the server running, the same way for
+every usage path (Claude-powered or Python-only). `make claude-setup` is the
+separate step that actually hooks Claude Code into the server `make
+bootstrap` started; run it any time after, independently, without
+re-running venv/server setup. `venv-setup`/`server-start` are
+skip-if-already-done; `mcp-register`/`skill-install` always replace cleanly.
+See [`docs/SETUP.md`](docs/SETUP.md) for the full human-facing walkthrough.
 
 **Day to day**: everything goes through the `portfolio` MCP tools
 (`upload_transactions`, `compute_lots`, `resolve_tickers`, `fetch_prices`,
@@ -88,8 +92,8 @@ so an agent never writes a data file itself). Full breakdown in
 
 **`skills/portfolio/`** is the Claude Skill source - `SKILL.md` + a
 self-contained `references/` bundle (including `references/tasks/*.md`, the
-actual instructions the two scheduled tasks follow). `bootstrap.sh` copies
-it wholesale to `~/.claude/skills/portfolio/`. See
+actual instructions the two scheduled tasks follow). `make claude-setup`
+copies it wholesale to `~/.claude/skills/portfolio/`. See
 [`docs/AGENT_NOTES.md`](docs/AGENT_NOTES.md)'s "Skill bundle vs. this repo"
 before editing anything under it - it must stay self-contained (no
 references out to `docs/`).

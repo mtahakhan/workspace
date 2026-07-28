@@ -49,10 +49,10 @@ workflow, and lessons already learned the hard way.
    a one-line pointer: invoke the `portfolio` skill, then follow
    `references/tasks/{name}.md` wherever that skill loaded from. The real
    instructions live in the bundled file itself - edit it here in the repo,
-   then **re-run `bootstrap.sh`** so the globally-deployed copy the scheduler
-   actually reads at runtime picks up the change. Editing only the deployed
-   `~/.claude/skills/...` copy works too but drifts from the repo until the
-   next `bootstrap.sh` overwrites it.
+   then **re-run `make claude-setup`** so the globally-deployed copy the
+   scheduler actually reads at runtime picks up the change. Editing only the
+   deployed `~/.claude/skills/...` copy works too but drifts from the repo
+   until the next `make claude-setup` overwrites it.
 3. **Keep `ARCHITECTURE.md`'s Mermaid diagram in sync.** Any change to a
    module's inputs/outputs, the run order, a data file, or a scheduled task -
    in that file's tables, or the actual code - must land alongside a matching
@@ -79,9 +79,9 @@ workflow, and lessons already learned the hard way.
 
 `skills/portfolio/` is a **self-contained copy** - everything it references
 (`references/*.md`) must resolve from within that directory alone, because
-`bootstrap.sh` copies it wholesale to `~/.claude/skills/portfolio/`, where it
-gets triggered from arbitrary other projects that have no access to this
-repo's `docs/`. Concretely:
+`make claude-setup` copies it wholesale to `~/.claude/skills/portfolio/`,
+where it gets triggered from arbitrary other projects that have no access to
+this repo's `docs/`. Concretely:
 
 - Never add a cross-reference from anything under `skills/portfolio/` to
   `docs/` or anywhere else outside the skill bundle - it would silently
@@ -92,8 +92,8 @@ repo's `docs/`. Concretely:
   part directly in the skill file, or conclude it doesn't actually belong in
   the skill (i.e. it's dev-only content, and the skill user doesn't need it
   to operate the tools correctly).
-- After editing anything under `skills/portfolio/`, re-run `bootstrap.sh` to
-  redeploy - it's idempotent and always replaces the global copy wholesale.
+- After editing anything under `skills/portfolio/`, re-run `make claude-setup`
+  to redeploy - it's idempotent and always replaces the global copy wholesale.
 
 ## Notable incidents (why some things are the way they are)
 
