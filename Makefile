@@ -1,4 +1,4 @@
-.PHONY: bootstrap claude-setup codex-setup copilot-setup setup-data-and-backfill bootstrap-with-schedule venv-setup server-start mcp-register skill-install codex-mcp-register codex-skill-install copilot-mcp-register copilot-skill-install setup-env fetch-prices refresh backfill
+.PHONY: bootstrap claude-setup codex-setup copilot-setup setup-ibm-bob setup-data-and-backfill bootstrap-with-schedule venv-setup server-start mcp-register skill-install bob-mcp-register bob-skill-install setup-env fetch-prices refresh backfill
 
 ## === MAIN ENTRY POINTS ===
 
@@ -34,6 +34,13 @@ copilot-setup: copilot-mcp-register copilot-skill-install
 	@echo ""
 	@echo "Done. Copilot detects the skill automatically - restart it if the"
 	@echo "MCP tools or skill don't show up right away."
+## Register the MCP server + install the Skill globally with IBM Bob. Independent
+## of 'make bootstrap' - run any time after the server's up to add (or
+## re-add) the IBM Bob integration, without re-running venv/server setup.
+setup-ibm-bob: bob-mcp-register bob-skill-install
+	@echo ""
+	@echo "Done. Start a NEW IBM Bob session (any project) to pick up"
+	@echo "the skill and MCP tools."
 
 ## Setup for pure-Python use: venv + server, then (assuming you've already
 ## placed data/personal/transactions.csv) builds positions, resolves tickers,
@@ -110,3 +117,10 @@ copilot-mcp-register:
 ## Copilot's global skills directory (~/.copilot/skills/portfolio/)
 copilot-skill-install:
 	./scripts/copilot-skill-install.sh
+## Bob step 1: register the MCP server globally with IBM Bob (~/.bob/settings/mcp.json)
+bob-mcp-register:
+	./scripts/bob-mcp-register.sh
+
+## Bob step 2: copy skills/portfolio/ to ~/.bob/skills/portfolio/
+bob-skill-install:
+	./scripts/bob-skill-install.sh
