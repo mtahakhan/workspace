@@ -6,13 +6,16 @@ What this system is and how data moves through it. Not a rules/gotchas doc
 
 ## Deployment model
 
-This is **not** a project-scoped tool. `bootstrap.sh` (repo root) registers
-the `portfolio` MCP server and the Claude Skill **globally**
-(`claude mcp add --scope user`, plus copying `skills/portfolio/` to
-`~/.claude/skills/portfolio/`) - the server is a single long-running HTTP
-process (`portfolio_tools/server.py`, `mcp.run(transport="streamable-http")`,
-bound to `127.0.0.1` only) that every Claude Code session on the machine
-talks to, in every project, not just this repo. There is no
+This is **not** a project-scoped tool. `bootstrap.sh` (repo root, `make
+bootstrap`) starts the server itself - deliberately Claude-free, it never
+touches Claude Code's own config. `make claude-setup` is the separate,
+independent step that registers the `portfolio` MCP server and the Claude
+Skill **globally** (`claude mcp add --scope user`, plus copying
+`skills/portfolio/` to `~/.claude/skills/portfolio/`) - the server is a
+single long-running HTTP process (`portfolio_tools/server.py`,
+`mcp.run(transport="streamable-http")`, bound to `127.0.0.1` only) that every
+Claude Code session on the machine talks to, in every project, not just this
+repo. There is no
 `${CLAUDE_PROJECT_DIR}`-relative anything in this codebase - every path comes
 from `portfolio_tools/paths.py`, never from cwd or "the current project."
 **Concretely: if you're working in some unrelated project and the `portfolio`
@@ -71,7 +74,7 @@ whatever was there before.
 lives at `skills/portfolio/` instead, so Claude Code doesn't auto-discover it
 as a *project-scoped* skill while you're developing here. The skill is meant
 to be reached only through its **global** install
-(`~/.claude/skills/portfolio/`, deployed by `bootstrap.sh`), the same way any
+(`~/.claude/skills/portfolio/`, deployed by `make claude-setup`), the same way any
 other project would see it - keeping it out of `.claude/` avoids a second,
 project-scoped copy silently coexisting with (and potentially drifting from)
 the global one.
@@ -83,8 +86,8 @@ is a subpackage of the server, not a sibling project:
 
 ```
 skills/portfolio/           <- the Claude Skill source (see docs/AGENT_NOTES.md
-                                for why it's not under .claude/); bootstrap.sh
-                                copies it to ~/.claude/skills/portfolio/
+                                for why it's not under .claude/); make
+                                claude-setup copies it to ~/.claude/skills/portfolio/
 docs/                        <- this directory: architecture, agent-dev rules,
                                 human setup/quickstart guides
 mcp_servers/
@@ -118,15 +121,19 @@ data/                        <- DEFAULT data root, outside the package (relocata
                                 analysis_history.jsonl, daily-analysis/          (not committed)
   impersonal/                  ticker_map.csv, ticker_overrides.csv, company_overrides.csv,
                                 fee_rules.json, price_history/*.jsonl, news/     (committed)
-bootstrap.sh                 <- repo root - full bootstrap orchestrator (delegates to scripts/)
+bootstrap.sh                 <- repo root - base orchestrator: venv + server only,
+                                deliberately Claude-free (delegates to scripts/)
 setup-env.sh                 <- interactive prompt to write the Finnhub API key to .env
-Makefile                     <- make bootstrap / make venv-setup / make server-start /
-                                make mcp-register / make skill-install / make setup-env
+Makefile                     <- make bootstrap (venv+server) / make claude-setup
+                                (mcp-register+skill-install, independent) / make
+                                venv-setup / make server-start / make mcp-register /
+                                make skill-install / make setup-env
 scripts/
-  venv-setup.sh              <- step 1: create .venv + install deps
-  server-start.sh            <- step 2: start server in background
-  mcp-register.sh            <- step 3: claude mcp add --scope user
-  skill-install.sh           <- step 4: copy skills/portfolio/ to ~/.claude/skills/
+  venv-setup.sh              <- step 1 (make bootstrap): create .venv + install deps
+  server-start.sh            <- step 2 (make bootstrap): start server in background
+  mcp-register.sh            <- step 1 (make claude-setup): claude mcp add --scope user
+  skill-install.sh           <- step 2 (make claude-setup): copy skills/portfolio/
+                                to ~/.claude/skills/
 ```
 
 Named `portfolio_tools`, not `mcp`, specifically so it never collides with the

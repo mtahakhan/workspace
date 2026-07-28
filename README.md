@@ -1,21 +1,28 @@
 # Portfolio pipeline
 
-A portfolio tracker and daily analysis pipeline for Scalable Capital, packaged
-as a Claude Skill + a globally-registered MCP server. Clone this repo, run
-one command, and it's available in every Claude Code session on the machine -
-not just this project. Upload a transaction export and it reconstructs your
-real positions, fetches prices, computes value/gain/XIRR/drawdown/sector
-concentration, and writes a daily report - see
-[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full description.
+A portfolio tracker and daily analysis pipeline for Scalable Capital: a
+deterministic Python pipeline behind an MCP server, with an optional Claude
+Skill on top. The MCP server setup is Claude-free by design - the Claude Code
+integration is a separate, independent step, not baked into base setup.
+Upload a transaction export and it reconstructs your real positions, fetches
+prices, computes value/gain/XIRR/drawdown/sector concentration, and writes a
+daily report - see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the
+full description.
 
 ## Quick start
 
 ```bash
 make bootstrap
 ```
-Then start a **new** Claude Code session and ask about your portfolio - it
-will walk you through first-time setup (transactions, tickers, optional API
-key).
+Sets up the venv and starts the MCP server - no Claude Code involved yet.
+
+**Want Claude Code to use it?**
+```bash
+make claude-setup
+```
+Registers the MCP server globally and installs the Skill. Then start a
+**new** Claude Code session and ask about your portfolio - it will walk you
+through first-time setup (transactions, tickers, optional API key).
 
 **Want something else** - just the numbers with no LLM, a hybrid of both, or
 full automation? See [`docs/PATHWAYS.md`](docs/PATHWAYS.md) for all four
@@ -36,8 +43,8 @@ setup paths and their trade-offs.
 | Path | What |
 |---|---|
 | [`mcp_servers/portfolio_tools/`](mcp_servers/portfolio_tools/) | The MCP server + deterministic pipeline (FIFO cost basis, prices, XIRR, drawdown, compliance, etc.) |
-| [`skills/portfolio/`](skills/portfolio/SKILL.md) | The Claude Skill — self-contained, deployed globally by `bootstrap.sh` |
-| [`Makefile`](Makefile) | `make bootstrap` (setup), `make refresh` (run), `make setup-data-and-backfill` (Python-only), plus individual targets |
-| [`bootstrap.sh`](bootstrap.sh) | Full bootstrap orchestrator — delegates to `scripts/` in order |
+| [`skills/portfolio/`](skills/portfolio/SKILL.md) | The Claude Skill — self-contained, deployed globally by `make claude-setup` |
+| [`Makefile`](Makefile) | `make bootstrap` (venv + server, Claude-free), `make claude-setup` (Claude Code integration, independent), `make refresh` (run), `make setup-data-and-backfill` (Python-only), plus individual targets |
+| [`bootstrap.sh`](bootstrap.sh) | Base bootstrap orchestrator — venv + server only, never touches Claude Code's own config |
 | [`scripts/`](scripts/) | Bootstrap steps + manual pipeline runners (`fetch-prices.sh`, `run-pipeline.sh`) |
 | [`setup-env.sh`](setup-env.sh) | Interactive prompt for Finnhub API key and data directory |

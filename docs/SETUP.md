@@ -18,17 +18,19 @@ From the repo root:
 ```bash
 make bootstrap
 ```
-This is the only setup command you need to run by hand, and it's safe to
-re-run any time (after a reboot, a `requirements.txt` change, or just to
-confirm everything's still wired up). It runs four steps in order (each in
-its own script under `scripts/`) - you can also run any step individually:
+Safe to re-run any time (after a reboot, a `requirements.txt` change, or just
+to confirm everything's still wired up). It runs two steps in order (each in
+its own script under `scripts/`) - you can also run either individually:
 
 | Make target | What it does |
 |---|---|
 | `make venv-setup` | Creates `mcp_servers/portfolio_tools/.venv` (Python >=3.10) and installs dependencies |
 | `make server-start` | Starts the HTTP server in the background (`nohup` + PID file) - **not** a login/boot service, re-run after a reboot or crash |
-| `make mcp-register` | Registers with `claude mcp add --scope user --transport http`, available in every Claude Code session on the machine |
-| `make skill-install` | Copies `skills/portfolio/` to `~/.claude/skills/portfolio/`, replacing whatever was there - self-contained, no dependency on this repo's location surviving afterward |
+
+**Deliberately Claude-free** - this step never touches Claude Code's own
+config or `~/.claude/`. It just gets the server itself running, which works
+just as well for the Python-only path (see [`PATHWAYS.md`](PATHWAYS.md)) as
+it does for this one.
 
 On a first run (no `.env` yet), bootstrap starts by asking two things: your
 Finnhub API key (optional - press Enter to skip) and **where to keep your
@@ -45,7 +47,22 @@ To change either value later, run `make setup-env` and restart the server.
 **Changing the path does not move existing data** - move the contents
 yourself, keeping `personal/` and `impersonal/` intact.
 
-## 2. Start a new Claude Code session
+## 2. Run `make claude-setup`
+
+```bash
+make claude-setup
+```
+This is the step that actually hooks Claude Code into the server `make
+bootstrap` just started - independent of it, and safe to re-run any time
+(e.g. to pick up a `skills/portfolio/` update) without touching the venv or
+restarting the server. Two steps:
+
+| Make target | What it does |
+|---|---|
+| `make mcp-register` | Registers with `claude mcp add --scope user --transport http`, available in every Claude Code session on the machine |
+| `make skill-install` | Copies `skills/portfolio/` to `~/.claude/skills/portfolio/`, replacing whatever was there - self-contained, no dependency on this repo's location surviving afterward |
+
+## 3. Start a new Claude Code session
 
 Any project, not just this one - the skill and MCP tools are both global
 now. Ask it anything portfolio-related and the `portfolio` skill should

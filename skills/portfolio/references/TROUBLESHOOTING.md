@@ -68,9 +68,12 @@ it happens on a trading day.
 
 ## The MCP server isn't responding
 
-- This means the source repo's server process isn't running or isn't
-  registered - not something fixable from inside a chat session, since it
-  requires running a script on that machine. Tell the user to re-run
-  `bootstrap.sh` from the source repo (they'll know where that is, or can
-  find it - it's not something this skill can locate on its own, since it
-  travels independently of the repo).
+- Not fixable from inside a chat session - it requires running a script on
+  that machine. Tell the user to, from the source repo (they'll know where
+  that is, or can find it - it's not something this skill can locate on its
+  own, since it travels independently of the repo):
+  - Run `make bootstrap` if the server process itself has died (common after
+    a machine sleep/reboot - it's a background process, not a login service)
+  - Run `make claude-setup` if the server's running but the registration
+    itself is missing or stale (`claude mcp get portfolio` doesn't say
+    "Connected")

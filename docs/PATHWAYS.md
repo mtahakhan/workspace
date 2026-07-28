@@ -11,9 +11,10 @@ This pipeline supports four distinct workflows. Pick the one that matches how yo
 ### Setup (5 min + first-time data import)
 ```bash
 make bootstrap
+make claude-setup
 ```
 
-This does everything: creates a Python venv, starts the MCP server in the background, registers it globally with Claude Code, and installs the Skill. Then:
+`bootstrap` creates a Python venv and starts the MCP server in the background - deliberately Claude-free, it never touches Claude Code's own config. `claude-setup` is the separate, independent step that registers the server globally with Claude Code and installs the Skill. Then:
 
 1. **Start a new Claude Code session** (any project)
 2. **Ask about your portfolio** — it will walk you through first-run setup:
@@ -72,6 +73,7 @@ Runs once: fetches prices → computes analysis → checks compliance → render
 ### Setup
 ```bash
 make bootstrap
+make claude-setup
 ```
 Same setup as Path 1 (venv, server, MCP registration, Skill install) — the only difference is what you do next. When Claude's first-run flow offers to set up scheduled tasks, decline and run `make refresh` yourself instead (see Path 2's daily workflow).
 
@@ -90,7 +92,7 @@ Same setup as Path 1 (venv, server, MCP registration, Skill install) — the onl
 ```bash
 make bootstrap-with-schedule
 ```
-Same setup as Path 1, plus a prompt to ask Claude to create the two scheduled tasks (`portfolio-daily-refresh` and `portfolio-daily-analysis`) — see [`SETUP.md`](SETUP.md#setting-up-daily-automation) for what each task does and how to check they're still running.
+One command - it chains `bootstrap` and `claude-setup` together (same end state as Path 1's two commands), plus a prompt to ask Claude to create the two scheduled tasks (`portfolio-daily-refresh` and `portfolio-daily-analysis`) — see [`SETUP.md`](SETUP.md#setting-up-daily-automation) for what each task does and how to check they're still running.
 
 ### Daily workflow
 - Nothing — Claude does it automatically
@@ -103,7 +105,7 @@ Same setup as Path 1, plus a prompt to ask Claude to create the two scheduled ta
 
 | Need | Path 1 (Claude) | Path 2 (Python) | Path 3 (Hybrid) | Path 4 (Automated) |
 |---|---|---|---|---|
-| **Setup command** | `make bootstrap` | `make setup-data-and-backfill` | `make bootstrap` | `make bootstrap-with-schedule` |
+| **Setup command** | `make bootstrap` + `make claude-setup` | `make setup-data-and-backfill` | `make bootstrap` + `make claude-setup` | `make bootstrap-with-schedule` |
 | **Run pipeline** | Claude daily (scheduled) | `make refresh` manually | You, daily: `make refresh` | Claude daily (scheduled) |
 | **Analysis** | Claude writes reports | Read markdown yourself | Claude on demand | Claude daily reports |
 | **Time commitment** | ~10 min setup, ask Claude anytime | 10 min setup + 2 min daily | 10 min setup + 2 min daily | ~10 min setup, nothing after |
@@ -115,7 +117,7 @@ Same setup as Path 1, plus a prompt to ask Claude to create the two scheduled ta
 
 ## Common questions
 
-**Can I switch paths?** Yes, they're not mutually exclusive. You can start with Path 2 (just the numbers), then add Path 1's Claude layer later by running `make mcp-register && make skill-install` from any Claude Code session.
+**Can I switch paths?** Yes, they're not mutually exclusive. You can start with Path 2 (just the numbers), then add Path 1's Claude layer later by running `make claude-setup` - it's independent of `make bootstrap` and doesn't need re-running venv/server setup.
 
 **What if I only want to backfill once, not fetch daily?** Every path supports this. Backfill is a one-time operation; daily `make refresh` (or Claude's scheduled tasks) just append new prices to the same files.
 
