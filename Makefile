@@ -1,4 +1,4 @@
-.PHONY: bootstrap claude-setup setup-data-and-backfill bootstrap-with-schedule venv-setup server-start mcp-register skill-install setup-env fetch-prices refresh backfill
+.PHONY: bootstrap claude-setup codex-setup setup-data-and-backfill bootstrap-with-schedule venv-setup server-start mcp-register skill-install codex-mcp-register codex-skill-install setup-env fetch-prices refresh backfill
 
 ## === MAIN ENTRY POINTS ===
 
@@ -15,6 +15,15 @@ claude-setup: mcp-register skill-install
 	@echo ""
 	@echo "Done. Start a NEW Claude Code session (any project) to pick up"
 	@echo "the skill and MCP tools."
+
+## Alternative to 'make claude-setup': register the MCP server + install the
+## Skill with Codex CLI instead. Independent of 'make bootstrap' and of
+## claude-setup - the two aren't mutually exclusive, both can be registered
+## against the same running server. Requires the 'codex' CLI on PATH.
+codex-setup: codex-mcp-register codex-skill-install
+	@echo ""
+	@echo "Done. Codex detects the skill automatically - restart it if the"
+	@echo "MCP tools or skill don't show up right away."
 
 ## Setup for pure-Python use: venv + server, then (assuming you've already
 ## placed data/personal/transactions.csv) builds positions, resolves tickers,
@@ -71,3 +80,13 @@ mcp-register:
 ## Step 4: copy skills/portfolio/ to ~/.claude/skills/portfolio/
 skill-install:
 	./scripts/skill-install.sh
+
+## Codex equivalent of 'make mcp-register' - registers with the codex CLI
+## (Streamable HTTP) instead of claude
+codex-mcp-register:
+	./scripts/codex-mcp-register.sh
+
+## Codex equivalent of 'make skill-install' - copies skills/portfolio/ to
+## Codex's global skills directory ($HOME/.agents/skills/portfolio/)
+codex-skill-install:
+	./scripts/codex-skill-install.sh
